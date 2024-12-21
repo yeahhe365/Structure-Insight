@@ -2,6 +2,11 @@
 # Structure Insight
 
 一个基于 PyQt5 的小工具，用于快速查看指定文件夹的目录结构，并可选择性地提取文本文件内容进行查看和保存。
+![PixPin_2024-12-21_11-52-26](https://github.com/user-attachments/assets/fa5439fe-405a-49e6-9102-41bc63133711)
+![PixPin_2024-12-21_11-52-41](https://github.com/user-attachments/assets/ab4d23a4-6d4c-4fbc-a9cf-ece5d42b8ae2)
+![PixPin_2024-12-21_11-52-52](https://github.com/user-attachments/assets/8bf0a70c-4d74-4275-b7f3-fa1bed8cb3e7)
+![PixPin_2024-12-21_11-53-02](https://github.com/user-attachments/assets/6c364d43-cc7a-4af5-919e-9a2ff3631a85)
+
 
 ## 功能简介
 
