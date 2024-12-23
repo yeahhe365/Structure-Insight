@@ -42,6 +42,8 @@ class FileProcessThread(QThread):
             '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.mp3', '.mp4',
             '.avi', '.mov', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'
         }
+        # 添加允许处理的扩展名（例如 .js）
+        self.allowed_extensions = {'.js', '.json'}
 
     def run(self):
         try:
@@ -123,7 +125,8 @@ class FileProcessThread(QThread):
         file_name = os.path.basename(file_path)
         _, file_extension = os.path.splitext(file_name)
 
-        if file_extension.lower() in self.skip_extensions:
+        # 检查是否跳过该文件类型，除非在允许的扩展名列表中
+        if file_extension.lower() in self.skip_extensions and file_extension.lower() not in self.allowed_extensions:
             self.update_signal.emit(file_name, "跳过该文件类型", "skipped", file_path)
             return
 
@@ -139,10 +142,17 @@ class FileProcessThread(QThread):
             self.update_signal.emit(file_name, "文件过大，已跳过", "skipped", file_path)
             return
 
-        # 检查是否是文本文件
+        # 检查是否是文本文件或特定的 MIME 类型
         mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type and not mime_type.startswith('text'):
-            self.update_signal.emit(file_name, "非文本文件，已跳过", "skipped", file_path)
+        # 添加 'application/javascript' 和 'application/json' 到允许的 MIME 类型
+        allowed_mime_types = ['text', 'application/javascript', 'application/json']
+        if mime_type:
+            if not (mime_type.startswith('text') or mime_type in allowed_mime_types):
+                self.update_signal.emit(file_name, "非文本文件，已跳过", "skipped", file_path)
+                return
+        else:
+            # 如果无法猜测 MIME 类型，也可以选择跳过或处理
+            self.update_signal.emit(file_name, "无法确定文件类型，已跳过", "skipped", file_path)
             return
 
         content = self.read_file_content(file_path)
@@ -552,6 +562,7 @@ class FileDropWidget(QWidget):
         total_files = 0
         max_depth = self.process_thread.max_depth
         skip_extensions = self.process_thread.skip_extensions
+        allowed_extensions = self.process_thread.allowed_extensions
         extract_content = self.process_thread.extract_content
 
         def count(path, depth=0):
@@ -569,7 +580,7 @@ class FileDropWidget(QWidget):
                             elif entry.is_file():
                                 file_name = entry.name
                                 _, file_extension = os.path.splitext(file_name)
-                                if file_extension.lower() in skip_extensions:
+                                if file_extension.lower() in skip_extensions and file_extension.lower() not in allowed_extensions:
                                     continue
                                 if not extract_content:
                                     total_files += 1
@@ -577,13 +588,14 @@ class FileDropWidget(QWidget):
                                     if entry.stat().st_size > 10 * 1024 * 1024:
                                         continue
                                     mime_type, _ = mimetypes.guess_type(entry.path)
-                                    if mime_type and not mime_type.startswith('text'):
+                                    allowed_mime_types = ['text', 'application/javascript', 'application/json']
+                                    if mime_type and not (mime_type.startswith('text') or mime_type in allowed_mime_types):
                                         continue
                                     total_files += 1
                 elif os.path.isfile(path):
                     file_name = os.path.basename(path)
                     _, file_extension = os.path.splitext(file_name)
-                    if file_extension.lower() in skip_extensions:
+                    if file_extension.lower() in skip_extensions and file_extension.lower() not in allowed_extensions:
                         return
                     if not extract_content:
                         total_files += 1
@@ -591,7 +603,8 @@ class FileDropWidget(QWidget):
                         if os.path.getsize(path) > 10 * 1024 * 1024:
                             return
                         mime_type, _ = mimetypes.guess_type(path)
-                        if mime_type and not mime_type.startswith('text'):
+                        allowed_mime_types = ['text', 'application/javascript', 'application/json']
+                        if mime_type and not (mime_type.startswith('text') or mime_type in allowed_mime_types):
                             return
                         total_files += 1
             except PermissionError as e:
