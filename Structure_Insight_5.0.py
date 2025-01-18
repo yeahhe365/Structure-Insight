@@ -191,6 +191,7 @@ class FileDropWidget(QWidget):
         self.file_positions = {}
         self.dir_items = {}
         self.isDarkTheme = True  # 默认使用暗色主题
+        self.lastPath = None     # 用于记录上一次处理的路径
         self.initUI()
 
     def initUI(self):
@@ -381,6 +382,9 @@ class FileDropWidget(QWidget):
         self.textEdit.setFont(font)
         self.textEdit.setToolTip("文件结构和文件内容将在这里显示")
 
+        # 当文本内容发生变化时，更新状态栏的行数和字符数
+        self.textEdit.textChanged.connect(self.update_line_char_count_in_status_bar)
+
         # 按钮（图标化）
         self.openFolderButton = QPushButton()
         self.openFolderButton.setToolTip("选择一个文件夹开始分析")
@@ -402,12 +406,21 @@ class FileDropWidget(QWidget):
         self.saveButton.clicked.connect(self.saveContent)
         self.saveButton.setEnabled(False)
 
+        # 这里是原本的“清空并重置”按钮，现在把图标换成“清扫”之类的图标 (示例使用垃圾桶图标)
         self.resetButton = QPushButton()
         self.resetButton.setToolTip("清空当前结果并重置")
-        reset_icon = self.style().standardIcon(QStyle.SP_BrowserReload)
+        reset_icon = self.style().standardIcon(QStyle.SP_TrashIcon)  # 新的清扫图标
         self.resetButton.setIcon(reset_icon)
         self.resetButton.clicked.connect(self.resetContent)
         self.resetButton.setEnabled(False)
+
+        # 新增“刷新”按钮，使用原先 resetButton 的 SP_BrowserReload 图标
+        self.refreshButton = QPushButton()
+        self.refreshButton.setToolTip("刷新当前路径")
+        refresh_icon = self.style().standardIcon(QStyle.SP_BrowserReload)  # 原先 resetButton 的图标
+        self.refreshButton.setIcon(refresh_icon)
+        self.refreshButton.clicked.connect(self.refreshContent)
+        self.refreshButton.setEnabled(False)
 
         self.cancelButton = QPushButton()
         self.cancelButton.setToolTip("取消当前处理")
@@ -435,6 +448,7 @@ class FileDropWidget(QWidget):
         buttonLayout.addWidget(self.copyButton)
         buttonLayout.addWidget(self.saveButton)
         buttonLayout.addWidget(self.resetButton)
+        buttonLayout.addWidget(self.refreshButton)
         buttonLayout.addWidget(self.cancelButton)
         buttonLayout.addWidget(self.extractContentCheckbox)
         buttonLayout.addWidget(self.themeButton)
@@ -512,6 +526,13 @@ class FileDropWidget(QWidget):
         searchAction.triggered.connect(self.open_search_dialog)
         self.addAction(searchAction)
 
+    # 新增一个函数：统计并更新状态栏的行数和字符数
+    def update_line_char_count_in_status_bar(self):
+        full_text = self.textEdit.toPlainText()
+        line_count = len(full_text.splitlines())
+        char_count = len(full_text)
+        self.statusBar.showMessage(f"就绪 - 共 {line_count} 行, {char_count} 字符")
+
     def toggleTheme(self):
         """切换深色/浅色主题"""
         if self.isDarkTheme:
@@ -522,19 +543,24 @@ class FileDropWidget(QWidget):
             self.isDarkTheme = True
 
     def dragEnterEvent(self, event: QDropEvent):
+        """拖进来的内容如果是文件或文件夹，就接受，否则忽略"""
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
     def dropEvent(self, event: QDropEvent):
+        """放开鼠标后，读取所有拖拽进来的文件/文件夹路径，并开始分析"""
         urls = event.mimeData().urls()
         for url in urls:
             path = url.toLocalFile()
             self.startProcessing(path)
 
     def startProcessing(self, path):
+        """开始处理文件或文件夹"""
         self.resetContent()
+        self.lastPath = path  # 记录最后一次处理的路径
+
         extract_content = self.extractContentCheckbox.isChecked()
         self.process_thread = FileProcessThread(path, extract_content=extract_content)
 
@@ -552,14 +578,22 @@ class FileDropWidget(QWidget):
         self.copyButton.setEnabled(False)
         self.saveButton.setEnabled(False)
         self.resetButton.setEnabled(False)
+        self.refreshButton.setEnabled(False)
         self.cancelButton.setEnabled(True)
         self.extractContentCheckbox.setEnabled(False)
         self.progressBar.setRange(0, total_files)
         self.progressBar.setValue(0)
         self.statusBar.showMessage("处理中...")
 
+    def refreshContent(self):
+        """刷新当前已加载的路径"""
+        if self.lastPath:
+            self.startProcessing(self.lastPath)
+
     def count_total_files(self, path):
+        """统计即将处理的文件数量，用于设置进度条最大值"""
         total_files = 0
+        # 在这里可以从 self.process_thread 读取相关参数
         max_depth = self.process_thread.max_depth
         skip_extensions = self.process_thread.skip_extensions
         allowed_extensions = self.process_thread.allowed_extensions
@@ -614,7 +648,9 @@ class FileDropWidget(QWidget):
         return total_files
 
     def update_content(self, name, content, content_type, file_path):
+        """将分析的结果更新到文本区与树形控件"""
         if content_type == "structure":
+            # 显示文件/文件夹层次结构
             self.file_structure = content
             self.update_text_edit(initial=True)
             root_item = QTreeWidgetItem(self.fileTreeWidget)
@@ -622,6 +658,7 @@ class FileDropWidget(QWidget):
             root_item.setData(0, Qt.UserRole, file_path)
             self.dir_items[file_path] = root_item
         elif content_type in ["file", "file_no_content", "skipped", "error"]:
+            # 显示具体文件节点
             parent_path = os.path.dirname(file_path)
             parent_item = self.dir_items.get(parent_path)
             if not parent_item:
@@ -634,6 +671,8 @@ class FileDropWidget(QWidget):
                 display_name = f"错误: {name}"
             item.setText(0, display_name)
             item.setData(0, Qt.UserRole, file_path)
+
+            # 如果需要提取内容，则追加到文本框
             if content_type == "file":
                 self.files_content.append((name, content))
                 self.append_text_edit(name, content)
@@ -644,10 +683,14 @@ class FileDropWidget(QWidget):
         self.fileTreeWidget.expandAll()
 
     def create_parent_items(self, path):
+        """递归创建树形控件的父节点"""
         if path in self.dir_items:
             return self.dir_items[path]
         parent_path = os.path.dirname(path)
-        parent_item = self.create_parent_items(parent_path) if parent_path != path else self.fileTreeWidget
+        if parent_path != path:
+            parent_item = self.create_parent_items(parent_path)
+        else:
+            parent_item = self.fileTreeWidget
         dir_name = os.path.basename(path)
         item = QTreeWidgetItem(parent_item)
         item.setText(0, dir_name)
@@ -656,6 +699,7 @@ class FileDropWidget(QWidget):
         return item
 
     def update_text_edit(self, initial=False):
+        """更新文本编辑器内容"""
         if initial:
             self.textEdit.clear()
             full_content = f"文件结构:\n{self.file_structure}\n\n"
@@ -665,6 +709,7 @@ class FileDropWidget(QWidget):
             self.file_positions.clear()
 
     def append_text_edit(self, name, content):
+        """在文本编辑器中追加文件名和内容"""
         if not self.extractContentCheckbox.isChecked():
             return
         self.textEdit.moveCursor(QTextCursor.End)
@@ -681,12 +726,12 @@ class FileDropWidget(QWidget):
         self.textEdit.verticalScrollBar().setValue(self.textEdit.verticalScrollBar().maximum())
 
     def jump_to_file_content(self, item):
+        """点击右侧树形控件，文本区滚动到对应文件内容"""
         file_name = item.text(0)
-        if file_name.startswith('跳过: ') or file_name.startswith('错误: '):
+        # 如果是“跳过: ***”或“错误: ***”开头，或者文件夹节点（有子项），则不跳转
+        if file_name.startswith('跳过: ') or file_name.startswith('错误: ') or item.childCount() > 0:
             return
-        if item.childCount() > 0:
-            # 如果这是一个文件夹节点（有子项），则不跳转
-            return
+
         name = os.path.basename(item.data(0, Qt.UserRole))
         position = self.file_positions.get(name)
         if position is not None:
@@ -697,23 +742,32 @@ class FileDropWidget(QWidget):
             self.textEdit.ensureCursorVisible()
 
     def process_finished(self):
+        """处理完成后，更新界面按钮状态，并显示行数和字符数"""
         self.copyButton.setEnabled(True)
         self.saveButton.setEnabled(True)
         self.resetButton.setEnabled(True)
+        if self.lastPath:
+            self.refreshButton.setEnabled(True)  # 如果有处理的路径，就可以启用刷新按钮
+
         self.cancelButton.setEnabled(False)
         self.extractContentCheckbox.setEnabled(True)
         self.progressBar.setValue(self.progressBar.maximum())
-        self.statusBar.showMessage("就绪")
+
+        # 主动调用一下文本编辑器的行数/字符统计，让状态栏刷新
+        self.update_line_char_count_in_status_bar()
 
     def update_progress(self, value):
+        """更新进度条"""
         self.progressBar.setValue(value)
 
     def copyContent(self):
+        """复制全部内容到剪贴板"""
         full_content = self.textEdit.toPlainText()
         QApplication.clipboard().setText(full_content)
         QMessageBox.information(self, "复制成功", "内容已复制到剪贴板")
 
     def saveContent(self):
+        """将当前内容保存到文本文件"""
         file_name, _ = QFileDialog.getSaveFileName(self, "保存文件", "", "Text Files (*.txt)")
         if file_name:
             try:
@@ -726,6 +780,7 @@ class FileDropWidget(QWidget):
                 QMessageBox.warning(self, "保存失败", f"无法保存文件：{str(e)}")
 
     def resetContent(self):
+        """清空当前所有结果并重置"""
         if self.process_thread and self.process_thread.isRunning():
             self.process_thread.cancel()
             self.process_thread.wait()
@@ -737,20 +792,26 @@ class FileDropWidget(QWidget):
         self.extractContentCheckbox.setEnabled(True)
         self.file_positions.clear()
         self.dir_items.clear()
+
+        # 状态栏恢复
         self.statusBar.showMessage("就绪")
+        self.refreshButton.setEnabled(False)
 
     def cancelProcessing(self):
+        """取消处理"""
         if self.process_thread:
             self.process_thread.cancel()
             self.process_thread.wait()
             self.process_finished()
 
     def openFolder(self):
+        """弹出对话框选择文件夹进行分析"""
         folder_path = QFileDialog.getExistingDirectory(self, "选择文件夹")
         if folder_path:
             self.startProcessing(folder_path)
 
     def deleteSelectedFiles(self):
+        """从结果中删除选中的文件条目"""
         selected_items = self.fileTreeWidget.selectedItems()
         if not selected_items:
             return
@@ -758,6 +819,7 @@ class FileDropWidget(QWidget):
         for item in selected_items:
             file_path = item.data(0, Qt.UserRole)
             if os.path.isdir(file_path):
+                # 如果选中的是一个文件夹节点，这里仅示例不进行删除，可自行添加逻辑
                 continue
             name = os.path.basename(file_path)
             parent = item.parent()
@@ -767,25 +829,30 @@ class FileDropWidget(QWidget):
                 index = self.fileTreeWidget.indexOfTopLevelItem(item)
                 self.fileTreeWidget.takeTopLevelItem(index)
 
+            # 从 files_content 列表中去掉该文件
             self.files_content = [
                 (fname, content) for fname, content in self.files_content if fname != name
             ]
             if name in self.file_positions:
                 del self.file_positions[name]
 
+        # 重新生成文本内容
         self.update_text_edit(initial=True)
         for name, content in self.files_content:
             self.append_text_edit(name, content)
 
     def open_search_dialog(self):
+        """打开搜索弹窗"""
         text, ok = QInputDialog.getText(self, '搜索', '请输入搜索内容:')
         if ok and text:
             self.find_in_text_edit(text)
 
     def find_in_text_edit(self, text):
+        """在文本编辑器中查找文本"""
         cursor = self.textEdit.textCursor()
         found = self.textEdit.find(text)
         if not found:
+            # 如果没找到，就回到开头重新找
             cursor.setPosition(0)
             self.textEdit.setTextCursor(cursor)
             found = self.textEdit.find(text)
