@@ -265,112 +265,116 @@ const App = () => {
         setIsDragging(false);
     };
 
-    const handleDrop = (e) => {
+    // 修复版本：完全重写handleDrop函数，修复文件夹递归处理的问题
+    const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
         
         if (isEditing) return;
+
+        // 显示正在处理中的状态
+        setStatusMessage('正在处理拖放的文件...');
         
-        // 获取拖放的文件
+        // 获取拖放的文件和项目
         const items = e.dataTransfer.items;
-        let filesArray = [];
+        const droppedFiles = e.dataTransfer.files;
+        let allFiles = [];
         
-        // 检查是否有文件
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            filesArray = Array.from(e.dataTransfer.files);
-        }
-        
-        // 使用 FileSystemDirectoryEntry API
+        // 检查是否有文件夹项目
         if (items && items.length > 0) {
-            let dirFound = false;
-            const allPromises = [];
-            
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+            // 使用更可靠的方法处理文件夹
+            try {
+                const fileEntries = [];
                 
-                if (!entry) continue;
-                
-                if (entry.isDirectory) {
-                    dirFound = true;
+                // 收集所有文件入口点
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
                     
-                    // 递归读取目录中的文件
-                    const readEntryContent = (dirEntry, path = '') => {
-                        return new Promise((resolve) => {
-                            const dirReader = dirEntry.createReader();
-                            const fileEntries = [];
-                            
-                            // 读取目录中的所有条目
-                            const readEntries = () => {
-                                dirReader.readEntries(async (entries) => {
-                                    if (entries.length === 0) {
-                                        resolve(fileEntries);
-                                    } else {
-                                        for (let entry of entries) {
-                                            const entryPath = path ? `${path}/${entry.name}` : entry.name;
+                    if (entry) {
+                        fileEntries.push(entry);
+                    }
+                }
+                
+                // 如果有entry则使用entry API，否则使用files API
+                if (fileEntries.length > 0) {
+                    // 递归读取所有文件
+                    const readEntryContentsRecursively = async (entry, path = '') => {
+                        return new Promise(async (resolve) => {
+                            if (entry.isFile) {
+                                entry.file(file => {
+                                    // 添加相对路径以匹配webkitdirectory的行为
+                                    Object.defineProperty(file, 'webkitRelativePath', {
+                                        value: path ? `${path}/${entry.name}` : entry.name
+                                    });
+                                    allFiles.push(file);
+                                    resolve();
+                                }, () => resolve()); // 如果出错也要继续
+                            } else if (entry.isDirectory) {
+                                const dirReader = entry.createReader();
+                                const readEntries = async () => {
+                                    dirReader.readEntries(async (entries) => {
+                                        if (entries.length === 0) {
+                                            resolve();
+                                        } else {
+                                            // 使用Promise.all确保所有子条目都被处理
+                                            const promises = entries.map(childEntry => {
+                                                const childPath = path ? `${path}/${entry.name}` : entry.name;
+                                                return readEntryContentsRecursively(childEntry, childPath);
+                                            });
                                             
-                                            if (entry.isFile) {
-                                                // 读取文件
-                                                const promise = new Promise(resolve => {
-                                                    entry.file(file => {
-                                                        // 添加相对路径以匹配webkitdirectory的行为
-                                                        Object.defineProperty(file, 'webkitRelativePath', {
-                                                            value: entryPath
-                                                        });
-                                                        fileEntries.push(file);
-                                                        resolve();
-                                                    }, resolve);
-                                                });
-                                                allPromises.push(promise);
-                                            } else if (entry.isDirectory) {
-                                                // 递归读取子目录
-                                                const subDirPromise = readEntryContent(entry, entryPath);
-                                                allPromises.push(subDirPromise.then(subEntries => {
-                                                    fileEntries.push(...subEntries);
-                                                }));
-                                            }
+                                            await Promise.all(promises);
+                                            
+                                            // 继续读取更多条目（处理超过100个条目的情况）
+                                            readEntries();
                                         }
-                                        readEntries();
-                                    }
-                                });
-                            };
-                            
-                            readEntries();
+                                    }, () => resolve()); // 如果出错也要继续
+                                };
+                                
+                                readEntries();
+                            } else {
+                                resolve();
+                            }
                         });
                     };
                     
-                    const rootDir = entry.name;
-                    const promise = readEntryContent(entry, rootDir);
-                    allPromises.push(promise.then(files => {
-                        filesArray.push(...files);
-                    }));
-                } else if (entry.isFile) {
-                    // 单个文件直接添加
-                    const promise = new Promise(resolve => {
-                        entry.file(file => {
-                            filesArray.push(file);
-                            resolve();
-                        }, resolve);
-                    });
-                    allPromises.push(promise);
+                    // 并行处理所有顶级条目
+                    const entryPromises = fileEntries.map(entry => readEntryContentsRecursively(entry));
+                    await Promise.all(entryPromises);
+                } else if (droppedFiles.length > 0) {
+                    // 退回到简单文件列表
+                    allFiles = Array.from(droppedFiles);
                 }
-            }
-            
-            // 等待所有文件读取完成后处理
-            if (allPromises.length > 0) {
-                Promise.all(allPromises).then(() => {
-                    if (filesArray.length > 0) {
-                        handleReceivedFiles(filesArray);
+                
+                // 确保所有文件都有webkitRelativePath属性
+                allFiles = allFiles.map(file => {
+                    if (!file.webkitRelativePath) {
+                        Object.defineProperty(file, 'webkitRelativePath', {
+                            value: file.name
+                        });
                     }
+                    return file;
                 });
-            } else if (!dirFound && filesArray.length > 0) {
-                // 如果只有文件，没有目录，直接处理
-                handleReceivedFiles(filesArray);
+                
+                // 处理所有收集到的文件
+                if (allFiles.length > 0) {
+                    handleReceivedFiles(allFiles);
+                } else {
+                    setStatusMessage('未找到有效文件');
+                    setTimeout(() => setStatusMessage('就绪'), 2000);
+                }
+            } catch (error) {
+                console.error('处理拖放文件时出错:', error);
+                setStatusMessage('处理文件时出错');
+                setTimeout(() => setStatusMessage('就绪'), 2000);
             }
-        } else if (filesArray.length > 0) {
-            // 如果dataTransfer.items不可用，尝试使用dataTransfer.files
-            handleReceivedFiles(filesArray);
+        } else if (droppedFiles.length > 0) {
+            // 直接处理文件列表
+            handleReceivedFiles(Array.from(droppedFiles));
+        } else {
+            setStatusMessage('没有检测到文件或文件夹');
+            setTimeout(() => setStatusMessage('就绪'), 2000);
         }
     };
 
