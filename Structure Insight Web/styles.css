@@ -1,0 +1,508 @@
+:root {
+    --bg-color: #F0F0F0;
+    --text-color: #333333;
+    --accent-color: #CCCCCC;
+    --button-bg: #E0E0E0;
+    --button-border: #BFBFBF;
+    --button-hover: #D0D0D0;
+    --button-disabled: #E8E8E8;
+    --text-disabled: #AAAAAA;
+    --progress-bg: #FFFFFF;
+    --progress-fill: #4CAF50;
+    --status-bg: #ECECEC;
+    --status-border: #CCCCCC;
+    --editor-bg: #FFFFFF;
+    --editor-border: #CCCCCC;
+    --scrollbar-bg: #F0F0F0;
+    --scrollbar-thumb: #CCCCCC;
+    --scrollbar-hover: #BBBBBB;
+    --line-number-bg: #F5F5F5;
+    --line-number-text: #888888;
+    --current-line: rgba(255, 255, 0, 0.1);
+    --divider-color: #E0E0E0;
+    --file-separator: #EAEAEA;
+    --file-separator-border: #D0D0D0;
+    --font-size-base: 16px;
+    --resizer-size: 8px;
+    --resizer-color: #DDDDDD;
+    --resizer-hover: #BBBBBB;
+}
+
+.dark-theme {
+    --bg-color: #2B2B2B;
+    --text-color: #DDDDDD;
+    --accent-color: #4A4A4A;
+    --button-bg: #444444;
+    --button-border: #666666;
+    --button-hover: #505050;
+    --button-disabled: #3C3C3C;
+    --text-disabled: #777777;
+    --progress-bg: #3C3C3C;
+    --progress-fill: #4CAF50;
+    --status-bg: #2F2F2F;
+    --status-border: #4A4A4A;
+    --editor-bg: #333333;
+    --editor-border: #4A4A4A;
+    --scrollbar-bg: #3C3C3C;
+    --scrollbar-thumb: #5C5C5C;
+    --scrollbar-hover: #6C6C6C;
+    --line-number-bg: #2A2A2A;
+    --line-number-text: #888888;
+    --current-line: rgba(255, 255, 0, 0.1);
+    --divider-color: #3A3A3A;
+    --file-separator: #383838;
+    --file-separator-border: #505050;
+    --resizer-color: #555555;
+    --resizer-hover: #777777;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    font-size: var(--font-size-base);
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.button-toolbar {
+    display: flex;
+    padding: 10px;
+    gap: 8px;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--accent-color);
+    flex-wrap: wrap;
+}
+
+.button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+    font-size: var(--font-size-base);
+}
+
+.button:hover {
+    background-color: var(--button-hover);
+}
+
+.button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    color: var(--text-color);
+    font-size: var(--font-size-base);
+}
+
+.checkbox {
+    margin-right: 5px;
+    transform: scale(1.2);
+}
+
+.font-size-controls {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+}
+
+.font-size-controls .button {
+    padding: 3px 8px;
+    font-size: 14px;
+}
+
+.font-size-display {
+    margin: 0 5px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.left-panel {
+    /* flex: 3; - Removed to fix width adjustment issue */
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--accent-color);
+    min-width: 300px;
+}
+
+.right-panel {
+    /* flex: 1; - Removed to fix width adjustment issue */
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.code-editor {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.line-numbers {
+    background-color: var(--line-number-bg);
+    color: var(--line-number-text);
+    padding: 10px 5px;
+    text-align: right;
+    user-select: none;
+    overflow-y: hidden;
+    font-family: monospace;
+    font-size: inherit;
+    white-space: pre;
+}
+
+.editor-content {
+    flex: 1;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    border: 1px solid var(--editor-border);
+    padding: 10px;
+    font-family: monospace;
+    white-space: pre;
+    tab-size: 4;
+    overflow: auto;
+    resize: none;
+    position: relative;
+    font-size: inherit;
+    line-height: 1.5;
+}
+
+.editor-content:focus {
+    outline: none;
+}
+
+.tree-container {
+    flex: 1;
+    background-color: var(--editor-bg);
+    border: 1px solid var(--editor-border);
+    padding: 10px;
+    overflow: auto;
+    font-size: var(--font-size-base);
+}
+
+.tree-label {
+    padding: 10px;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.file-tree {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.file-tree-item {
+    padding: 2px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.file-tree-item:hover {
+    background-color: var(--button-hover);
+}
+
+.file-tree-toggle {
+    margin-right: 5px;
+    width: 12px;
+    text-align: center;
+}
+
+.file-tree-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-tree-skipped {
+    color: var(--text-disabled);
+}
+
+.progress-container {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 16px;
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    background-color: var(--progress-bg);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--progress-fill);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.status-bar {
+    height: 28px;
+    background-color: var(--status-bg);
+    border-top: 1px solid var(--status-border);
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-hover);
+}
+
+/* File Input Styling */
+.file-input {
+    display: none;
+}
+
+.folder-icon {
+    margin-right: 5px;
+}
+
+/* Current line highlight */
+.highlight-line {
+    background-color: var(--current-line);
+    width: 100%;
+    position: absolute;
+    z-index: 1;
+}
+
+/* 文件分割线样式优化 */
+.file-separator {
+    background-color: var(--file-separator);
+    border-top: 1px solid var(--file-separator-border);
+    border-bottom: 1px solid var(--file-separator-border);
+    padding: 8px 12px;
+    margin: 15px 0;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+/* 可拖动分割线样式 - 修复版 */
+.resizer {
+    width: var(--resizer-size);
+    background-color: var(--resizer-color);
+    cursor: col-resize;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    transition: background-color 0.2s;
+    z-index: 10;
+}
+
+.resizer:hover, .resizer.active {
+    background-color: var(--resizer-hover);
+}
+
+/* 高亮代码块样式调整 */
+pre code.hljs {
+    font-family: monospace;
+    font-size: inherit;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 5px 0;
+    display: block;
+}
+
+/* 文件结构保持格式 */
+.file-structure-content {
+    white-space: pre;
+    font-family: monospace;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: var(--editor-bg);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* 暗黑模式下代码高亮样式覆盖 */
+.dark-theme .hljs {
+    background: #2d2d2d;
+    color: #ccc;
+}
+
+.dark-theme .hljs-comment,
+.dark-theme .hljs-quote {
+    color: #999;
+}
+
+.dark-theme .hljs-keyword,
+.dark-theme .hljs-selector-tag,
+.dark-theme .hljs-literal {
+    color: #88aece;
+}
+
+.dark-theme .hljs-string,
+.dark-theme .hljs-doctag {
+    color: #b5bd68;
+}
+
+.dark-theme .hljs-number,
+.dark-theme .hljs-selector-class,
+.dark-theme .hljs-selector-id {
+    color: #de935f;
+}
+
+.dark-theme .hljs-section,
+.dark-theme .hljs-title {
+    color: #f0c674;
+}
+
+/* 编辑器容器调整以显示高亮内容 */
+.highlighted-content {
+    font-family: monospace;
+    font-size: inherit;
+    line-height: 1.5;
+    overflow: auto;
+    flex: 1;
+    position: relative;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    padding: 10px;
+}
+
+/* 移动端样式优化 */
+@media screen and (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .left-panel, .right-panel {
+        flex: none;
+        width: 100% !important;
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .left-panel {
+        height: 60%;
+        border-right: none;
+        border-bottom: 1px solid var(--accent-color);
+    }
+
+    .right-panel {
+        height: 40%;
+    }
+
+    .resizer {
+        width: 100%;
+        height: var(--resizer-size);
+        cursor: row-resize;
+        left: 0;
+        right: 0;
+    }
+
+    .button-toolbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .button {
+        padding: 10px;
+    }
+    
+    .checkbox-container, .font-size-controls {
+        margin: 5px 0;
+    }
+
+    .file-tree-item {
+        padding: 8px 0;
+    }
+
+    .status-bar {
+        height: auto;
+        padding: 5px 10px;
+        flex-wrap: wrap;
+    }
+}
+
+/* 切换视图按钮 */
+.view-toggle {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    .view-toggle {
+        display: block;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 100;
+        background-color: var(--button-bg);
+        color: var(--text-color);
+        border: 1px solid var(--button-border);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .view-toggle:hover {
+        background-color: var(--button-hover);
+    }
+
+    .mobile-hidden {
+        display: none !important;
+    }
+
+    .mobile-full {
+        height: 100% !important;
+    }
+}
