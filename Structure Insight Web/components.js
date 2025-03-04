@@ -34,10 +34,11 @@ const LineNumbers = React.forwardRef(({ content, lineHeight, fontSize }, ref) =>
     );
 });
 
-// 使用高亮显示代码的组件
-const HighlightedContent = ({ content, language, fontSize, lineHeight }) => {
+// 使用高亮显示代码的组件 - 增加编辑功能
+const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing, currentEditingFile, onEditContent }) => {
     const containerRef = useRef(null);
     const [processedContent, setProcessedContent] = useState('');
+    const [editingContent, setEditingContent] = useState('');
     
     // 处理内容
     useEffect(() => {
@@ -64,31 +65,73 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight }) => {
     
     if (!processedContent) return <div className="highlighted-content"></div>;
     
-    // 分离文件结构和文件内容
+    // 分离文件结构和文件内容 - 修复中文注释问题
     let structurePart = '';
     let contentPart = '';
     
+    // 改进：使用更精确的方式分割内容，避免中文注释问题
     if (processedContent.includes('文件结构:') && processedContent.includes('文件内容:')) {
-        const parts = processedContent.split('文件内容:');
-        structurePart = parts[0];
-        contentPart = parts.length > 1 ? '文件内容:' + parts[1] : '';
+        const contentIndex = processedContent.indexOf('文件内容:');
+        structurePart = processedContent.substring(0, contentIndex);
+        contentPart = processedContent.substring(contentIndex);
     } else {
         structurePart = processedContent;
     }
     
-    // 处理文件结构部分
-    const structureMatch = structurePart.match(/文件结构:\n([\s\S]*?)(?=\n\n|$)/);
-    const structureContent = structureMatch ? structureMatch[1] : '';
+    // 处理文件结构部分 - 避免使用正则表达式以防中文问题
+    const structureLines = structurePart.split('\n');
+    let structureContent = '';
     
-    // 将文件内容分割成多个部分
+    if (structureLines.length > 1 && structureLines[0].includes('文件结构:')) {
+        // 找到第一个空行之前的内容作为结构
+        let endLine = structureLines.findIndex((line, index) => index > 0 && line.trim() === '');
+        if (endLine === -1) endLine = structureLines.length;
+        
+        structureContent = structureLines.slice(1, endLine).join('\n');
+    }
+    
+    // 将文件内容分割成多个部分 - 修复中文注释问题
     const fileParts = [];
+    
     if (contentPart) {
-        const regex = /(={40}\n文件名:.*?\n-{71}\n[\s\S]*?)(?=\n\n={40}|\n\n$|$)/g;
-        let match;
-        while ((match = regex.exec(contentPart))) {
-            fileParts.push(match[1]);
+        // 使用文件分隔符找到所有文件部分
+        const separatorPattern = '='.repeat(40) + '\n文件名:';
+        
+        // 从内容部分的第一行（"文件内容:"）之后开始查找文件
+        const startIndex = contentPart.indexOf('\n') + 1;
+        const filePartsContent = contentPart.substring(startIndex);
+        
+        // 查找所有分隔符位置
+        const separatorPositions = [];
+        let pos = 0;
+        
+        while ((pos = filePartsContent.indexOf(separatorPattern, pos)) !== -1) {
+            separatorPositions.push(pos);
+            pos += separatorPattern.length;
+        }
+        
+        // 处理找到的每个文件部分
+        for (let i = 0; i < separatorPositions.length; i++) {
+            const start = separatorPositions[i];
+            const end = i < separatorPositions.length - 1 
+                ? separatorPositions[i + 1] 
+                : filePartsContent.length;
+                
+            const filePart = filePartsContent.substring(start, end);
+            fileParts.push(filePart);
         }
     }
+    
+    // 处理文件编辑
+    const handleContentChange = (e) => {
+        setEditingContent(e.target.value);
+    };
+    
+    const handleSaveEdit = () => {
+        if (onEditContent && currentEditingFile) {
+            onEditContent(currentEditingFile, editingContent);
+        }
+    };
     
     return (
         <div 
@@ -113,27 +156,78 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight }) => {
             {contentPart && <h3 style={{margin: '20px 0 10px'}}>文件内容:</h3>}
             
             {fileParts.map((part, index) => {
-                // 提取文件名和内容
-                const match = part.match(/={40}\n文件名:\s*([^\n]+)\n-{71}\n([\s\S]*?)(?=\n\n|$)/);
-                if (match) {
-                    const fileName = match[1];
-                    const fileContent = match[2];
-                    const fileLanguage = window.Utils.detectLanguage(fileName);
+                // 提取文件名和内容 - 避免使用正则表达式，手动解析
+                const fileNameIndex = part.indexOf('文件名:') + 4;
+                const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
+                
+                if (fileNameIndex > 4 && fileNameEndIndex !== -1) {
+                    const fileName = part.substring(fileNameIndex, fileNameEndIndex).trim();
                     
-                    return (
-                        <div key={index}>
-                            <div className="file-separator">
-                                <i className="fas fa-file-alt"></i> {fileName}
+                    // 找到分隔符所在行的结束位置
+                    const separatorEnd = part.indexOf('\n', part.indexOf('-'.repeat(71))) + 1;
+                    
+                    if (separatorEnd !== 0) {
+                        // 提取文件内容
+                        let fileContent = part.substring(separatorEnd).trim();
+                        const fileLanguage = window.Utils.detectLanguage(fileName);
+                        const isCurrentEditingFile = isEditing && currentEditingFile === fileName;
+                        
+                        // 初始化编辑内容
+                        if (isCurrentEditingFile && editingContent === '') {
+                            setEditingContent(fileContent);
+                        }
+                        
+                        return (
+                            <div key={index} className="file-content-container">
+                                <div className="file-separator">
+                                    <div className="file-info">
+                                        <i className="fas fa-file-alt"></i> {fileName}
+                                    </div>
+                                    {/* 编辑按钮始终显示，不只在编辑模式下 */}
+                                    <button 
+                                        className="edit-button" 
+                                        onClick={() => {
+                                            setEditingContent(fileContent);
+                                            onEditContent(fileName, null, true); // 标记为正在编辑
+                                        }}
+                                        disabled={isEditing}
+                                    >
+                                        <i className="fas fa-edit"></i> 编辑
+                                    </button>
+                                </div>
+                                
+                                {isCurrentEditingFile ? (
+                                    <div className="editor-container">
+                                        <textarea 
+                                            className="editor-textarea"
+                                            value={editingContent}
+                                            onChange={handleContentChange}
+                                            style={{ 
+                                                fontSize: `${fontSize}px`,
+                                                lineHeight: `${lineHeight}px` 
+                                            }}
+                                        />
+                                        <div className="editor-buttons">
+                                            <button className="button" onClick={handleSaveEdit}>
+                                                <i className="fas fa-save"></i> 保存
+                                            </button>
+                                            <button className="button" onClick={() => onEditContent(null)}>
+                                                <i className="fas fa-times"></i> 取消
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    fileContent.trim() ? (
+                                        <pre><code className={fileLanguage ? `language-${fileLanguage}` : ''}>
+                                            {fileContent}
+                                        </code></pre>
+                                    ) : (
+                                        <p>（未提取内容）</p>
+                                    )
+                                )}
                             </div>
-                            {fileContent.trim() ? (
-                                <pre><code className={fileLanguage ? `language-${fileLanguage}` : ''}>
-                                    {fileContent}
-                                </code></pre>
-                            ) : (
-                                <p>（未提取内容）</p>
-                            )}
-                        </div>
-                    );
+                        );
+                    }
                 }
                 return null;
             })}

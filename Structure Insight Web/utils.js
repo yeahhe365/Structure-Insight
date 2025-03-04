@@ -16,6 +16,22 @@ const Storage = {
             console.error('无法加载设置', error);
             return defaultValue;
         }
+    },
+    
+    remove: (key) => {
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.error('无法删除设置', error);
+        }
+    },
+    
+    clear: () => {
+        try {
+            localStorage.clear();
+        } catch (error) {
+            console.error('无法清除设置', error);
+        }
     }
 };
 

@@ -26,6 +26,12 @@
     --resizer-size: 8px;
     --resizer-color: #DDDDDD;
     --resizer-hover: #BBBBBB;
+    --editing-bg: #FFFDE7;
+    --editing-border: #FFE082;
+    --editing-button-bg: #FFB74D;
+    --editing-button-hover: #FFA726;
+    --refresh-button-bg: #81C784;
+    --refresh-button-hover: #66BB6A;
 }
 
 .dark-theme {
@@ -54,6 +60,12 @@
     --file-separator-border: #505050;
     --resizer-color: #555555;
     --resizer-hover: #777777;
+    --editing-bg: #3C3C23;
+    --editing-border: #827717;
+    --editing-button-bg: #827717;
+    --editing-button-hover: #9E9D24;
+    --refresh-button-bg: #2E7D32;
+    --refresh-button-hover: #388E3C;
 }
 
 * {
@@ -115,6 +127,28 @@ body {
     background-color: var(--button-disabled);
     color: var(--text-disabled);
     cursor: not-allowed;
+}
+
+/* 刷新按钮特殊样式 */
+.button .fa-sync-alt {
+    color: var(--refresh-button-bg);
+}
+
+.button:hover .fa-sync-alt {
+    color: var(--refresh-button-hover);
+}
+
+.button:disabled .fa-sync-alt {
+    color: var(--text-disabled);
+}
+
+.button.refreshing {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .checkbox-container {
@@ -199,6 +233,62 @@ body {
 
 .editor-content:focus {
     outline: none;
+}
+
+/* 编辑器样式 */
+.editor-container {
+    margin: 10px 0;
+    border: 1px solid var(--editing-border);
+    border-radius: 4px;
+    background-color: var(--editing-bg);
+    padding: 5px;
+}
+
+.editor-textarea {
+    width: 100%;
+    min-height: 200px;
+    border: 1px solid var(--editor-border);
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    font-family: monospace;
+    white-space: pre;
+    tab-size: 4;
+    resize: vertical;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.editor-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.editor-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.edit-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.edit-button:hover {
+    text-decoration: underline;
+}
+
+/* 文件内容容器 */
+.file-content-container {
+    margin-bottom: 20px;
+    border-radius: 4px;
 }
 
 .tree-container {
@@ -328,6 +418,19 @@ body {
     margin: 15px 0;
     font-weight: bold;
     border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 可拖动分割线样式 - 修复版 */
@@ -354,6 +457,9 @@ pre code.hljs {
     padding: 10px;
     margin: 5px 0;
     display: block;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 /* 文件结构保持格式 */
@@ -468,6 +574,10 @@ pre code.hljs {
         padding: 5px 10px;
         flex-wrap: wrap;
     }
+    
+    .editor-buttons {
+        flex-direction: column;
+    }
 }
 
 /* 切换视图按钮 */
@@ -505,4 +615,274 @@ pre code.hljs {
     .mobile-full {
         height: 100% !important;
     }
+}
+
+/* 新增的拖放相关样式 */
+.dragging {
+    position: relative;
+}
+
+.drop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.drop-message {
+    background-color: var(--bg-color);
+    border: 2px dashed var(--accent-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.drop-message i {
+    font-size: 48px;
+    color: var(--accent-color);
+}
+
+.drop-message span {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 新增的拖放相关样式 */
+.dragging {
+    position: relative;
+}
+
+.drop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.drop-message {
+    background-color: var(--bg-color);
+    border: 2px dashed var(--accent-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.drop-message i {
+    font-size: 48px;
+    color: var(--accent-color);
+}
+
+.drop-message span {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 修改的文件编辑按钮样式 */
+.edit-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.edit-button:hover {
+    opacity: 1;
+    color: var(--editing-button-bg);
+}
+
+.edit-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* 文件标题栏改进 */
+.file-separator {
+    background-color: var(--file-separator);
+    border-top: 1px solid var(--file-separator-border);
+    border-bottom: 1px solid var(--file-separator-border);
+    padding: 8px 12px;
+    margin: 15px 0;
+    font-weight: bold;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-separator:hover {
+    background-color: var(--button-hover);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 新增的拖放相关样式 */
+.dragging {
+    position: relative;
+}
+
+.drop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.drop-message {
+    background-color: var(--bg-color);
+    border: 2px dashed var(--accent-color);
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.drop-message i {
+    font-size: 48px;
+    color: var(--accent-color);
+}
+
+.drop-message span {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 修改的文件编辑按钮样式 */
+.edit-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.edit-button:hover {
+    opacity: 1;
+    color: var(--editing-button-bg);
+}
+
+.edit-button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* 文件标题栏改进 */
+.file-separator {
+    background-color: var(--file-separator);
+    border-top: 1px solid var(--file-separator-border);
+    border-bottom: 1px solid var(--file-separator-border);
+    padding: 8px 12px;
+    margin: 15px 0;
+    font-weight: bold;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-separator:hover {
+    background-color: var(--button-hover);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 初始提示样式 */
+.initial-prompt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    width: 80%;
+    max-width: 500px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.prompt-content {
+    background-color: rgba(var(--bg-color-rgb, 240, 240, 240), 0.8);
+    padding: 30px;
+    border-radius: 8px;
+    border: 2px dashed var(--accent-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.prompt-content i {
+    font-size: 64px;
+    color: var(--accent-color);
+}
+
+.prompt-content p {
+    font-size: 18px;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+/* 确保拖放覆盖层在最上层 */
+.drop-overlay {
+    z-index: 1001;
 }

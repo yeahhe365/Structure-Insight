@@ -11,11 +11,13 @@ const App = () => {
     const [leftPanelWidth, setLeftPanelWidth] = useState(Storage.load('leftPanelWidth', 75));
     const [mobileView, setMobileView] = useState('editor'); // 'editor' 或 'tree'
     
-    const [fileStructure, setFileStructure] = useState('');
-    const [filesContent, setFilesContent] = useState([]);
-    const [treeData, setTreeData] = useState([]);
-    const [currentContent, setCurrentContent] = useState('');
-    const [filePositions, setFilePositions] = useState({});
+    // 新增：从本地存储加载内容状态
+    const [fileStructure, setFileStructure] = useState(Storage.load('fileStructure', ''));
+    const [filesContent, setFilesContent] = useState(Storage.load('filesContent', []));
+    const [treeData, setTreeData] = useState(Storage.load('treeData', []));
+    const [currentContent, setCurrentContent] = useState(Storage.load('currentContent', ''));
+    const [filePositions, setFilePositions] = useState(Storage.load('filePositions', {}));
+    
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [maxProgress, setMaxProgress] = useState(100);
@@ -25,10 +27,23 @@ const App = () => {
     const [lineHeight, setLineHeight] = useState(Math.round(fontSize * 1.5));
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     
-    const fileInputRef = useRef(null);
+    // 新增的编辑相关状态
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentEditingFile, setCurrentEditingFile] = useState(null);
+    const [editedContent, setEditedContent] = useState({});
+    
+    // 新增：记录最后打开的文件夹
+    const [lastOpenedFiles, setLastOpenedFiles] = useState(Storage.load('lastOpenedFiles', null));
+    
+    // 新增：拖放状态
+    const [isDragging, setIsDragging] = useState(false);
+    // 新增：接收的文件对象
+    const [receivedFiles, setReceivedFiles] = useState(null);
+    
     const containerRef = useRef(null);
     const editorScrollRef = useRef(null);
     const lineNumbersRef = useRef(null);
+    const appRef = useRef(null);
 
     // 检测设备大小
     useEffect(() => {
@@ -38,6 +53,17 @@ const App = () => {
         
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    
+    // 新增：初始化行数和字符数（根据缓存的内容）
+    useEffect(() => {
+        if (currentContent) {
+            const lines = currentContent.split('\n').length;
+            const chars = currentContent.length;
+            setLineCount(lines);
+            setCharCount(chars);
+            setStatusMessage(`就绪 - 共 ${lines} 行, ${chars} 字符`);
+        }
     }, []);
     
     // 保存状态到本地存储
@@ -56,6 +82,27 @@ const App = () => {
     useEffect(() => {
         Storage.save('leftPanelWidth', leftPanelWidth);
     }, [leftPanelWidth]);
+    
+    // 新增：缓存文件内容状态
+    useEffect(() => {
+        if (fileStructure) Storage.save('fileStructure', fileStructure);
+    }, [fileStructure]);
+    
+    useEffect(() => {
+        if (filesContent.length > 0) Storage.save('filesContent', filesContent);
+    }, [filesContent]);
+    
+    useEffect(() => {
+        if (treeData.length > 0) Storage.save('treeData', treeData);
+    }, [treeData]);
+    
+    useEffect(() => {
+        if (currentContent) Storage.save('currentContent', currentContent);
+    }, [currentContent]);
+    
+    useEffect(() => {
+        if (Object.keys(filePositions).length > 0) Storage.save('filePositions', filePositions);
+    }, [filePositions]);
     
     // 计算行高
     useEffect(() => {
@@ -123,18 +170,207 @@ const App = () => {
         if (fontSize > 12) setFontSize(fontSize - 2);
     };
 
-    // 打开文件夹
-    const openFolder = () => {
-        if (fileInputRef.current) {
-            fileInputRef.current.click();
+    // 新增：通过File API读取本地文件夹
+    const handleLocalFolderSelect = () => {
+        // 使用showDirectoryPicker API代替input元素
+        if (window.showDirectoryPicker) {
+            showDirectoryPicker()
+                .then(async (dirHandle) => {
+                    const files = [];
+                    
+                    // 递归读取文件夹中的所有文件
+                    async function readFilesRecursively(dirHandle, path = '') {
+                        for await (const entry of dirHandle.values()) {
+                            if (entry.kind === 'file') {
+                                const file = await entry.getFile();
+                                // 为文件添加相对路径信息
+                                Object.defineProperty(file, 'webkitRelativePath', {
+                                    value: path ? `${path}/${entry.name}` : entry.name
+                                });
+                                files.push(file);
+                            } else if (entry.kind === 'directory') {
+                                const newPath = path ? `${path}/${entry.name}` : entry.name;
+                                await readFilesRecursively(entry, newPath);
+                            }
+                        }
+                    }
+                    
+                    try {
+                        await readFilesRecursively(dirHandle, dirHandle.name);
+                        // 处理文件
+                        handleReceivedFiles(files);
+                    } catch (error) {
+                        console.error('读取文件夹时出错:', error);
+                        setStatusMessage('读取文件夹失败');
+                        setTimeout(() => setStatusMessage('就绪'), 2000);
+                    }
+                })
+                .catch(error => {
+                    // 用户取消选择或发生错误
+                    console.log('选择文件夹取消或失败:', error);
+                });
+        } else {
+            // 浏览器不支持 File System Access API
+            setStatusMessage('您的浏览器不支持文件夹选择，请使用拖放功能');
+            setTimeout(() => setStatusMessage('就绪'), 3000);
         }
     };
 
-    // 处理文件选择
-    const handleFileSelect = (e) => {
-        const files = e.target.files;
+    // 新增：处理接收到的文件
+    const handleReceivedFiles = (files) => {
         if (files && files.length > 0) {
+            // 保存文件引用以便刷新
+            setReceivedFiles(files);
+            
+            try {
+                // 保存一些基本信息到lastOpenedFiles
+                const fileInfo = Array.from(files).map(file => ({
+                    name: file.name,
+                    path: file.webkitRelativePath || file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: file.lastModified
+                }));
+                setLastOpenedFiles(fileInfo);
+                Storage.save('lastOpenedFiles', fileInfo);
+            } catch (error) {
+                console.error('无法保存文件信息:', error);
+            }
+            
+            // 处理文件
             processFiles(files);
+        }
+    };
+
+    // 新增：拖放处理函数
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isEditing) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isEditing) {
+            setIsDragging(true);
+        }
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        
+        if (isEditing) return;
+        
+        // 获取拖放的文件
+        const items = e.dataTransfer.items;
+        let filesArray = [];
+        
+        // 检查是否有文件
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            filesArray = Array.from(e.dataTransfer.files);
+        }
+        
+        // 使用 FileSystemDirectoryEntry API
+        if (items && items.length > 0) {
+            let dirFound = false;
+            const allPromises = [];
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+                
+                if (!entry) continue;
+                
+                if (entry.isDirectory) {
+                    dirFound = true;
+                    
+                    // 递归读取目录中的文件
+                    const readEntryContent = (dirEntry, path = '') => {
+                        return new Promise((resolve) => {
+                            const dirReader = dirEntry.createReader();
+                            const fileEntries = [];
+                            
+                            // 读取目录中的所有条目
+                            const readEntries = () => {
+                                dirReader.readEntries(async (entries) => {
+                                    if (entries.length === 0) {
+                                        resolve(fileEntries);
+                                    } else {
+                                        for (let entry of entries) {
+                                            const entryPath = path ? `${path}/${entry.name}` : entry.name;
+                                            
+                                            if (entry.isFile) {
+                                                // 读取文件
+                                                const promise = new Promise(resolve => {
+                                                    entry.file(file => {
+                                                        // 添加相对路径以匹配webkitdirectory的行为
+                                                        Object.defineProperty(file, 'webkitRelativePath', {
+                                                            value: entryPath
+                                                        });
+                                                        fileEntries.push(file);
+                                                        resolve();
+                                                    }, resolve);
+                                                });
+                                                allPromises.push(promise);
+                                            } else if (entry.isDirectory) {
+                                                // 递归读取子目录
+                                                const subDirPromise = readEntryContent(entry, entryPath);
+                                                allPromises.push(subDirPromise.then(subEntries => {
+                                                    fileEntries.push(...subEntries);
+                                                }));
+                                            }
+                                        }
+                                        readEntries();
+                                    }
+                                });
+                            };
+                            
+                            readEntries();
+                        });
+                    };
+                    
+                    const rootDir = entry.name;
+                    const promise = readEntryContent(entry, rootDir);
+                    allPromises.push(promise.then(files => {
+                        filesArray.push(...files);
+                    }));
+                } else if (entry.isFile) {
+                    // 单个文件直接添加
+                    const promise = new Promise(resolve => {
+                        entry.file(file => {
+                            filesArray.push(file);
+                            resolve();
+                        }, resolve);
+                    });
+                    allPromises.push(promise);
+                }
+            }
+            
+            // 等待所有文件读取完成后处理
+            if (allPromises.length > 0) {
+                Promise.all(allPromises).then(() => {
+                    if (filesArray.length > 0) {
+                        handleReceivedFiles(filesArray);
+                    }
+                });
+            } else if (!dirFound && filesArray.length > 0) {
+                // 如果只有文件，没有目录，直接处理
+                handleReceivedFiles(filesArray);
+            }
+        } else if (filesArray.length > 0) {
+            // 如果dataTransfer.items不可用，尝试使用dataTransfer.files
+            handleReceivedFiles(filesArray);
         }
     };
 
@@ -206,12 +442,17 @@ const App = () => {
                     // 添加到主内容
                     if (extractContent) {
                         const separator = `${'='.repeat(40)}\n文件名: ${file.name}\n${'-'.repeat(71)}\n`;
-                        const fileContent = `${separator}${content}\n\n`;
                         
+                        // 记录当前文件在全局内容中的位置
                         positions[file.name] = currentPosition;
-                        currentPosition += fileContent.length;
+                        currentPosition += separator.length + content.length + 2; // 加上分隔符、内容和换行符长度
                         
-                        setCurrentContent(prev => prev + fileContent);
+                        // 修复：使用函数式更新来确保最新的状态，并正确处理包含特殊字符的内容
+                        setCurrentContent(prev => {
+                            const newContent = prev + separator + content + "\n\n";
+                            // 避免使用拼接方式，可能导致特殊字符的问题
+                            return newContent;
+                        });
                     }
                 } catch (error) {
                     console.error(`Error reading file ${file.name}:`, error);
@@ -449,6 +690,16 @@ const App = () => {
         setStatusMessage('就绪');
         setLineCount(0);
         setCharCount(0);
+        setIsEditing(false);
+        setCurrentEditingFile(null);
+        setEditedContent({});
+        
+        // 清除缓存
+        Storage.remove('fileStructure');
+        Storage.remove('filesContent');
+        Storage.remove('treeData');
+        Storage.remove('currentContent');
+        Storage.remove('filePositions');
     };
 
     // 取消处理
@@ -465,6 +716,12 @@ const App = () => {
     // 文件树选择处理
     const handleFileTreeSelect = (node) => {
         if (!node || !node.name) return;
+        
+        // 退出编辑模式 - 不弹窗
+        if (isEditing) {
+            setIsEditing(false);
+            setCurrentEditingFile(null);
+        }
         
         if (filePositions[node.name]) {
             // 如果在移动端，切换到编辑器视图
@@ -497,6 +754,12 @@ const App = () => {
     // 文件删除处理
     const handleFileDelete = (node) => {
         if (!node || !node.name) return;
+        
+        // 如果文件正在编辑，先退出编辑
+        if (isEditing && currentEditingFile === node.name) {
+            setIsEditing(false);
+            setCurrentEditingFile(null);
+        }
         
         // 从树数据中移除
         setTreeData(prevTree => {
@@ -558,6 +821,85 @@ const App = () => {
         }, 2000);
     };
 
+    // 处理文件编辑
+    const handleEditContent = (fileName, newContent, startEditing = false) => {
+        // 如果是开始编辑
+        if (startEditing) {
+            setIsEditing(true);
+            setCurrentEditingFile(fileName);
+            return;
+        }
+        
+        // 如果是取消编辑
+        if (fileName === null) {
+            setIsEditing(false);
+            setCurrentEditingFile(null);
+            return;
+        }
+        
+        // 如果是保存编辑
+        if (newContent !== null) {
+            // 更新文件内容数组
+            setFilesContent(prev => 
+                prev.map(file => 
+                    file.name === fileName 
+                        ? { ...file, content: newContent } 
+                        : file
+                )
+            );
+            
+            // 更新完整内容字符串
+            if (filePositions[fileName]) {
+                const position = filePositions[fileName];
+                
+                // 找到文件内容的开始和结束位置
+                const start = currentContent.indexOf('-'.repeat(71) + '\n', position) + 72; // 71个'-'加换行
+                const end = currentContent.indexOf('\n\n', start);
+                
+                if (start !== -1 && end !== -1) {
+                    const oldContent = currentContent.substring(start, end);
+                    const lengthDifference = newContent.length - oldContent.length;
+                    
+                    // 更新主内容
+                    const before = currentContent.substring(0, start);
+                    const after = currentContent.substring(end);
+                    setCurrentContent(before + newContent + after);
+                    
+                    // 更新后续文件的位置
+                    const updatedPositions = { ...filePositions };
+                    Object.keys(updatedPositions).forEach(name => {
+                        if (updatedPositions[name] > position + oldContent.length) {
+                            updatedPositions[name] += lengthDifference;
+                        }
+                    });
+                    setFilePositions(updatedPositions);
+                    
+                    // 退出编辑模式
+                    setIsEditing(false);
+                    setCurrentEditingFile(null);
+                    
+                    // 更新状态信息
+                    setStatusMessage(`已保存修改: ${fileName}`);
+                    setTimeout(() => {
+                        setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+                    }, 2000);
+                }
+            }
+        }
+    };
+
+    // 编辑特定文件
+    const editFile = (fileName) => {
+        if (!fileName || isEditing) return;
+        
+        // 查找文件内容
+        const fileData = filesContent.find(f => f.name === fileName);
+        if (fileData) {
+            setCurrentEditingFile(fileName);
+            setIsEditing(true);
+        }
+    };
+
     // 打开搜索对话框
     const openSearchDialog = () => {
         const searchText = prompt("请输入搜索内容:");
@@ -612,11 +954,18 @@ const App = () => {
                 // 只在没有选中文本的情况下触发全局复制
                 copyContent();
             }
+            
+            // Esc 退出编辑模式
+            if (e.key === 'Escape' && isEditing) {
+                e.preventDefault();
+                setIsEditing(false);
+                setCurrentEditingFile(null);
+            }
         };
         
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentContent]);
+    }, [currentContent, isEditing, processing]);
 
     // 同步行号与内容滚动 - 改进版本，使用 ResizeObserver
     useEffect(() => {
@@ -664,6 +1013,24 @@ const App = () => {
         }
     }, [leftPanelWidth]);
 
+    // 设置拖放事件监听器
+    useEffect(() => {
+        const app = document.getElementById('app');
+        if (app) {
+            app.addEventListener('dragenter', handleDragEnter);
+            app.addEventListener('dragover', handleDragOver);
+            app.addEventListener('dragleave', handleDragLeave);
+            app.addEventListener('drop', handleDrop);
+            
+            return () => {
+                app.removeEventListener('dragenter', handleDragEnter);
+                app.removeEventListener('dragover', handleDragOver);
+                app.removeEventListener('dragleave', handleDragLeave);
+                app.removeEventListener('drop', handleDrop);
+            };
+        }
+    }, [isEditing]);
+
     // 移动端类名
     const getLeftPanelClassNames = () => {
         if (!isMobile) return '';
@@ -680,25 +1047,16 @@ const App = () => {
             <div className="button-toolbar">
                 <button 
                     className="button" 
-                    onClick={openFolder}
+                    onClick={handleLocalFolderSelect}
                     title="选择一个文件夹开始分析"
+                    disabled={isEditing}
                 >
                     <i className="fas fa-folder-open"></i>
                 </button>
-                <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="file-input" 
-                    onChange={handleFileSelect}
-                    webkitdirectory="true"
-                    directory="true"
-                    multiple
-                    accept="*/*"
-                />
                 <button 
                     className="button" 
                     onClick={copyContent} 
-                    disabled={!currentContent}
+                    disabled={!currentContent || isEditing}
                     title="复制全部内容到剪贴板"
                 >
                     <i className="fas fa-copy"></i>
@@ -706,7 +1064,7 @@ const App = () => {
                 <button 
                     className="button" 
                     onClick={saveContent} 
-                    disabled={!currentContent}
+                    disabled={!currentContent || isEditing}
                     title="将内容保存为文本文件"
                 >
                     <i className="fas fa-save"></i>
@@ -714,7 +1072,7 @@ const App = () => {
                 <button 
                     className="button" 
                     onClick={resetContent} 
-                    disabled={!currentContent}
+                    disabled={!currentContent || processing}
                     title="清空当前结果并重置"
                 >
                     <i className="fas fa-redo"></i>
@@ -730,11 +1088,12 @@ const App = () => {
                 <button
                     className="button"
                     onClick={openSearchDialog}
-                    disabled={!currentContent}
+                    disabled={!currentContent || isEditing}
                     title="搜索内容 (Ctrl+F)"
                 >
                     <i className="fas fa-search"></i>
                 </button>
+                
                 <div className="checkbox-container">
                     <input 
                         type="checkbox" 
@@ -742,7 +1101,7 @@ const App = () => {
                         id="extractContent" 
                         checked={extractContent} 
                         onChange={(e) => setExtractContent(e.target.checked)}
-                        disabled={processing}
+                        disabled={processing || isEditing}
                     />
                     <label htmlFor="extractContent">提取文件内容</label>
                 </div>
@@ -778,7 +1137,10 @@ const App = () => {
                 </button>
             </div>
             
-            <div className="container" ref={containerRef}>
+            <div 
+                className={`container ${isDragging ? 'dragging' : ''}`} 
+                ref={containerRef}
+            >
                 <div 
                     className={`left-panel ${getLeftPanelClassNames()}`} 
                     style={!isMobile ? { width: `${leftPanelWidth}%` } : {}}
@@ -802,6 +1164,9 @@ const App = () => {
                                 content={currentContent}
                                 fontSize={fontSize}
                                 lineHeight={lineHeight}
+                                isEditing={isEditing}
+                                currentEditingFile={currentEditingFile}
+                                onEditContent={handleEditContent}
                             />
                         </div>
                     </div>
@@ -838,6 +1203,7 @@ const App = () => {
             
             <div className="status-bar">
                 {processing ? statusMessage : `${statusMessage} - 共 ${lineCount} 行, ${charCount} 字符`}
+                {isEditing && !processing && " - 编辑模式"}
             </div>
             
             {/* 移动端视图切换按钮 */}
@@ -851,6 +1217,26 @@ const App = () => {
                         <i className="fas fa-folder"></i> : 
                         <i className="fas fa-file-alt"></i>}
                 </button>
+            )}
+
+            {/* 拖放提示覆盖层 */}
+            {isDragging && (
+                <div className="drop-overlay">
+                    <div className="drop-message">
+                        <i className="fas fa-upload"></i>
+                        <span>释放鼠标以导入文件夹</span>
+                    </div>
+                </div>
+            )}
+            
+            {/* 初始提示 */}
+            {!currentContent && !processing && (
+                <div className="initial-prompt">
+                    <div className="prompt-content">
+                        <i className="fas fa-folder-open"></i>
+                        <p>拖放文件夹到此处，或点击左上角的文件夹图标</p>
+                    </div>
+                </div>
             )}
         </>
     );
