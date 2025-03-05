@@ -520,61 +520,72 @@ const App = () => {
         });
     };
 
-    // 构建文件结构
+    // 构建文件结构 - 改进版本：正确显示文件夹结构
     const buildFileStructure = (files) => {
         if (!files || files.length === 0) {
             return "无文件";
         }
         
-        const structure = [];
-        const folderPaths = new Set();
+        // 构建树结构
+        const root = { name: files[0]?.webkitRelativePath?.split('/')[0] || 'Files', children: {}, isFolder: true };
         
-        // 获取所有文件夹路径
+        // 处理所有文件，构建目录树
         files.forEach(file => {
             const path = file.webkitRelativePath || file.name;
             const parts = path.split('/');
             
-            // 添加所有父文件夹路径
-            let currentPath = '';
-            for (let i = 0; i < parts.length - 1; i++) {
-                currentPath += (i > 0 ? '/' : '') + parts[i];
-                folderPaths.add(currentPath);
+            let current = root;
+            
+            // 创建文件路径
+            for (let i = 1; i < parts.length; i++) {
+                const part = parts[i];
+                const isFile = i === parts.length - 1;
+                
+                if (!current.children[part]) {
+                    current.children[part] = { 
+                        name: part, 
+                        children: {}, 
+                        isFolder: !isFile 
+                    };
+                }
+                
+                current = current.children[part];
             }
         });
         
-        // 转换为字符串表示
-        const rootFolder = files[0]?.webkitRelativePath?.split('/')[0] || 'Files';
-        structure.push(rootFolder);
+        // 生成格式化输出
+        const result = [];
+        result.push(root.name);
         
-        // 按路径排序文件
-        const sortedFiles = [...files].sort((a, b) => {
-            const pathA = a.webkitRelativePath || a.name;
-            const pathB = b.webkitRelativePath || b.name;
-            return pathA.localeCompare(pathB);
-        });
-        
-        // 构建结构字符串
-        const formatStructure = (prefix, fileName, isLast) => {
-            return `${prefix}${isLast ? '└── ' : '├── '}${fileName}`;
+        // 递归生成结构文本
+        const generateStructure = (node, prefix = '', isLast = true) => {
+            // 将children对象转换为数组并排序（文件夹优先）
+            const childrenArray = Object.values(node.children).sort((a, b) => {
+                // 文件夹优先
+                if (a.isFolder !== b.isFolder) {
+                    return a.isFolder ? -1 : 1;
+                }
+                // 按名称排序
+                return a.name.localeCompare(b.name);
+            });
+            
+            // 处理每个子节点
+            childrenArray.forEach((child, index) => {
+                const isChildLast = index === childrenArray.length - 1;
+                const childPrefix = `${prefix}${isLast ? '    ' : '│   '}`;
+                const lineSymbol = isChildLast ? '└── ' : '├── ';
+                
+                result.push(`${prefix}${lineSymbol}${child.name}`);
+                
+                if (child.isFolder && Object.keys(child.children).length > 0) {
+                    generateStructure(child, childPrefix, isChildLast);
+                }
+            });
         };
         
-        sortedFiles.forEach((file, index) => {
-            const path = file.webkitRelativePath || file.name;
-            const parts = path.split('/');
-            const fileName = parts[parts.length - 1];
-            const isLast = index === sortedFiles.length - 1;
-            
-            if (parts.length === 1) {
-                // 根目录下的文件
-                structure.push(formatStructure('', fileName, isLast));
-            } else {
-                // 文件夹中的文件
-                const prefix = '    '.repeat(parts.length - 1);
-                structure.push(formatStructure(prefix, fileName, isLast));
-            }
-        });
+        generateStructure(root);
         
-        return structure.join('\n');
+        return result.join('\n');
     };
 
     // 构建树形数据
