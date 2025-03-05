@@ -32,6 +32,12 @@
     --editing-button-hover: #FFA726;
     --refresh-button-bg: #81C784;
     --refresh-button-hover: #66BB6A;
+    --header-bg: #2A3F54;
+    --header-text: #ffffff;
+    --header-button-bg: rgba(255, 255, 255, 0.1);
+    --header-button-hover: rgba(255, 255, 255, 0.2);
+    --header-button-active: rgba(255, 255, 255, 0.3);
+    --header-button-disabled: rgba(255, 255, 255, 0.05);
 }
 
 .dark-theme {
@@ -66,6 +72,12 @@
     --editing-button-hover: #9E9D24;
     --refresh-button-bg: #2E7D32;
     --refresh-button-hover: #388E3C;
+    --header-bg: #1A2534;
+    --header-text: #ffffff;
+    --header-button-bg: rgba(255, 255, 255, 0.1);
+    --header-button-hover: rgba(255, 255, 255, 0.2);
+    --header-button-active: rgba(255, 255, 255, 0.3);
+    --header-button-disabled: rgba(255, 255, 255, 0.05);
 }
 
 * {
@@ -89,6 +101,98 @@ body {
     flex-direction: column;
 }
 
+/* 更新：应用标题栏样式 */
+.app-header {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    height: 60px;
+}
+
+.app-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-logo img {
+    height: 32px;
+    width: auto;
+}
+
+.app-logo span {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* 新增：标题栏按钮区域样式 */
+.header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.header-button {
+    background-color: var(--header-button-bg);
+    color: var(--header-text);
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    height: 38px;
+    width: 38px;
+}
+
+.header-button:hover {
+    background-color: var(--header-button-hover);
+}
+
+.header-button:active {
+    background-color: var(--header-button-active);
+}
+
+.header-button:disabled {
+    background-color: var(--header-button-disabled);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 10px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-controls .checkbox-container {
+    color: var(--header-text);
+}
+
+.font-size-button {
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+}
+
+.font-size-display {
+    color: var(--header-text);
+}
+
+.theme-button {
+    margin-left: 10px;
+}
+
 .container {
     display: flex;
     flex: 1;
@@ -96,13 +200,9 @@ body {
     position: relative;
 }
 
+/* 旧版按钮工具栏 - 已不需要 */
 .button-toolbar {
-    display: flex;
-    padding: 10px;
-    gap: 8px;
-    background-color: var(--bg-color);
-    border-bottom: 1px solid var(--accent-color);
-    flex-wrap: wrap;
+    display: none; /* 隐藏旧工具栏 */
 }
 
 .button {
@@ -130,16 +230,19 @@ body {
 }
 
 /* 刷新按钮特殊样式 */
-.button .fa-sync-alt {
+.button .fa-sync-alt,
+.header-button .fa-redo {
     color: var(--refresh-button-bg);
 }
 
-.button:hover .fa-sync-alt {
+.button:hover .fa-sync-alt,
+.header-button:hover .fa-redo {
     color: var(--refresh-button-hover);
 }
 
-.button:disabled .fa-sync-alt {
-    color: var(--text-disabled);
+.button:disabled .fa-sync-alt,
+.header-button:disabled .fa-redo {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .button.refreshing {
@@ -154,7 +257,6 @@ body {
 .checkbox-container {
     display: flex;
     align-items: center;
-    margin-left: 10px;
     color: var(--text-color);
     font-size: var(--font-size-base);
 }
@@ -167,12 +269,6 @@ body {
 .font-size-controls {
     display: flex;
     align-items: center;
-    margin-left: 15px;
-}
-
-.font-size-controls .button {
-    padding: 3px 8px;
-    font-size: 14px;
 }
 
 .font-size-display {
@@ -182,7 +278,6 @@ body {
 }
 
 .left-panel {
-    /* flex: 3; - Removed to fix width adjustment issue */
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--accent-color);
@@ -190,7 +285,6 @@ body {
 }
 
 .right-panel {
-    /* flex: 1; - Removed to fix width adjustment issue */
     display: flex;
     flex-direction: column;
     min-width: 200px;
@@ -551,20 +645,48 @@ pre code.hljs {
         right: 0;
     }
 
-    .button-toolbar {
+    /* 移动端标题栏调整 */
+    .app-header {
         flex-wrap: wrap;
-        justify-content: center;
-        gap: 5px;
-    }
-
-    .button {
-        padding: 10px;
+        padding: 8px 10px;
+        height: auto;
+        min-height: 60px;
     }
     
-    .checkbox-container, .font-size-controls {
-        margin: 5px 0;
+    .app-logo {
+        margin-bottom: 5px;
     }
-
+    
+    .header-buttons {
+        margin-top: 5px;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .header-controls {
+        margin-top: 5px;
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding-top: 5px;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .header-button {
+        height: 36px;
+        width: 36px;
+        padding: 8px;
+    }
+    
+    .app-logo img {
+        height: 24px;
+    }
+    
+    .app-logo span {
+        font-size: 16px;
+    }
+    
     .file-tree-item {
         padding: 8px 0;
     }

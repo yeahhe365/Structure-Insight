@@ -1059,97 +1059,106 @@ const App = () => {
 
     return (
         <>
-            <div className="button-toolbar">
-                <button 
-                    className="button" 
-                    onClick={handleLocalFolderSelect}
-                    title="选择一个文件夹开始分析"
-                    disabled={isEditing}
-                >
-                    <i className="fas fa-folder-open"></i>
-                </button>
-                <button 
-                    className="button" 
-                    onClick={copyContent} 
-                    disabled={!currentContent || isEditing}
-                    title="复制全部内容到剪贴板"
-                >
-                    <i className="fas fa-copy"></i>
-                </button>
-                <button 
-                    className="button" 
-                    onClick={saveContent} 
-                    disabled={!currentContent || isEditing}
-                    title="将内容保存为文本文件"
-                >
-                    <i className="fas fa-save"></i>
-                </button>
-                <button 
-                    className="button" 
-                    onClick={resetContent} 
-                    disabled={!currentContent || processing}
-                    title="清空当前结果并重置"
-                >
-                    <i className="fas fa-redo"></i>
-                </button>
-                <button 
-                    className="button" 
-                    onClick={cancelProcessing} 
-                    disabled={!processing}
-                    title="取消当前处理"
-                >
-                    <i className="fas fa-stop"></i>
-                </button>
-                <button
-                    className="button"
-                    onClick={openSearchDialog}
-                    disabled={!currentContent || isEditing}
-                    title="搜索内容 (Ctrl+F)"
-                >
-                    <i className="fas fa-search"></i>
-                </button>
-                
-                <div className="checkbox-container">
-                    <input 
-                        type="checkbox" 
-                        className="checkbox" 
-                        id="extractContent" 
-                        checked={extractContent} 
-                        onChange={(e) => setExtractContent(e.target.checked)}
-                        disabled={processing || isEditing}
-                    />
-                    <label htmlFor="extractContent">提取文件内容</label>
+            {/* 修改后的标题栏：整合按钮到标题行 */}
+            <div className="app-header">
+                <div className="app-logo">
+                    <img src="favicon_io/android-chrome-192x192.png" alt="Structure Insight Logo" />
+                    <span>Structure Insight Web</span>
                 </div>
                 
-                {/* 字体大小控制 */}
-                <div className="font-size-controls">
+                <div className="header-buttons">
                     <button 
-                        className="button" 
-                        onClick={decreaseFontSize}
-                        title="减小字体"
+                        className="header-button" 
+                        onClick={handleLocalFolderSelect}
+                        title="选择一个文件夹开始分析"
+                        disabled={isEditing}
                     >
-                        <i className="fas fa-minus"></i>
+                        <i className="fas fa-folder-open"></i>
                     </button>
-                    <span className="font-size-display">{fontSize}px</span>
                     <button 
-                        className="button" 
-                        onClick={increaseFontSize}
-                        title="增大字体"
+                        className="header-button" 
+                        onClick={copyContent} 
+                        disabled={!currentContent || isEditing}
+                        title="复制全部内容到剪贴板"
                     >
-                        <i className="fas fa-plus"></i>
+                        <i className="fas fa-copy"></i>
+                    </button>
+                    <button 
+                        className="header-button" 
+                        onClick={saveContent} 
+                        disabled={!currentContent || isEditing}
+                        title="将内容保存为文本文件"
+                    >
+                        <i className="fas fa-save"></i>
+                    </button>
+                    <button 
+                        className="header-button" 
+                        onClick={resetContent} 
+                        disabled={!currentContent || processing}
+                        title="清空当前结果并重置"
+                    >
+                        <i className="fas fa-redo"></i>
+                    </button>
+                    <button 
+                        className="header-button" 
+                        onClick={cancelProcessing} 
+                        disabled={!processing}
+                        title="取消当前处理"
+                    >
+                        <i className="fas fa-stop"></i>
+                    </button>
+                    <button
+                        className="header-button"
+                        onClick={openSearchDialog}
+                        disabled={!currentContent || isEditing}
+                        title="搜索内容 (Ctrl+F)"
+                    >
+                        <i className="fas fa-search"></i>
+                    </button>
+                    
+                    <div className="header-controls">
+                        <div className="checkbox-container">
+                            <input 
+                                type="checkbox" 
+                                className="checkbox" 
+                                id="extractContent" 
+                                checked={extractContent} 
+                                onChange={(e) => setExtractContent(e.target.checked)}
+                                disabled={processing || isEditing}
+                            />
+                            <label htmlFor="extractContent">提取文件内容</label>
+                        </div>
+                        
+                        {/* 字体大小控制 */}
+                        <div className="font-size-controls">
+                            <button 
+                                className="header-button font-size-button" 
+                                onClick={decreaseFontSize}
+                                title="减小字体"
+                            >
+                                <i className="fas fa-minus"></i>
+                            </button>
+                            <span className="font-size-display">{fontSize}px</span>
+                            <button 
+                                className="header-button font-size-button" 
+                                onClick={increaseFontSize}
+                                title="增大字体"
+                            >
+                                <i className="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        className="header-button theme-button" 
+                        onClick={toggleTheme}
+                        title="在深色和浅色主题之间切换"
+                    >
+                        {isDarkTheme ? 
+                            <i className="fas fa-sun"></i> : 
+                            <i className="fas fa-moon"></i>}
                     </button>
                 </div>
-                
-                <button 
-                    className="button" 
-                    onClick={toggleTheme}
-                    title="在深色和浅色主题之间切换"
-                    style={{ marginLeft: 'auto' }}
-                >
-                    {isDarkTheme ? 
-                        <i className="fas fa-sun"></i> : 
-                        <i className="fas fa-moon"></i>}
-                </button>
             </div>
             
             <div 
