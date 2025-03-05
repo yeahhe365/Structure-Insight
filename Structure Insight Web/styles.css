@@ -1,4 +1,9 @@
-:root {
+/**
+ * Structure Insight Web - Styles
+ * Main stylesheet for the application
+ */
+
+ :root {
     --bg-color: #F0F0F0;
     --text-color: #333333;
     --accent-color: #CCCCCC;
@@ -26,6 +31,7 @@
     --resizer-size: 8px;
     --resizer-color: #DDDDDD;
     --resizer-hover: #BBBBBB;
+    --resizer-handle-color: #999999;
     --editing-bg: #FFFDE7;
     --editing-border: #FFE082;
     --editing-button-bg: #FFB74D;
@@ -38,8 +44,17 @@
     --header-button-hover: rgba(255, 255, 255, 0.2);
     --header-button-active: rgba(255, 255, 255, 0.3);
     --header-button-disabled: rgba(255, 255, 255, 0.05);
+    --mobile-toggle-bg: #4A6491;
+    --mobile-toggle-active: #5D77A4;
+    --mobile-toggle-shadow: rgba(0, 0, 0, 0.3);
+    /* Mobile optimization variables */
+    --mobile-header-height: 48px;
+    --mobile-status-height: 32px;
+    --mobile-action-button-size: 48px;
+    --mobile-button-gap: 4px;
 }
 
+/* Dark theme variables */
 .dark-theme {
     --bg-color: #2B2B2B;
     --text-color: #DDDDDD;
@@ -66,6 +81,7 @@
     --file-separator-border: #505050;
     --resizer-color: #555555;
     --resizer-hover: #777777;
+    --resizer-handle-color: #AAAAAA;
     --editing-bg: #3C3C23;
     --editing-border: #827717;
     --editing-button-bg: #827717;
@@ -78,13 +94,18 @@
     --header-button-hover: rgba(255, 255, 255, 0.2);
     --header-button-active: rgba(255, 255, 255, 0.3);
     --header-button-disabled: rgba(255, 255, 255, 0.05);
+    --mobile-toggle-bg: #1A2534;
+    --mobile-toggle-active: #2A3F54;
+    --mobile-toggle-shadow: rgba(0, 0, 0, 0.5);
 }
 
+/* Base styles */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
     font-family: "Microsoft YaHei", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
 }
 
 body {
@@ -92,16 +113,19 @@ body {
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
     font-size: var(--font-size-base);
+    overscroll-behavior: none; /* Prevent pull-to-refresh on mobile */
 }
 
 #app {
     width: 100%;
     height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Prevent body scrolling */
 }
 
-/* 更新：应用标题栏样式 */
+/* App header styles */
 .app-header {
     background-color: var(--header-bg);
     color: var(--header-text);
@@ -111,12 +135,15 @@ body {
     justify-content: space-between;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     height: 60px;
+    position: relative;
+    z-index: 20;
 }
 
 .app-logo {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-wrap: nowrap;
 }
 
 .app-logo img {
@@ -129,7 +156,22 @@ body {
     font-weight: bold;
 }
 
-/* 新增：标题栏按钮区域样式 */
+/* Mobile title controls */
+.mobile-title-controls {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    gap: 2px;
+}
+
+.font-size-display-mobile {
+    color: var(--header-text);
+    font-size: 12px;
+    min-width: 14px;
+    text-align: center;
+}
+
+/* Header buttons */
 .header-buttons {
     display: flex;
     align-items: center;
@@ -200,11 +242,7 @@ body {
     position: relative;
 }
 
-/* 旧版按钮工具栏 - 已不需要 */
-.button-toolbar {
-    display: none; /* 隐藏旧工具栏 */
-}
-
+/* Standard button styles */
 .button {
     background-color: var(--button-bg);
     color: var(--text-color);
@@ -229,7 +267,7 @@ body {
     cursor: not-allowed;
 }
 
-/* 刷新按钮特殊样式 */
+/* Refresh button styles */
 .button .fa-sync-alt,
 .header-button .fa-redo {
     color: var(--refresh-button-bg);
@@ -254,18 +292,38 @@ body {
     to { transform: rotate(360deg); }
 }
 
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    color: var(--text-color);
-    font-size: var(--font-size-base);
+/* Extract content button */
+.extract-content-button {
+    background-color: var(--header-button-bg);
+    color: var(--header-text);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    position: relative;
 }
 
-.checkbox {
-    margin-right: 5px;
-    transform: scale(1.2);
+.extract-content-button.active {
+    background-color: var(--header-button-active);
+    opacity: 1;
+    position: relative;
 }
 
+.extract-content-button.active::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+}
+
+.extract-content-button:hover {
+    opacity: 1;
+}
+
+/* Font size controls */
 .font-size-controls {
     display: flex;
     align-items: center;
@@ -277,19 +335,23 @@ body {
     text-align: center;
 }
 
+/* Panel styles */
 .left-panel {
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--accent-color);
     min-width: 300px;
+    transition: all 0.3s ease;
 }
 
 .right-panel {
     display: flex;
     flex-direction: column;
     min-width: 200px;
+    transition: all 0.3s ease;
 }
 
+/* Code editor styles */
 .code-editor {
     flex: 1;
     position: relative;
@@ -329,7 +391,7 @@ body {
     outline: none;
 }
 
-/* 编辑器样式 */
+/* Editor styles */
 .editor-container {
     margin: 10px 0;
     border: 1px solid var(--editing-border);
@@ -379,12 +441,13 @@ body {
     text-decoration: underline;
 }
 
-/* 文件内容容器 */
+/* File content container */
 .file-content-container {
     margin-bottom: 20px;
     border-radius: 4px;
 }
 
+/* File tree styles */
 .tree-container {
     flex: 1;
     background-color: var(--editor-bg);
@@ -433,6 +496,7 @@ body {
     color: var(--text-disabled);
 }
 
+/* Progress bar styles */
 .progress-container {
     padding: 10px;
     display: flex;
@@ -455,6 +519,7 @@ body {
     transition: width 0.3s;
 }
 
+/* Status bar styles */
 .status-bar {
     height: 28px;
     background-color: var(--status-bg);
@@ -468,42 +533,25 @@ body {
 
 /* Scrollbar Styles */
 ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
     background: var(--scrollbar-bg);
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-hover);
 }
 
-/* File Input Styling */
-.file-input {
-    display: none;
-}
-
-.folder-icon {
-    margin-right: 5px;
-}
-
-/* Current line highlight */
-.highlight-line {
-    background-color: var(--current-line);
-    width: 100%;
-    position: absolute;
-    z-index: 1;
-}
-
-/* 文件分割线样式优化 */
+/* File separator styles */
 .file-separator {
     background-color: var(--file-separator);
     border-top: 1px solid var(--file-separator-border);
@@ -527,23 +575,81 @@ body {
     white-space: nowrap;
 }
 
-/* 可拖动分割线样式 - 修复版 */
+/* Resizer styles */
 .resizer {
-    width: var(--resizer-size);
     background-color: var(--resizer-color);
-    cursor: col-resize;
     position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.resizer.vertical {
+    width: var(--resizer-size);
     top: 0;
     bottom: 0;
-    transition: background-color 0.2s;
-    z-index: 10;
+    transform: translateX(-50%);
+    will-change: left;
+}
+
+.resizer.horizontal {
+    height: var(--resizer-size);
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    will-change: top;
 }
 
 .resizer:hover, .resizer.active {
     background-color: var(--resizer-hover);
 }
 
-/* 高亮代码块样式调整 */
+/* Resizer handle */
+.resizer-handle {
+    background-color: var(--resizer-handle-color, #999);
+    opacity: 0.6;
+}
+
+.resizer.vertical .resizer-handle {
+    height: 40px;
+    width: 2px;
+    border-radius: 1px;
+}
+
+.resizer.horizontal .resizer-handle {
+    width: 40px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+.resizer:hover .resizer-handle,
+.resizer.active .resizer-handle {
+    opacity: 1;
+}
+
+/* Global dragging state */
+body.resizing {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default !important;
+    overflow: hidden;
+}
+
+body.resizing.vertical * {
+    cursor: col-resize !important;
+}
+
+body.resizing.horizontal * {
+    cursor: row-resize !important;
+}
+
+/* Performance optimization */
+.left-panel, .right-panel {
+    will-change: width, height;
+}
+
+/* Highlighted code block styles */
 pre code.hljs {
     font-family: monospace;
     font-size: inherit;
@@ -556,7 +662,7 @@ pre code.hljs {
     word-wrap: break-word;
 }
 
-/* 文件结构保持格式 */
+/* File structure format */
 .file-structure-content {
     white-space: pre;
     font-family: monospace;
@@ -568,7 +674,7 @@ pre code.hljs {
     overflow-x: auto;
 }
 
-/* 暗黑模式下代码高亮样式覆盖 */
+/* Dark mode code highlighting overrides */
 .dark-theme .hljs {
     background: #2d2d2d;
     color: #ccc;
@@ -601,7 +707,7 @@ pre code.hljs {
     color: #f0c674;
 }
 
-/* 编辑器容器调整以显示高亮内容 */
+/* Editor container */
 .highlighted-content {
     font-family: monospace;
     font-size: inherit;
@@ -614,8 +720,22 @@ pre code.hljs {
     padding: 10px;
 }
 
-/* 移动端样式优化 */
+/* MOBILE OPTIMIZATIONS */
 @media screen and (max-width: 768px) {
+    /* Faster transitions for mobile */
+    * {
+        transition-duration: 0.2s !important;
+    }
+    
+    /* Use hardware acceleration for smoother animations */
+    .app-header, .left-panel, .right-panel, .view-toggle, .mobile-transition {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        perspective: 1000px;
+    }
+    
+    /* Container for flexible layout */
     .container {
         flex-direction: column;
     }
@@ -628,13 +748,13 @@ pre code.hljs {
     }
 
     .left-panel {
-        height: 60%;
+        height: 70%; 
         border-right: none;
         border-bottom: 1px solid var(--accent-color);
     }
 
     .right-panel {
-        height: 40%;
+        height: 30%;
     }
 
     .resizer {
@@ -645,106 +765,631 @@ pre code.hljs {
         right: 0;
     }
 
-    /* 移动端标题栏调整 */
+    /* Optimized header for mobile */
     .app-header {
-        flex-wrap: wrap;
-        padding: 8px 10px;
-        height: auto;
-        min-height: 60px;
+        flex-wrap: nowrap;
+        padding: 0 8px;
+        height: var(--mobile-header-height);
+        min-height: var(--mobile-header-height);
+        justify-content: space-between;
     }
     
     .app-logo {
-        margin-bottom: 5px;
-    }
-    
-    .header-buttons {
-        margin-top: 5px;
-        justify-content: center;
-        width: 100%;
-    }
-    
-    .header-controls {
-        margin-top: 5px;
-        border-left: none;
-        padding-left: 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-        padding-top: 5px;
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .header-button {
-        height: 36px;
-        width: 36px;
-        padding: 8px;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        max-width: 40%;
     }
     
     .app-logo img {
         height: 24px;
+        margin-right: 5px;
     }
     
+    /* Hide app name on all mobile devices */
     .app-logo span {
-        font-size: 16px;
+        display: none;
     }
     
-    .file-tree-item {
-        padding: 8px 0;
-    }
-
-    .status-bar {
-        height: auto;
-        padding: 5px 10px;
-        flex-wrap: wrap;
-    }
-    
-    .editor-buttons {
-        flex-direction: column;
-    }
-}
-
-/* 切换视图按钮 */
-.view-toggle {
-    display: none;
-}
-
-@media screen and (max-width: 768px) {
-    .view-toggle {
-        display: block;
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 100;
-        background-color: var(--button-bg);
-        color: var(--text-color);
-        border: 1px solid var(--button-border);
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
+    /* Mobile controls in header */
+    .mobile-title-controls {
         display: flex;
         align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        margin-left: 5px;
+        gap: var(--mobile-button-gap);
     }
-
-    .view-toggle:hover {
+    
+    .mobile-title-controls .header-button {
+        height: 28px;
+        width: 28px;
+        padding: 0;
+        margin: 0 1px;
+        font-size: 12px;
+    }
+    
+    .font-size-display-mobile {
+        font-size: 10px;
+        margin: 0 2px;
+    }
+    
+    /* Compact header buttons */
+    .header-buttons {
+        margin-top: 0;
+        justify-content: flex-end;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Hide scrollbar in Firefox */
+        -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+        max-width: 60%;
+        gap: var(--mobile-button-gap);
+        padding-right: 5px; /* Space at the end for better scrolling */
+    }
+    
+    /* Hide scrollbar in Webkit browsers */
+    .header-buttons::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Remove dividers on mobile for cleaner look */
+    .header-controls {
+        margin-top: 0;
+        border-left: none;
+        padding-left: 5px;
+        border-top: none;
+        padding-top: 0;
+        margin-left: 2px;
+        gap: var(--mobile-button-gap);
+    }
+    
+    /* Compact buttons for mobile */
+    .header-button {
+        height: 32px;
+        width: 32px;
+        padding: 6px;
+        margin: 0;
+        font-size: 14px;
+    }
+    
+    /* Improved touch targets for file tree */
+    .file-tree-item {
+        padding: 12px 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        border-bottom: 1px solid var(--divider-color);
+    }
+    
+    .file-tree-item:active {
         background-color: var(--button-hover);
     }
+    
+    .file-tree-item:last-child {
+        border-bottom: none;
+    }
+    
+    .file-tree-toggle, 
+    .folder-icon {
+        font-size: 18px;
+        margin-right: 10px;
+        width: 18px;
+    }
+    
+    .file-tree-label {
+        font-size: 15px;
+        padding: 5px 0;
+    }
+    
+    /* File tree improved for touch */
+    .file-tree {
+        padding-left: 10px;
+    }
+    
+    /* Improved status bar */
+    .status-bar {
+        height: var(--mobile-status-height);
+        padding: 0 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        font-size: 13px;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    /* Improved edit buttons */
+    .edit-button {
+        font-size: 15px;
+        opacity: 1;
+        padding: 5px 10px;
+        background-color: var(--button-bg);
+        border-radius: 4px;
+        margin-left: 5px;
+    }
+    
+    .edit-button:active {
+        background-color: var(--button-hover);
+    }
+    
+    /* Editor improvements */
+    .editor-buttons {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .editor-buttons .button {
+        flex: 1;
+        justify-content: center;
+        margin: 0 4px;
+        padding: 12px;
+        font-size: 15px;
+        height: 44px; /* Larger touch target */
+    }
+    
+    /* Mobile-optimized textarea */
+    .editor-textarea {
+        min-height: 150px;
+        font-size: 16px; /* iOS minimum to prevent zoom */
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    
+    /* Improved file separators */
+    .file-separator {
+        margin: 10px 0;
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .file-separator:active {
+        background-color: var(--button-hover);
+    }
+    
+    /* Code blocks */
+    pre code.hljs {
+        padding: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+        border-radius: 8px;
+    }
+    
+    /* Improved highlighted content for mobile */
+    .highlighted-content {
+        padding: 12px 10px;
+    }
 
+    /* Improved line numbers for mobile */
+    .line-numbers {
+        padding: 12px 5px 12px 0;
+    }
+    
+    /* Improved mobile view toggle */
+    .view-toggle {
+        display: flex;
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        z-index: 100;
+        background-color: var(--mobile-toggle-bg);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: var(--mobile-action-button-size);
+        height: var(--mobile-action-button-size);
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 8px var(--mobile-toggle-shadow);
+        font-size: 18px;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Add subtle animation to the toggle button */
+    .view-toggle.clicked {
+        transform: scale(0.9);
+    }
+
+    .view-toggle:active {
+        background-color: var(--mobile-toggle-active);
+        transform: scale(0.95);
+    }
+    
+    /* View transition states */
     .mobile-hidden {
         display: none !important;
+        height: 0 !important;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(20px);
     }
 
     .mobile-full {
         height: 100% !important;
+        display: flex !important;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .mobile-transition {
+        transition: opacity 0.25s ease-out, transform 0.25s ease-out !important;
+    }
+    
+    /* Drop overlay improvement */
+    .drop-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+    
+    .drop-message {
+        background-color: var(--editor-bg);
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 90%;
+        max-width: 320px;
+    }
+    
+    .drop-message i {
+        font-size: 42px;
+        color: var(--header-bg);
+    }
+    
+    .drop-message span {
+        font-size: 16px;
+        color: var(--text-color);
+    }
+    
+    /* Better tooltips for mobile */
+    .tooltip {
+        position: absolute;
+        bottom: 45px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        display: none;
+        pointer-events: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1002;
+        animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, 5px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    
+    .header-button:active .tooltip {
+        display: block;
+    }
+    
+    /* Prevent overscrolling */
+    .tree-container, .highlighted-content {
+        overscroll-behavior: contain;
+    }
+    
+    /* Improve file tree spacing at bottom */
+    .file-tree {
+        padding-bottom: 90px; /* Make space for floating action button */
+    }
+    
+    /* Initial prompt improvement */
+    .initial-prompt {
+        background-color: rgba(var(--editor-bg-rgb, 255, 255, 255), 0.8);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    
+    .prompt-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .prompt-content i {
+        font-size: 48px;
+        color: var(--header-bg);
+    }
+    
+    .prompt-content p {
+        font-size: 16px;
+        max-width: 280px;
+        line-height: 1.5;
+        text-align: center;
     }
 }
 
-/* 新增的拖放相关样式 */
-.dragging {
-    position: relative;
+/* Extra small screens optimization */
+@media screen and (max-width: 480px) {
+    .app-header {
+        padding: 0 5px;
+        height: var(--mobile-header-height);
+    }
+    
+    /* Further reduced button size */
+    .header-button {
+        height: 30px;
+        width: 30px;
+        padding: 5px;
+    }
+    
+    /* Hide app name completely on small screens */
+    .app-logo span {
+        display: none;
+    }
+    
+    /* Even smaller app logo */
+    .app-logo img {
+        height: 22px;
+    }
+    
+    /* Optimize checkbox labels */
+    .header-controls .checkbox-container label {
+        font-size: 12px;
+    }
+    
+    .header-controls .checkbox-container label .full-text {
+        display: none;
+    }
+    
+    .header-controls .checkbox-container label .short-text {
+        display: inline;
+    }
+    
+    /* Hide font size display */
+    .font-size-display {
+        display: none;
+    }
+    
+    /* Reduce status bar height */
+    .status-bar {
+        font-size: 12px;
+        height: 28px;
+        padding: 0 8px;
+    }
+    
+    /* Better scroll to top button */
+    .scroll-to-top {
+        bottom: 80px; /* Position above the view toggle button */
+        right: 16px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Make toggle buttons smaller on very small screens */
+    .view-toggle {
+        width: 44px;
+        height: 44px;
+        bottom: 12px;
+        right: 12px;
+    }
+    
+    /* Optimize file tree for very small screens */
+    .file-tree-item {
+        padding: 10px 6px;
+    }
+    
+    .file-tree-toggle, 
+    .folder-icon {
+        font-size: 16px;
+        margin-right: 8px;
+        width: 16px;
+    }
+    
+    .file-tree-label {
+        font-size: 14px;
+    }
+    
+    /* Smaller edit buttons */
+    .edit-button {
+        font-size: 13px;
+        padding: 4px 8px;
+    }
+    
+    /* Smaller editor buttons */
+    .editor-buttons .button {
+        padding: 10px 8px;
+        height: 40px;
+        font-size: 14px;
+    }
 }
 
-.drop-overlay {
+/* Tablet landscape mode optimizations */
+@media screen and (min-width: 481px) and (max-width: 768px) and (orientation: landscape) {
+    .container {
+        flex-direction: row; /* Use horizontal layout in landscape */
+    }
+    
+    .left-panel, .right-panel {
+        height: 100% !important;
+    }
+    
+    .left-panel {
+        width: 65% !important;
+        border-right: 1px solid var(--accent-color);
+        border-bottom: none;
+    }
+    
+    .right-panel {
+        width: 35% !important;
+    }
+    
+    .resizer {
+        width: var(--resizer-size);
+        height: 100%;
+        cursor: col-resize;
+        top: 0;
+        bottom: 0;
+    }
+    
+    /* Show app name in tablet landscape */
+    .app-logo span {
+        display: inline;
+    }
+    
+    /* Slightly larger controls for tablet */
+    .header-button {
+        height: 34px;
+        width: 34px;
+    }
+    
+    /* Hide view toggle button in landscape tablet mode */
+    .tablet-landscape .view-toggle {
+        display: none;
+    }
+    
+    /* Optimize tree for tablet landscape */
+    .tablet-landscape .file-tree-item {
+        padding: 8px 6px;
+    }
+}
+
+/* Add scroll to top button */
+.scroll-to-top {
+    display: none;
+    position: fixed;
+    bottom: 70px;
+    right: 20px;
+    z-index: 99;
+    width: 44px;
+    height: 44px;
+    border: none;
+    outline: none;
+    background-color: var(--header-bg);
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 18px;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top:hover,
+.scroll-to-top:active {
+    opacity: 1;
+    transform: scale(1.05);
+}
+
+/* Make scroll button visible when scrolled */
+.scroll-to-top.visible {
+    display: flex;
+    animation: fadeInButton 0.3s ease-out;
+}
+
+@keyframes fadeInButton {
+    from { opacity: 0; transform: scale(0.8) translateY(10px); }
+    to { opacity: 0.8; transform: scale(1) translateY(0); }
+}
+
+/* Accessibility focus states */
+.header-button:focus-visible,
+.button:focus-visible,
+.edit-button:focus-visible,
+.view-toggle:focus-visible {
+    outline: 2px solid #4A90E2;
+    outline-offset: 2px;
+}
+
+/* Touch feedback states */
+@media (hover: none) {
+    .header-button:active,
+    .button:active,
+    .file-tree-item:active,
+    .edit-button:active {
+        transform: scale(0.97);
+    }
+}
+
+/* Prevent text selection on buttons */
+.header-button, .button, .view-toggle, .edit-button, .file-separator {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Fix for iOS height issues */
+    #app {
+        height: -webkit-fill-available;
+    }
+    
+    /* Fix for iOS button touch feedback */
+    .header-button:active,
+    .button:active,
+    .edit-button:active {
+        opacity: 0.7;
+    }
+    
+    /* Fix iOS textarea zoom */
+    .editor-textarea {
+        font-size: 16px; /* Minimum font size to prevent iOS zoom */
+    }
+}
+
+/* Initial prompt styles */
+.initial-prompt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    text-align: center;
+    z-index: 10;
+    width: 90%;
+    max-width: 400px;
+}
+
+.prompt-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.prompt-content i {
+    font-size: 48px;
+    color: var(--header-bg);
+}
+
+.prompt-content p {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* Search dialog styles */
+.search-dialog-backdrop {
     position: fixed;
     top: 0;
     left: 0;
@@ -755,114 +1400,363 @@ pre code.hljs {
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    pointer-events: none;
+    animation: fadeIn 0.2s ease-out;
 }
 
-.drop-message {
-    padding: 30px;
-    text-align: center;
+.search-dialog {
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px;
+    animation: slideIn 0.2s ease-out;
+    overflow: hidden;
 }
 
-.drop-message i {
-    font-size: 48px;
-    color: var(--accent-color);
-}
-
-.drop-message span {
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--text-color);
-}
-
-/* 修改的文件编辑按钮样式 */
-.edit-button {
-    background-color: transparent;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    margin-left: 10px;
-    display: inline-flex;
-    align-items: center;
-    font-size: 14px;
-    opacity: 0.7;
-    transition: opacity 0.2s, color 0.2s;
-}
-
-.edit-button:hover {
-    opacity: 1;
-    color: var(--editing-button-bg);
-}
-
-.edit-button:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-/* 文件标题栏改进 */
-.file-separator {
-    background-color: var(--file-separator);
-    border-top: 1px solid var(--file-separator-border);
-    border-bottom: 1px solid var(--file-separator-border);
-    padding: 8px 12px;
-    margin: 15px 0;
-    font-weight: bold;
-    border-radius: 4px;
+.search-dialog-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--divider-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.file-separator:hover {
+.search-dialog-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-color);
+}
+
+.search-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.search-dialog-close:hover {
     background-color: var(--button-hover);
 }
 
-.file-info {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 80%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* 初始提示样式 */
-.initial-prompt {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    width: 80%;
-    max-width: 500px;
-    z-index: 2;
-    pointer-events: none;
-}
-
-.prompt-content {
-    padding: 30px;
+.search-dialog-content {
+    padding: 16px;
     display: flex;
     flex-direction: column;
+    gap: 16px;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--divider-color);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--header-bg);
+    box-shadow: 0 0 0 2px rgba(42, 63, 84, 0.2);
+}
+
+.search-button {
+    padding: 8px 16px;
+    background-color: var(--header-bg);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.search-button:hover {
+    background-color: var(--mobile-toggle-active);
+}
+
+.search-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.search-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.search-option {
+    display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.prompt-content i {
-    font-size: 64px;
-    color: var(--accent-color);
+.search-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 
-.prompt-content p {
+.search-results {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.search-result-count {
+    color: var(--text-color);
+}
+
+.search-no-results {
+    color: #e74c3c;
+}
+
+.search-navigation {
+    display: flex;
+    gap: 8px;
+}
+
+.search-nav-button {
+    background-color: var(--button-bg);
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.search-nav-button:hover {
+    background-color: var(--button-hover);
+}
+
+.search-nav-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+/* Highlight search matches */
+.search-highlight {
+    background-color: rgba(255, 213, 0, 0.3);
+    outline: 1px solid rgba(255, 213, 0, 0.7);
+}
+
+.search-highlight.current {
+    background-color: rgba(255, 165, 0, 0.5);
+    outline: 2px solid rgba(255, 165, 0, 0.9);
+}
+
+/* Animation effects */
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mobile device search dialog optimization */
+@media screen and (max-width: 768px) {
+    .search-dialog {
+        width: 95%;
+        max-width: none;
+        max-height: 80vh;
+    }
+    
+    .search-dialog-content {
+        padding: 12px;
+        gap: 12px;
+    }
+    
+    .search-options {
+        gap: 10px;
+        font-size: 13px;
+    }
+    
+    .search-option {
+        font-size: 13px;
+    }
+    
+    .search-button, .search-nav-button {
+        padding: 6px 10px;
+    }
+    
+    .search-input {
+        font-size: 16px; /* Keep font large enough to prevent auto-zoom on iOS */
+    }
+}
+
+/* Floating search dialog styles */
+/* Completely revised search dialog styles */
+.floating-search-dialog {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 950;
+    border: 1px solid var(--divider-color);
+    /* Remove transition and animation that could interfere with dragging */
+    will-change: right, bottom; /* Optimize for GPU acceleration */
+    touch-action: none; /* Prevent browser handling of touch events */
+    user-select: none; /* Prevent text selection during drag */
+}
+
+/* Add animation only when initially appearing */
+.floating-search-dialog:not(.dragging) {
+    animation: slideInSearch 0.2s ease-out;
+}
+
+/* Apply stronger visual feedback when dragging */
+.floating-search-dialog.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Make the whole document show proper cursor during drag */
+body.search-dragging {
+    cursor: grabbing !important;
+}
+
+/* Make all elements inside the dialog inherit the grabbing cursor during drag */
+body.search-dragging * {
+    cursor: grabbing !important;
+}
+
+.floating-search-dialog.dragging {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+    cursor: grabbing;
+}
+
+/* Enhanced search dialog header for better dragging */
+.search-dialog-header {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -ms-user-select: none;
+    touch-action: none; /* Prevent default touch behaviors */
+}
+
+/* Change cursor when dragging */
+.dragging .search-dialog-header {
+    cursor: grabbing;
+}
+
+.search-dialog-header .drag-handle {
+    margin-right: auto;
+    cursor: grab;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.search-dialog-header .drag-handle i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.search-option-toggle,
+.search-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--header-text);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.search-option-toggle:hover,
+.search-dialog-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.search-option-toggle.active {
+    opacity: 1;
+    color: #4CAF50;
+}
+
+/* Quick search button */
+.quick-search-button {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--header-bg);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 90;
+    transition: transform 0.2s, background-color 0.2s;
+    border: none;
     font-size: 18px;
-    max-width: 300px;
-    line-height: 1.5;
 }
 
-/* 确保拖放覆盖层在最上层 */
-.drop-overlay {
-    z-index: 1001;
+.quick-search-button:hover,
+.quick-search-button:active {
+    background-color: var(--mobile-toggle-active);
+    transform: scale(1.05);
+}
+
+/* Search result highlight animation */
+@keyframes blinkHighlight {
+    0%, 100% { background-color: rgba(255, 165, 0, 0.5); }
+    50% { background-color: rgba(255, 165, 0, 0.8); }
+}
+
+.search-highlight.blink {
+    animation: blinkHighlight 0.6s ease-in-out;
+}
+
+/* Animation for search dialog */
+@keyframes slideInSearch {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeInOptions {
+    from { opacity: 0; height: 0; }
+    to { opacity: 1; height: auto; }
 }

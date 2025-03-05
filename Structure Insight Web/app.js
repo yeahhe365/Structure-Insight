@@ -1,23 +1,29 @@
-const { useState, useEffect, useRef, useCallback } = React;
-const { LineNumbers, HighlightedContent, FileTree, Resizer } = window.Components;
-const { Storage, detectLanguage } = window.Utils;
+/**
+ * Structure Insight Web - Main Application
+ * Core application logic and state management
+ */
 
-// 主应用组件
+const { useState, useEffect, useRef, useCallback } = React;
+const { LineNumbers, HighlightedContent, FileTree, Resizer, ScrollToTop, SearchDialog } = window.Components;
+const { Storage, FileUtils, SearchUtils, DOMUtils } = window.Utils;
+
+// Main application component
 const App = () => {
-    // 从本地存储加载状态
+    // Load state from local storage
     const [isDarkTheme, setIsDarkTheme] = useState(Storage.load('theme', false));
     const [extractContent, setExtractContent] = useState(Storage.load('extractContent', true));
     const [fontSize, setFontSize] = useState(Storage.load('fontSize', 16));
     const [leftPanelWidth, setLeftPanelWidth] = useState(Storage.load('leftPanelWidth', 75));
-    const [mobileView, setMobileView] = useState('editor'); // 'editor' 或 'tree'
+    const [mobileView, setMobileView] = useState(Storage.load('mobileView', 'editor')); // 'editor' or 'tree'
     
-    // 新增：从本地存储加载内容状态
+    // Content state loaded from storage
     const [fileStructure, setFileStructure] = useState(Storage.load('fileStructure', ''));
     const [filesContent, setFilesContent] = useState(Storage.load('filesContent', []));
     const [treeData, setTreeData] = useState(Storage.load('treeData', []));
     const [currentContent, setCurrentContent] = useState(Storage.load('currentContent', ''));
     const [filePositions, setFilePositions] = useState(Storage.load('filePositions', {}));
     
+    // Processing state
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [maxProgress, setMaxProgress] = useState(100);
@@ -25,37 +31,86 @@ const App = () => {
     const [lineCount, setLineCount] = useState(0);
     const [charCount, setCharCount] = useState(0);
     const [lineHeight, setLineHeight] = useState(Math.round(fontSize * 1.5));
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     
-    // 新增的编辑相关状态
+    // Device and view state
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
+    
+    // Editing state
     const [isEditing, setIsEditing] = useState(false);
     const [currentEditingFile, setCurrentEditingFile] = useState(null);
     const [editedContent, setEditedContent] = useState({});
     
-    // 新增：记录最后打开的文件夹
+    // History and UI state
     const [lastOpenedFiles, setLastOpenedFiles] = useState(Storage.load('lastOpenedFiles', null));
-    
-    // 新增：拖放状态
     const [isDragging, setIsDragging] = useState(false);
-    // 新增：接收的文件对象
     const [receivedFiles, setReceivedFiles] = useState(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
     
+    // Mobile UI optimization state
+    const [scrollToTopVisible, setScrollToTopVisible] = useState(false);
+    const [isScrolling, setIsScrolling] = useState(false);
+    
+    // Search state
+    const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchMatches, setSearchMatches] = useState([]);
+    const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+    const [searchOptions, setSearchOptions] = useState({
+        caseSensitive: false,
+        useRegex: false,
+        wholeWord: false
+    });
+    
+    // References
     const containerRef = useRef(null);
     const editorScrollRef = useRef(null);
     const lineNumbersRef = useRef(null);
     const appRef = useRef(null);
+    const mobileToggleRef = useRef(null);
+    const highlightedContentRef = useRef(null);
 
-    // 检测设备大小
+    //=========================================================================
+    // EFFECTS & LIFECYCLE
+    //=========================================================================
+
+    // Detect device size and orientation
     useEffect(() => {
         const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
+            const newIsMobile = window.innerWidth <= 768;
+            const newIsLandscape = window.innerWidth > window.innerHeight;
+            
+            setIsMobile(newIsMobile);
+            setIsLandscape(newIsLandscape);
+            
+            // Special handling for tablets in landscape mode
+            if (newIsMobile && newIsLandscape && window.innerWidth > 480) {
+                document.documentElement.classList.add('tablet-landscape');
+            } else {
+                document.documentElement.classList.remove('tablet-landscape');
+            }
         };
         
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        
+        // Initial run
+        handleResize();
+        
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
+        };
     }, []);
     
-    // 新增：初始化行数和字符数（根据缓存的内容）
+    // Save current mobile view state
+    useEffect(() => {
+        if (isMobile) {
+            Storage.save('mobileView', mobileView);
+        }
+    }, [mobileView, isMobile]);
+    
+    // Initialize line and character count from cached content
     useEffect(() => {
         if (currentContent) {
             const lines = currentContent.split('\n').length;
@@ -66,7 +121,7 @@ const App = () => {
         }
     }, []);
     
-    // 保存状态到本地存储
+    // Save state to local storage
     useEffect(() => {
         Storage.save('theme', isDarkTheme);
     }, [isDarkTheme]);
@@ -83,7 +138,7 @@ const App = () => {
         Storage.save('leftPanelWidth', leftPanelWidth);
     }, [leftPanelWidth]);
     
-    // 新增：缓存文件内容状态
+    // Cache file content state
     useEffect(() => {
         if (fileStructure) Storage.save('fileStructure', fileStructure);
     }, [fileStructure]);
@@ -104,12 +159,12 @@ const App = () => {
         if (Object.keys(filePositions).length > 0) Storage.save('filePositions', filePositions);
     }, [filePositions]);
     
-    // 计算行高
+    // Calculate line height
     useEffect(() => {
         setLineHeight(Math.round(fontSize * 1.5));
     }, [fontSize]);
 
-    // 计算行数和字符数
+    // Calculate line and character count
     useEffect(() => {
         if (currentContent) {
             const lines = currentContent.split('\n').length;
@@ -122,46 +177,97 @@ const App = () => {
         }
     }, [currentContent]);
 
-    // 应用主题
+    // Apply theme
     useEffect(() => {
         document.body.className = isDarkTheme ? 'dark-theme' : '';
     }, [isDarkTheme]);
 
-    // 处理左右面板分割线拖动
-    const handleHorizontalResize = useCallback((clientX) => {
-        if (containerRef.current) {
-            const containerWidth = containerRef.current.offsetWidth;
-            const newLeftPanelWidth = (clientX / containerWidth) * 100;
-            // 限制最小宽度
-            if (newLeftPanelWidth > 20 && newLeftPanelWidth < 85) {
-                setLeftPanelWidth(newLeftPanelWidth);
-            }
-        }
-    }, []);
-    
-    // 处理上下面板分割线拖动
-    const handleVerticalResize = useCallback((clientY) => {
-        if (containerRef.current) {
-            const containerHeight = containerRef.current.offsetHeight;
-            const newTopPanelHeight = (clientY / containerHeight) * 100;
-            // 限制最小高度
-            if (newTopPanelHeight > 20 && newTopPanelHeight < 80) {
-                setLeftPanelWidth(newTopPanelHeight);
-            }
-        }
+    //=========================================================================
+    // PANEL RESIZING
+    //=========================================================================
+
+    // Handle panel resize update
+    const handleResizeUpdate = useCallback((newPercentage) => {
+        setLeftPanelWidth(newPercentage);
     }, []);
 
-    // 切换主题
+    //=========================================================================
+    // THEME AND UI CONTROLS
+    //=========================================================================
+
+    // Toggle theme
     const toggleTheme = () => {
         setIsDarkTheme(!isDarkTheme);
     };
 
-    // 切换移动视图
-    const toggleMobileView = () => {
-        setMobileView(mobileView === 'editor' ? 'tree' : 'editor');
+    // Handle mobile scroll
+    const handleMobileScroll = useCallback(() => {
+        if (!isMobile || !editorScrollRef.current) return;
+        
+        // Show/hide scroll to top button
+        const scrollPosition = editorScrollRef.current.scrollTop;
+        const showScrollButton = scrollPosition > 300;
+        
+        if (showScrollButton !== scrollToTopVisible) {
+            setScrollToTopVisible(showScrollButton);
+        }
+        
+        // Track scrolling state
+        if (!isScrolling) {
+            setIsScrolling(true);
+            setTimeout(() => setIsScrolling(false), 100);
+        }
+    }, [isMobile, scrollToTopVisible, isScrolling]);
+
+    // Mobile scroll event listener
+    useEffect(() => {
+        if (isMobile && editorScrollRef.current) {
+            const editorElement = editorScrollRef.current;
+            editorElement.addEventListener('scroll', handleMobileScroll);
+            
+            return () => {
+                editorElement.removeEventListener('scroll', handleMobileScroll);
+            };
+        }
+    }, [isMobile, editorScrollRef, handleMobileScroll]);
+
+    // Scroll to top method
+    const scrollToTop = () => {
+        if (editorScrollRef.current) {
+            editorScrollRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     };
 
-    // 字体大小调整
+    // Handle view toggle button click animation
+    const handleViewToggleClick = () => {
+        // Add animation class
+        if (mobileToggleRef.current) {
+            mobileToggleRef.current.classList.add('clicked');
+            setTimeout(() => {
+                if (mobileToggleRef.current) {
+                    mobileToggleRef.current.classList.remove('clicked');
+                }
+            }, 300);
+        }
+        
+        // Add animation effect
+        setIsTransitioning(true);
+        setTimeout(() => {
+            setMobileView(prev => prev === 'editor' ? 'tree' : 'editor');
+            // Delay ending animation state to match CSS transition time
+            setTimeout(() => setIsTransitioning(false), 300);
+        }, 50);
+    };
+
+    // Toggle mobile view - enhanced version with animation
+    const toggleMobileView = useCallback(() => {
+        handleViewToggleClick();
+    }, [mobileToggleRef]);
+
+    // Font size adjustment
     const increaseFontSize = () => {
         if (fontSize < 28) setFontSize(fontSize + 2);
     };
@@ -170,20 +276,24 @@ const App = () => {
         if (fontSize > 12) setFontSize(fontSize - 2);
     };
 
-    // 新增：通过File API读取本地文件夹
+    //=========================================================================
+    // FILE HANDLING FUNCTIONS
+    //=========================================================================
+
+    // Select local folder using File System Access API
     const handleLocalFolderSelect = () => {
-        // 使用showDirectoryPicker API代替input元素
+        // Use showDirectoryPicker API
         if (window.showDirectoryPicker) {
             showDirectoryPicker()
                 .then(async (dirHandle) => {
                     const files = [];
                     
-                    // 递归读取文件夹中的所有文件
+                    // Recursively read all files in the folder
                     async function readFilesRecursively(dirHandle, path = '') {
                         for await (const entry of dirHandle.values()) {
                             if (entry.kind === 'file') {
                                 const file = await entry.getFile();
-                                // 为文件添加相对路径信息
+                                // Add relative path information to file
                                 Object.defineProperty(file, 'webkitRelativePath', {
                                     value: path ? `${path}/${entry.name}` : entry.name
                                 });
@@ -197,7 +307,7 @@ const App = () => {
                     
                     try {
                         await readFilesRecursively(dirHandle, dirHandle.name);
-                        // 处理文件
+                        // Process files
                         handleReceivedFiles(files);
                     } catch (error) {
                         console.error('读取文件夹时出错:', error);
@@ -206,24 +316,24 @@ const App = () => {
                     }
                 })
                 .catch(error => {
-                    // 用户取消选择或发生错误
+                    // User canceled selection or error occurred
                     console.log('选择文件夹取消或失败:', error);
                 });
         } else {
-            // 浏览器不支持 File System Access API
+            // Browser doesn't support File System Access API
             setStatusMessage('您的浏览器不支持文件夹选择，请使用拖放功能');
             setTimeout(() => setStatusMessage('就绪'), 3000);
         }
     };
 
-    // 新增：处理接收到的文件
+    // Handle received files
     const handleReceivedFiles = (files) => {
         if (files && files.length > 0) {
-            // 保存文件引用以便刷新
+            // Save file reference for refresh
             setReceivedFiles(files);
             
             try {
-                // 保存一些基本信息到lastOpenedFiles
+                // Save basic info to lastOpenedFiles
                 const fileInfo = Array.from(files).map(file => ({
                     name: file.name,
                     path: file.webkitRelativePath || file.name,
@@ -237,12 +347,21 @@ const App = () => {
                 console.error('无法保存文件信息:', error);
             }
             
-            // 处理文件
+            // Process files
             processFiles(files);
+            
+            // Automatically switch to editor view on mobile
+            if (isMobile) {
+                setMobileView('editor');
+            }
         }
     };
 
-    // 新增：拖放处理函数
+    //=========================================================================
+    // DRAG AND DROP HANDLERS
+    //=========================================================================
+
+    // Drag enter handler
     const handleDragEnter = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -251,6 +370,7 @@ const App = () => {
         }
     };
 
+    // Drag over handler
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -259,13 +379,14 @@ const App = () => {
         }
     };
 
+    // Drag leave handler
     const handleDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
     };
 
-    // 修复版本：完全重写handleDrop函数，修复文件夹递归处理的问题
+    // Drop handler - fixed version to handle folder recursion properly
     const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -273,21 +394,21 @@ const App = () => {
         
         if (isEditing) return;
 
-        // 显示正在处理中的状态
+        // Show processing status
         setStatusMessage('正在处理拖放的文件...');
         
-        // 获取拖放的文件和项目
+        // Get dropped files and items
         const items = e.dataTransfer.items;
         const droppedFiles = e.dataTransfer.files;
         let allFiles = [];
         
-        // 检查是否有文件夹项目
+        // Check for folder items
         if (items && items.length > 0) {
-            // 使用更可靠的方法处理文件夹
+            // Use more reliable method to handle folders
             try {
                 const fileEntries = [];
                 
-                // 收集所有文件入口点
+                // Collect all file entries
                 for (let i = 0; i < items.length; i++) {
                     const item = items[i];
                     const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
@@ -297,20 +418,20 @@ const App = () => {
                     }
                 }
                 
-                // 如果有entry则使用entry API，否则使用files API
+                // Use entry API if available, otherwise use files API
                 if (fileEntries.length > 0) {
-                    // 递归读取所有文件
+                    // Recursively read all files
                     const readEntryContentsRecursively = async (entry, path = '') => {
                         return new Promise(async (resolve) => {
                             if (entry.isFile) {
                                 entry.file(file => {
-                                    // 添加相对路径以匹配webkitdirectory的行为
+                                    // Add relative path to match webkitdirectory behavior
                                     Object.defineProperty(file, 'webkitRelativePath', {
                                         value: path ? `${path}/${entry.name}` : entry.name
                                     });
                                     allFiles.push(file);
                                     resolve();
-                                }, () => resolve()); // 如果出错也要继续
+                                }, () => resolve()); // Continue even if error occurs
                             } else if (entry.isDirectory) {
                                 const dirReader = entry.createReader();
                                 const readEntries = async () => {
@@ -318,7 +439,7 @@ const App = () => {
                                         if (entries.length === 0) {
                                             resolve();
                                         } else {
-                                            // 使用Promise.all确保所有子条目都被处理
+                                            // Use Promise.all to ensure all entries are processed
                                             const promises = entries.map(childEntry => {
                                                 const childPath = path ? `${path}/${entry.name}` : entry.name;
                                                 return readEntryContentsRecursively(childEntry, childPath);
@@ -326,10 +447,10 @@ const App = () => {
                                             
                                             await Promise.all(promises);
                                             
-                                            // 继续读取更多条目（处理超过100个条目的情况）
+                                            // Continue reading more entries (handles >100 entries)
                                             readEntries();
                                         }
-                                    }, () => resolve()); // 如果出错也要继续
+                                    }, () => resolve()); // Continue even if error occurs
                                 };
                                 
                                 readEntries();
@@ -339,15 +460,15 @@ const App = () => {
                         });
                     };
                     
-                    // 并行处理所有顶级条目
+                    // Process all top-level entries in parallel
                     const entryPromises = fileEntries.map(entry => readEntryContentsRecursively(entry));
                     await Promise.all(entryPromises);
                 } else if (droppedFiles.length > 0) {
-                    // 退回到简单文件列表
+                    // Fall back to simple file list
                     allFiles = Array.from(droppedFiles);
                 }
                 
-                // 确保所有文件都有webkitRelativePath属性
+                // Ensure all files have webkitRelativePath property
                 allFiles = allFiles.map(file => {
                     if (!file.webkitRelativePath) {
                         Object.defineProperty(file, 'webkitRelativePath', {
@@ -357,7 +478,7 @@ const App = () => {
                     return file;
                 });
                 
-                // 处理所有收集到的文件
+                // Process all collected files
                 if (allFiles.length > 0) {
                     handleReceivedFiles(allFiles);
                 } else {
@@ -370,7 +491,7 @@ const App = () => {
                 setTimeout(() => setStatusMessage('就绪'), 2000);
             }
         } else if (droppedFiles.length > 0) {
-            // 直接处理文件列表
+            // Process file list directly
             handleReceivedFiles(Array.from(droppedFiles));
         } else {
             setStatusMessage('没有检测到文件或文件夹');
@@ -378,7 +499,11 @@ const App = () => {
         }
     };
 
-    // 处理文件
+    //=========================================================================
+    // FILE PROCESSING FUNCTIONS
+    //=========================================================================
+
+    // Process files
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         
@@ -386,26 +511,26 @@ const App = () => {
         setProcessing(true);
         setStatusMessage('处理中...');
         
-        // 转换FileList为数组
+        // Convert FileList to array
         const filesArray = Array.from(files);
         setMaxProgress(filesArray.length);
         
-        // 先处理目录结构
-        const structure = buildFileStructure(filesArray);
+        // First process directory structure
+        const structure = FileUtils.buildFileStructure(filesArray);
         setFileStructure(structure);
         
-        // 创建初始内容
+        // Create initial content
         let fullContent = `文件结构:\n${structure}\n\n`;
         if (extractContent) {
             fullContent += "文件内容:\n";
         }
         setCurrentContent(fullContent);
         
-        // 构建树形数据
-        const tree = buildTreeData(filesArray);
+        // Build tree data
+        const tree = FileUtils.buildTreeData(filesArray);
         setTreeData(tree);
         
-        // 处理每个文件
+        // Process each file
         const fileContents = [];
         const positions = {};
         let currentPosition = fullContent.length;
@@ -439,22 +564,21 @@ const App = () => {
                 file.name.endsWith('.go')) {
                 
                 try {
-                    // 读取文件内容
-                    const content = await readFileContent(file);
+                    // Read file content
+                    const content = await FileUtils.readFileContent(file);
                     fileContents.push({ name: file.name, content });
                     
-                    // 添加到主内容
+                    // Add to main content
                     if (extractContent) {
                         const separator = `${'='.repeat(40)}\n文件名: ${file.name}\n${'-'.repeat(71)}\n`;
                         
-                        // 记录当前文件在全局内容中的位置
+                        // Record current file position in global content
                         positions[file.name] = currentPosition;
-                        currentPosition += separator.length + content.length + 2; // 加上分隔符、内容和换行符长度
+                        currentPosition += separator.length + content.length + 2; // Add separator, content, and newlines
                         
-                        // 修复：使用函数式更新来确保最新的状态，并正确处理包含特殊字符的内容
+                        // Use functional update to ensure latest state
                         setCurrentContent(prev => {
                             const newContent = prev + separator + content + "\n\n";
-                            // 避免使用拼接方式，可能导致特殊字符的问题
                             return newContent;
                         });
                     }
@@ -464,7 +588,7 @@ const App = () => {
                     updateTreeNodeStatus(file.name, 'error');
                 }
             } else {
-                // 跳过非文本文件
+                // Skip non-text files
                 updateTreeNodeStatus(file.name, 'skipped');
             }
             
@@ -476,13 +600,13 @@ const App = () => {
         setFilePositions(positions);
         setProcessing(false);
         
-        // 更新状态栏信息（使用最新的行数和字符数）
+        // Update status bar info with latest line and character count
         setTimeout(() => {
             setStatusMessage(`就绪 - 共 ${document.querySelectorAll('.line-numbers > div').length} 行, ${currentContent.length} 字符`);
         }, 100);
     };
 
-    // 更新树节点状态
+    // Update tree node status
     const updateTreeNodeStatus = (fileName, status) => {
         setTreeData(prevTree => {
             if (!prevTree || !Array.isArray(prevTree)) {
@@ -510,157 +634,11 @@ const App = () => {
         });
     };
 
-    // 读取文件内容
-    const readFileContent = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = (e) => reject(new Error('File read error'));
-            reader.readAsText(file);
-        });
-    };
+    //=========================================================================
+    // CONTENT MANAGEMENT FUNCTIONS
+    //=========================================================================
 
-    // 构建文件结构 - 改进版本：正确显示文件夹结构
-    const buildFileStructure = (files) => {
-        if (!files || files.length === 0) {
-            return "无文件";
-        }
-        
-        // 构建树结构
-        const root = { name: files[0]?.webkitRelativePath?.split('/')[0] || 'Files', children: {}, isFolder: true };
-        
-        // 处理所有文件，构建目录树
-        files.forEach(file => {
-            const path = file.webkitRelativePath || file.name;
-            const parts = path.split('/');
-            
-            let current = root;
-            
-            // 创建文件路径
-            for (let i = 1; i < parts.length; i++) {
-                const part = parts[i];
-                const isFile = i === parts.length - 1;
-                
-                if (!current.children[part]) {
-                    current.children[part] = { 
-                        name: part, 
-                        children: {}, 
-                        isFolder: !isFile 
-                    };
-                }
-                
-                current = current.children[part];
-            }
-        });
-        
-        // 生成格式化输出
-        const result = [];
-        result.push(root.name);
-        
-        // 递归生成结构文本
-        const generateStructure = (node, prefix = '', isLast = true) => {
-            // 将children对象转换为数组并排序（文件夹优先）
-            const childrenArray = Object.values(node.children).sort((a, b) => {
-                // 文件夹优先
-                if (a.isFolder !== b.isFolder) {
-                    return a.isFolder ? -1 : 1;
-                }
-                // 按名称排序
-                return a.name.localeCompare(b.name);
-            });
-            
-            // 处理每个子节点
-            childrenArray.forEach((child, index) => {
-                const isChildLast = index === childrenArray.length - 1;
-                const childPrefix = `${prefix}${isLast ? '    ' : '│   '}`;
-                const lineSymbol = isChildLast ? '└── ' : '├── ';
-                
-                result.push(`${prefix}${lineSymbol}${child.name}`);
-                
-                if (child.isFolder && Object.keys(child.children).length > 0) {
-                    generateStructure(child, childPrefix, isChildLast);
-                }
-            });
-        };
-        
-        generateStructure(root);
-        
-        return result.join('\n');
-    };
-
-    // 构建树形数据
-    const buildTreeData = (files) => {
-        if (!files || files.length === 0) {
-            return [];
-        }
-        
-        const tree = [];
-        const folders = {};
-        
-        // 获取根文件夹名或使用"Files"作为默认值
-        const rootFolderName = files[0]?.webkitRelativePath?.split('/')[0] || 'Files';
-        folders[rootFolderName] = {
-            name: rootFolderName,
-            path: rootFolderName,
-            isDirectory: true,
-            children: []
-        };
-        
-        tree.push(folders[rootFolderName]);
-        
-        // 处理每个文件
-        files.forEach(file => {
-            const path = file.webkitRelativePath || file.name;
-            const parts = path.split('/');
-            
-            // 如果是没有文件夹结构的文件，直接添加到根目录
-            if (parts.length === 1) {
-                tree.push({
-                    name: file.name,
-                    path: file.name,
-                    isDirectory: false,
-                    file
-                });
-                return;
-            }
-            
-            // 创建文件夹结构
-            let currentPath = '';
-            let currentFolder = folders[rootFolderName];
-            
-            for (let i = 0; i < parts.length; i++) {
-                const part = parts[i];
-                currentPath += (i > 0 ? '/' : '') + part;
-                
-                // 如果是最后一部分，则为文件
-                if (i === parts.length - 1) {
-                    currentFolder.children.push({
-                        name: part,
-                        path: currentPath,
-                        isDirectory: false,
-                        file
-                    });
-                }
-                // 否则是文件夹
-                else {
-                    if (!folders[currentPath]) {
-                        folders[currentPath] = {
-                            name: part,
-                            path: currentPath,
-                            isDirectory: true,
-                            children: []
-                        };
-                        currentFolder.children.push(folders[currentPath]);
-                    }
-                    currentFolder = folders[currentPath];
-                }
-            }
-        });
-        
-        return tree;
-    };
-
-    // 复制内容
+    // Copy content
     const copyContent = () => {
         if (!currentContent) return;
         
@@ -677,7 +655,7 @@ const App = () => {
             });
     };
 
-    // 保存内容
+    // Save content
     const saveContent = () => {
         if (!currentContent) return;
         
@@ -694,7 +672,7 @@ const App = () => {
         }, 100);
     };
 
-    // 重置内容
+    // Reset content
     const resetContent = () => {
         setFileStructure('');
         setFilesContent([]);
@@ -709,7 +687,12 @@ const App = () => {
         setCurrentEditingFile(null);
         setEditedContent({});
         
-        // 清除缓存
+        // Clear search state
+        clearSearchHighlights();
+        setSearchMatches([]);
+        setCurrentMatchIndex(0);
+        
+        // Clear cache
         Storage.remove('fileStructure');
         Storage.remove('filesContent');
         Storage.remove('treeData');
@@ -717,7 +700,7 @@ const App = () => {
         Storage.remove('filePositions');
     };
 
-    // 取消处理
+    // Cancel processing
     const cancelProcessing = () => {
         if (!processing) return;
         
@@ -728,36 +711,58 @@ const App = () => {
         }, 2000);
     };
 
-    // 文件树选择处理
+    //=========================================================================
+    // FILE TREE INTERACTION
+    //=========================================================================
+
+    // File tree selection handler
     const handleFileTreeSelect = (node) => {
         if (!node || !node.name) return;
         
-        // 退出编辑模式 - 不弹窗
+        // Exit edit mode without dialog
         if (isEditing) {
             setIsEditing(false);
             setCurrentEditingFile(null);
         }
         
         if (filePositions[node.name]) {
-            // 如果在移动端，切换到编辑器视图
+            // Switch to editor view on mobile
             if (isMobile) {
-                setMobileView('editor');
+                // Trigger transition animation
+                setIsTransitioning(true);
+                
+                // Delay to allow CSS transition
+                setTimeout(() => {
+                    setMobileView('editor');
+                    
+                    // Delay ending animation state
+                    setTimeout(() => setIsTransitioning(false), 300);
+                }, 50);
             }
             
-            // 滚动到文件位置
+            // Scroll to file position
             const position = filePositions[node.name];
             const targetElement = editorScrollRef.current;
             
             if (targetElement) {
-                // 计算大致的滚动位置
+                // Calculate approximate scroll position
                 const textBeforePosition = currentContent.substring(0, position);
                 const linesBefore = textBeforePosition.split('\n').length;
                 
-                // 估算滚动位置
+                // Estimate scroll position
                 const scrollPosition = linesBefore * lineHeight;
-                targetElement.scrollTop = scrollPosition;
                 
-                // 更新状态信息
+                // Use smooth scrolling on mobile for better experience
+                if (isMobile) {
+                    targetElement.scrollTo({
+                        top: scrollPosition,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    targetElement.scrollTop = scrollPosition;
+                }
+                
+                // Update status message
                 setStatusMessage(`已跳转到: ${node.name}`);
                 setTimeout(() => {
                     setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
@@ -766,17 +771,17 @@ const App = () => {
         }
     };
 
-    // 文件删除处理
+    // File deletion handler
     const handleFileDelete = (node) => {
         if (!node || !node.name) return;
         
-        // 如果文件正在编辑，先退出编辑
+        // If file is being edited, exit edit mode
         if (isEditing && currentEditingFile === node.name) {
             setIsEditing(false);
             setCurrentEditingFile(null);
         }
         
-        // 从树数据中移除
+        // Remove from tree data
         setTreeData(prevTree => {
             if (!prevTree || !Array.isArray(prevTree)) {
                 return prevTree;
@@ -798,10 +803,10 @@ const App = () => {
             return removeNode(prevTree);
         });
         
-        // 从文件内容中移除
+        // Remove from file contents
         setFilesContent(prev => prev.filter(f => f.name !== node.name));
         
-        // 更新文本内容
+        // Update text content
         if (filePositions[node.name] && extractContent) {
             const beforePos = currentContent.substring(0, filePositions[node.name]);
             const afterStartIndex = currentContent.indexOf('\n\n', filePositions[node.name]);
@@ -811,7 +816,7 @@ const App = () => {
                 
                 setCurrentContent(beforePos + afterPos);
                 
-                // 更新文件位置
+                // Update file positions
                 const newPositions = {};
                 const removedLength = afterStart - filePositions[node.name];
                 
@@ -829,32 +834,36 @@ const App = () => {
             }
         }
         
-        // 更新状态信息
+        // Update status info
         setStatusMessage(`已移除: ${node.name}`);
         setTimeout(() => {
             setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
         }, 2000);
     };
 
-    // 处理文件编辑
+    //=========================================================================
+    // FILE EDITING FUNCTIONS
+    //=========================================================================
+
+    // Handle file content editing
     const handleEditContent = (fileName, newContent, startEditing = false) => {
-        // 如果是开始编辑
+        // If starting edit mode
         if (startEditing) {
             setIsEditing(true);
             setCurrentEditingFile(fileName);
             return;
         }
         
-        // 如果是取消编辑
+        // If canceling edit
         if (fileName === null) {
             setIsEditing(false);
             setCurrentEditingFile(null);
             return;
         }
         
-        // 如果是保存编辑
+        // If saving edit
         if (newContent !== null) {
-            // 更新文件内容数组
+            // Update file content array
             setFilesContent(prev => 
                 prev.map(file => 
                     file.name === fileName 
@@ -863,24 +872,24 @@ const App = () => {
                 )
             );
             
-            // 更新完整内容字符串
+            // Update complete content string
             if (filePositions[fileName]) {
                 const position = filePositions[fileName];
                 
-                // 找到文件内容的开始和结束位置
-                const start = currentContent.indexOf('-'.repeat(71) + '\n', position) + 72; // 71个'-'加换行
+                // Find file content start and end positions
+                const start = currentContent.indexOf('-'.repeat(71) + '\n', position) + 72; // 71 dashes plus newline
                 const end = currentContent.indexOf('\n\n', start);
                 
                 if (start !== -1 && end !== -1) {
                     const oldContent = currentContent.substring(start, end);
                     const lengthDifference = newContent.length - oldContent.length;
                     
-                    // 更新主内容
+                    // Update main content
                     const before = currentContent.substring(0, start);
                     const after = currentContent.substring(end);
                     setCurrentContent(before + newContent + after);
                     
-                    // 更新后续文件的位置
+                    // Update positions of subsequent files
                     const updatedPositions = { ...filePositions };
                     Object.keys(updatedPositions).forEach(name => {
                         if (updatedPositions[name] > position + oldContent.length) {
@@ -889,11 +898,11 @@ const App = () => {
                     });
                     setFilePositions(updatedPositions);
                     
-                    // 退出编辑模式
+                    // Exit edit mode
                     setIsEditing(false);
                     setCurrentEditingFile(null);
                     
-                    // 更新状态信息
+                    // Update status info
                     setStatusMessage(`已保存修改: ${fileName}`);
                     setTimeout(() => {
                         setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
@@ -903,11 +912,11 @@ const App = () => {
         }
     };
 
-    // 编辑特定文件
+    // Edit specific file
     const editFile = (fileName) => {
         if (!fileName || isEditing) return;
         
-        // 查找文件内容
+        // Find file content
         const fileData = filesContent.find(f => f.name === fileName);
         if (fileData) {
             setCurrentEditingFile(fileName);
@@ -915,74 +924,280 @@ const App = () => {
         }
     };
 
-    // 打开搜索对话框
+    //=========================================================================
+    // SEARCH FUNCTIONS
+    //=========================================================================
+
+    // Open search dialog
     const openSearchDialog = () => {
-        const searchText = prompt("请输入搜索内容:");
-        if (searchText) {
-            const position = currentContent.indexOf(searchText);
-            if (position !== -1) {
-                // 切换到编辑器视图（如果在移动端）
-                if (isMobile) {
-                    setMobileView('editor');
-                }
-                
-                // 计算滚动位置
-                const textBeforePosition = currentContent.substring(0, position);
-                const linesBefore = textBeforePosition.split('\n').length;
-                
-                // 估算滚动位置
-                const scrollPosition = linesBefore * lineHeight;
-                
-                // 滚动到位置
-                if (editorScrollRef.current) {
-                    editorScrollRef.current.scrollTop = scrollPosition;
-                    
-                    // 更新状态信息
-                    setStatusMessage(`找到: "${searchText.substring(0, 20)}${searchText.length > 20 ? '...' : ''}"`);
-                    setTimeout(() => {
-                        setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
-                    }, 2000);
-                }
-            } else {
-                alert("未找到指定内容。");
-            }
+        if (!currentContent) return;
+        
+        // Ensure editor view on mobile
+        if (isMobile && mobileView !== 'editor') {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                setMobileView('editor');
+                setTimeout(() => {
+                    setIsTransitioning(false);
+                    setIsSearchDialogOpen(true);
+                }, 300);
+            }, 50);
+        } else {
+            setIsSearchDialogOpen(true);
         }
     };
+    
+    // Close search dialog
+    const closeSearchDialog = () => {
+        setIsSearchDialogOpen(false);
+    };
+    
+    // Clear search highlights
+    const clearSearchHighlights = () => {
+        // Skip if not in DOM
+        if (!editorScrollRef.current) return;
+        
+        // Use more efficient approach to remove all highlights
+        const highlights = editorScrollRef.current.querySelectorAll('.search-highlight');
+        
+        if (highlights.length === 0) return;
+        
+        // Optimize: batch DOM operations
+        const fragment = document.createDocumentFragment();
+        const toReplace = [];
+        
+        highlights.forEach(el => {
+            toReplace.push({
+                element: el,
+                text: el.textContent
+            });
+        });
+        
+        // Perform replacements
+        toReplace.forEach(item => {
+            const parent = item.element.parentNode;
+            if (parent) {
+                // Replace highlight element with text node
+                parent.replaceChild(document.createTextNode(item.text), item.element);
+                // Normalize text nodes, merging adjacent ones
+                parent.normalize();
+            }
+        });
+    };
+    
+    // Perform search with optimizations
+    const performSearch = (query, options = {}) => {
+        if (!query || !currentContent) {
+            setSearchMatches([]);
+            setCurrentMatchIndex(0);
+            clearSearchHighlights();
+            return;
+        }
+        
+        // Save search parameters
+        setSearchQuery(query);
+        setSearchOptions(options);
+        
+        // Prepare search content and matches
+        const content = currentContent;
+        let matches = [];
+        
+        try {
+            // Find all matches using utility function
+            matches = SearchUtils.performSearch(content, query, options);
+        } catch (error) {
+            console.error('Search error:', error);
+            setStatusMessage(`搜索错误: ${error.message}`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
+            return;
+        }
+        
+        // Update search results
+        setSearchMatches(matches);
+        
+        // If matches found, highlight and scroll to first match
+        if (matches.length > 0) {
+            setCurrentMatchIndex(0);
+            highlightMatches(matches, 0);
+            scrollToMatch(matches[0]);
+            setStatusMessage(`找到 ${matches.length} 个匹配结果`);
+        } else {
+            setCurrentMatchIndex(-1);
+            clearSearchHighlights();
+            setStatusMessage(`未找到匹配项: "${query}"`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
+        }
+    };
+    
+    // Highlight matches - optimized version
+    const highlightMatches = (matches, currentIndex) => {
+        if (!editorScrollRef.current || !matches.length) return;
+        
+        // First clear previous highlights
+        clearSearchHighlights();
+        
+        // Use DOM interface to add highlights
+        const range = document.createRange();
+        
+        // Batch processing of highlights
+        const batchSize = 50; // Process 50 matches at a time to avoid blocking UI
+        let processed = 0;
+        
+        const processNextBatch = () => {
+            const startIdx = processed;
+            const endIdx = Math.min(processed + batchSize, matches.length);
+            
+            for (let i = startIdx; i < endIdx; i++) {
+                const match = matches[i];
+                
+                // Convert match position to DOM node context
+                DOMUtils.findTextNodes(editorScrollRef.current, match.start, match.end, (textNode, startOffset, endOffset) => {
+                    try {
+                        range.setStart(textNode, startOffset);
+                        range.setEnd(textNode, endOffset);
+                        
+                        // Create highlight element
+                        const highlight = document.createElement('span');
+                        highlight.className = `search-highlight ${i === currentIndex ? 'current' : ''}`;
+                        
+                        // Wrap text with highlight element
+                        range.surroundContents(highlight);
+                    } catch (e) {
+                        // Ignore highlighting errors, usually due to DOM structure changes
+                    }
+                });
+            }
+            
+            processed = endIdx;
+            
+            // If more matches remain, schedule next batch
+            if (processed < matches.length) {
+                requestAnimationFrame(processNextBatch);
+            }
+        };
+        
+        // Start batch processing
+        processNextBatch();
+    };
+    
+    // Scroll to match
+    const scrollToMatch = (match) => {
+        if (!match || !editorScrollRef.current) return;
+        
+        // Calculate approximate line number of match
+        const textBeforeMatch = currentContent.substring(0, match.start);
+        const linesBefore = textBeforeMatch.split('\n').length;
+        
+        // Estimate scroll position - center the match in view
+        const scrollPosition = linesBefore * lineHeight - editorScrollRef.current.clientHeight / 3;
+        
+        // Scroll to position
+        editorScrollRef.current.scrollTo({
+            top: Math.max(0, scrollPosition),
+            behavior: 'smooth'
+        });
+        
+        // Enhanced visual feedback
+        setTimeout(() => {
+            const currentHighlight = editorScrollRef.current.querySelector('.search-highlight.current');
+            if (currentHighlight) {
+                currentHighlight.classList.add('blink');
+                setTimeout(() => {
+                    if (currentHighlight) {
+                        currentHighlight.classList.remove('blink');
+                    }
+                }, 600);
+            }
+        }, 300);
+    };
+    
+    // Go to next match
+    const goToNextMatch = () => {
+        const { length } = searchMatches;
+        if (length === 0) return;
+        
+        const newIndex = (currentMatchIndex + 1) % length;
+        setCurrentMatchIndex(newIndex);
+        highlightMatches(searchMatches, newIndex);
+        scrollToMatch(searchMatches[newIndex]);
+    };
+    
+    // Go to previous match
+    const goToPreviousMatch = () => {
+        const { length } = searchMatches;
+        if (length === 0) return;
+        
+        const newIndex = (currentMatchIndex - 1 + length) % length;
+        setCurrentMatchIndex(newIndex);
+        highlightMatches(searchMatches, newIndex);
+        scrollToMatch(searchMatches[newIndex]);
+    };
+    
+    // Clear search state when content changes
+    useEffect(() => {
+        if (searchMatches.length > 0) {
+            clearSearchHighlights();
+            setSearchMatches([]);
+            setCurrentMatchIndex(0);
+        }
+    }, [currentContent]);
 
-    // 设置键盘快捷键
+    //=========================================================================
+    // KEYBOARD SHORTCUTS
+    //=========================================================================
+
+    // Set up keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e) => {
-            // Ctrl+F 搜索
+            // Ctrl+F Search
             if (e.ctrlKey && e.key === 'f') {
                 e.preventDefault();
                 openSearchDialog();
             }
             
-            // Ctrl+S 保存
+            // Ctrl+S Save
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 saveContent();
             }
             
-            // Ctrl+C 复制
+            // Ctrl+C Copy
             if (e.ctrlKey && e.key === 'c' && !window.getSelection().toString()) {
-                // 只在没有选中文本的情况下触发全局复制
+                // Only trigger global copy if no text is selected
                 copyContent();
             }
             
-            // Esc 退出编辑模式
+            // Esc Exit edit mode
             if (e.key === 'Escape' && isEditing) {
                 e.preventDefault();
                 setIsEditing(false);
                 setCurrentEditingFile(null);
             }
+            
+            // F3 Find next
+            if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && searchMatches.length > 0) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    goToPreviousMatch();
+                } else {
+                    goToNextMatch();
+                }
+            }
         };
         
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentContent, isEditing, processing]);
+    }, [currentContent, isEditing, processing, searchMatches, currentMatchIndex]);
 
-    // 同步行号与内容滚动 - 改进版本，使用 ResizeObserver
+    //=========================================================================
+    // SYNCHRONIZATION AND EVENT LISTENERS
+    //=========================================================================
+
+    // Sync line numbers with content scrolling
     useEffect(() => {
         const syncScroll = () => {
             if (editorScrollRef.current && lineNumbersRef.current) {
@@ -992,15 +1207,15 @@ const App = () => {
         
         const editorElement = editorScrollRef.current;
         if (editorElement) {
-            // 添加滚动事件监听器
+            // Add scroll event listener
             editorElement.addEventListener('scroll', syncScroll);
             
-            // 使用 ResizeObserver 监听大小变化
+            // Use ResizeObserver to monitor size changes
             if (typeof ResizeObserver !== 'undefined') {
                 const observer = new ResizeObserver(syncScroll);
                 observer.observe(editorElement);
                 
-                // 也监听容器大小变化
+                // Also observe container size changes
                 if (containerRef.current) {
                     observer.observe(containerRef.current);
                 }
@@ -1010,7 +1225,7 @@ const App = () => {
                     observer.disconnect();
                 };
             } else {
-                // 备用方案：监听 window resize
+                // Fallback: listen to window resize
                 window.addEventListener('resize', syncScroll);
                 return () => {
                     editorElement.removeEventListener('scroll', syncScroll);
@@ -1020,15 +1235,15 @@ const App = () => {
         }
     }, [editorScrollRef.current, lineNumbersRef.current, containerRef.current]);
     
-    // 分隔线调整后强制同步滚动
+    // Force sync scrolling after divider adjustment
     useEffect(() => {
-        // 强制同步滚动
+        // Force sync scrolling
         if (editorScrollRef.current && lineNumbersRef.current) {
             lineNumbersRef.current.scrollTop = editorScrollRef.current.scrollTop;
         }
     }, [leftPanelWidth]);
 
-    // 设置拖放事件监听器
+    // Set up drag and drop event listeners
     useEffect(() => {
         const app = document.getElementById('app');
         if (app) {
@@ -1046,24 +1261,85 @@ const App = () => {
         }
     }, [isEditing]);
 
-    // 移动端类名
+    // Check if scroll-to-top button should be shown when content length changes
+    useEffect(() => {
+        if (isMobile && editorScrollRef.current) {
+            const scrollHeight = editorScrollRef.current.scrollHeight;
+            const clientHeight = editorScrollRef.current.clientHeight;
+            
+            // Only enable scroll button when content is long enough
+            setScrollToTopVisible(scrollHeight > clientHeight * 1.5);
+        }
+    }, [isMobile, currentContent, editorScrollRef]);
+
+    //=========================================================================
+    // RENDERING HELPERS
+    //=========================================================================
+
+    // Mobile class names
     const getLeftPanelClassNames = () => {
         if (!isMobile) return '';
-        return mobileView === 'editor' ? 'mobile-full' : 'mobile-hidden';
+        const classNames = [
+            mobileView === 'editor' ? 'mobile-full' : 'mobile-hidden'
+        ];
+        if (isTransitioning) classNames.push('mobile-transition');
+        return classNames.join(' ');
     };
     
     const getRightPanelClassNames = () => {
         if (!isMobile) return '';
-        return mobileView === 'tree' ? 'mobile-full' : 'mobile-hidden';
+        const classNames = [
+            mobileView === 'tree' ? 'mobile-full' : 'mobile-hidden'
+        ];
+        if (isTransitioning) classNames.push('mobile-transition');
+        return classNames.join(' ');
     };
+
+    // Special handling for tablet devices
+    const isTabletLandscape = isMobile && isLandscape && window.innerWidth > 480;
+
+    //=========================================================================
+    // MAIN RENDER
+    //=========================================================================
 
     return (
         <>
-            {/* 修改后的标题栏：整合按钮到标题行 */}
+            {/* Header with integrated buttons */}
             <div className="app-header">
                 <div className="app-logo">
                     <img src="favicon_io/android-chrome-192x192.png" alt="Structure Insight Logo" />
                     <span>Structure Insight Web</span>
+                    
+                    {/* Mobile device controls in title bar */}
+                    {isMobile && (
+                        <div className="mobile-title-controls">
+                            <button 
+                                className="header-button font-size-button" 
+                                onClick={decreaseFontSize}
+                                title="减小字体"
+                            >
+                                <i className="fas fa-minus"></i>
+                            </button>
+                            <span className="font-size-display-mobile">{fontSize}</span>
+                            <button 
+                                className="header-button font-size-button" 
+                                onClick={increaseFontSize}
+                                title="增大字体"
+                            >
+                                <i className="fas fa-plus"></i>
+                            </button>
+                            
+                            <button 
+                                className="header-button theme-button" 
+                                onClick={toggleTheme}
+                                title="在深色和浅色主题之间切换"
+                            >
+                                {isDarkTheme ? 
+                                    <i className="fas fa-sun"></i> : 
+                                    <i className="fas fa-moon"></i>}
+                            </button>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="header-buttons">
@@ -1074,6 +1350,7 @@ const App = () => {
                         disabled={isEditing}
                     >
                         <i className="fas fa-folder-open"></i>
+                        {isMobile && <span className="tooltip">选择文件夹</span>}
                     </button>
                     <button 
                         className="header-button" 
@@ -1082,6 +1359,7 @@ const App = () => {
                         title="复制全部内容到剪贴板"
                     >
                         <i className="fas fa-copy"></i>
+                        {isMobile && <span className="tooltip">复制内容</span>}
                     </button>
                     <button 
                         className="header-button" 
@@ -1090,6 +1368,7 @@ const App = () => {
                         title="将内容保存为文本文件"
                     >
                         <i className="fas fa-save"></i>
+                        {isMobile && <span className="tooltip">保存文件</span>}
                     </button>
                     <button 
                         className="header-button" 
@@ -1098,6 +1377,7 @@ const App = () => {
                         title="清空当前结果并重置"
                     >
                         <i className="fas fa-redo"></i>
+                        {isMobile && <span className="tooltip">重置</span>}
                     </button>
                     <button 
                         className="header-button" 
@@ -1106,6 +1386,7 @@ const App = () => {
                         title="取消当前处理"
                     >
                         <i className="fas fa-stop"></i>
+                        {isMobile && <span className="tooltip">取消</span>}
                     </button>
                     <button
                         className="header-button"
@@ -1114,50 +1395,55 @@ const App = () => {
                         title="搜索内容 (Ctrl+F)"
                     >
                         <i className="fas fa-search"></i>
+                        {isMobile && <span className="tooltip">搜索</span>}
                     </button>
                     
                     <div className="header-controls">
-                        <div className="checkbox-container">
-                            <input 
-                                type="checkbox" 
-                                className="checkbox" 
-                                id="extractContent" 
-                                checked={extractContent} 
-                                onChange={(e) => setExtractContent(e.target.checked)}
-                                disabled={processing || isEditing}
-                            />
-                            <label htmlFor="extractContent">提取文件内容</label>
-                        </div>
+                        {/* Extract content toggle button */}
+                        <button 
+                            className={`header-button extract-content-button ${extractContent ? 'active' : ''}`}
+                            onClick={() => setExtractContent(!extractContent)}
+                            disabled={processing || isEditing}
+                            title={extractContent ? "关闭文件内容提取" : "开启文件内容提取"}
+                        >
+                            <i className="fas fa-code"></i>
+                            {isMobile && <span className="tooltip">{extractContent ? "关闭提取" : "开启提取"}</span>}
+                        </button>
                         
-                        {/* 字体大小控制 */}
-                        <div className="font-size-controls">
-                            <button 
-                                className="header-button font-size-button" 
-                                onClick={decreaseFontSize}
-                                title="减小字体"
-                            >
-                                <i className="fas fa-minus"></i>
-                            </button>
-                            <span className="font-size-display">{fontSize}px</span>
-                            <button 
-                                className="header-button font-size-button" 
-                                onClick={increaseFontSize}
-                                title="增大字体"
-                            >
-                                <i className="fas fa-plus"></i>
-                            </button>
-                        </div>
+                        {/* Font size controls - desktop only */}
+                        {!isMobile && (
+                            <div className="font-size-controls">
+                                <button 
+                                    className="header-button font-size-button" 
+                                    onClick={decreaseFontSize}
+                                    title="减小字体"
+                                >
+                                    <i className="fas fa-minus"></i>
+                                </button>
+                                <span className="font-size-display">{fontSize}px</span>
+                                <button 
+                                    className="header-button font-size-button" 
+                                    onClick={increaseFontSize}
+                                    title="增大字体"
+                                >
+                                    <i className="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        )}
                     </div>
                     
-                    <button 
-                        className="header-button theme-button" 
-                        onClick={toggleTheme}
-                        title="在深色和浅色主题之间切换"
-                    >
-                        {isDarkTheme ? 
-                            <i className="fas fa-sun"></i> : 
-                            <i className="fas fa-moon"></i>}
-                    </button>
+                    {/* Theme button - desktop only */}
+                    {!isMobile && (
+                        <button 
+                            className="header-button theme-button" 
+                            onClick={toggleTheme}
+                            title="在深色和浅色主题之间切换"
+                        >
+                            {isDarkTheme ? 
+                                <i className="fas fa-sun"></i> : 
+                                <i className="fas fa-moon"></i>}
+                        </button>
+                    )}
                 </div>
             </div>
             
@@ -1167,7 +1453,7 @@ const App = () => {
             >
                 <div 
                     className={`left-panel ${getLeftPanelClassNames()}`} 
-                    style={!isMobile ? { width: `${leftPanelWidth}%` } : {}}
+                    style={!isMobile || isTabletLandscape ? { width: `${leftPanelWidth}%` } : {}}
                 >
                     <div className="code-editor">
                         <LineNumbers 
@@ -1204,10 +1490,10 @@ const App = () => {
                     </div>
                 </div>
                 
-                {/* 可拖动分隔线 */}
-                {!isMobile && (
+                {/* Resizable divider - only for non-mobile or tablet landscape */}
+                {(!isMobile || isTabletLandscape) && (
                     <Resizer 
-                        onResize={handleHorizontalResize} 
+                        onResize={handleResizeUpdate} 
                         position={leftPanelWidth}
                         isVertical={true}
                     />
@@ -1215,7 +1501,7 @@ const App = () => {
                 
                 <div 
                     className={`right-panel ${getRightPanelClassNames()}`}
-                    style={!isMobile ? { width: `${100 - leftPanelWidth}%` } : {}}
+                    style={!isMobile || isTabletLandscape ? { width: `${100 - leftPanelWidth}%` } : {}}
                 >
                     <FileTree 
                         nodes={treeData} 
@@ -1228,11 +1514,14 @@ const App = () => {
             <div className="status-bar">
                 {processing ? statusMessage : `${statusMessage} - 共 ${lineCount} 行, ${charCount} 字符`}
                 {isEditing && !processing && " - 编辑模式"}
+                {searchMatches.length > 0 && !processing && !isEditing && 
+                    ` - 找到 ${searchMatches.length} 个匹配项 (${currentMatchIndex + 1}/${searchMatches.length})`}
             </div>
             
-            {/* 移动端视图切换按钮 */}
-            {isMobile && (
+            {/* Mobile view toggle button */}
+            {isMobile && !isTabletLandscape && (
                 <button 
+                    ref={mobileToggleRef}
                     className="view-toggle"
                     onClick={toggleMobileView}
                     title={mobileView === 'editor' ? "切换到文件列表" : "切换到编辑器"}
@@ -1243,7 +1532,7 @@ const App = () => {
                 </button>
             )}
 
-            {/* 拖放提示覆盖层 */}
+            {/* Drop overlay */}
             {isDragging && (
                 <div className="drop-overlay">
                     <div className="drop-message">
@@ -1253,7 +1542,7 @@ const App = () => {
                 </div>
             )}
             
-            {/* 初始提示 */}
+            {/* Initial prompt */}
             {!currentContent && !processing && (
                 <div className="initial-prompt">
                     <div className="prompt-content">
@@ -1262,10 +1551,38 @@ const App = () => {
                     </div>
                 </div>
             )}
+            
+            {/* Mobile scroll to top button */}
+            {isMobile && (
+                <ScrollToTop targetRef={editorScrollRef} />
+            )}
+            
+            {/* Search dialog */}
+            <SearchDialog 
+                isOpen={isSearchDialogOpen}
+                onClose={closeSearchDialog}
+                onSearch={performSearch}
+                onNext={goToNextMatch}
+                onPrevious={goToPreviousMatch}
+                resultCount={searchMatches.length}
+                currentMatchIndex={currentMatchIndex < 0 ? 0 : currentMatchIndex}
+                initialQuery={searchQuery}
+            />
+            
+            {/* Quick search button */}
+            {currentContent && !isEditing && !isSearchDialogOpen && (
+                <button 
+                    className="quick-search-button"
+                    onClick={openSearchDialog}
+                    title="搜索 (Ctrl+F)"
+                >
+                    <i className="fas fa-search"></i>
+                </button>
+            )}
         </>
     );
 };
 
-// 渲染应用
+// Render the application
 const root = ReactDOM.createRoot(document.getElementById('app'));
 root.render(<App />);
