@@ -1,9 +1,12 @@
 /**
  * Structure Insight Web - Utility Functions
- * Contains all utility functions including storage, file operations, and helpers
+ * Contains all utility functions organized by category
  */
 
-// Storage utilities for persistent data
+//=============================================================================
+// STORAGE UTILITIES
+//=============================================================================
+
 const Storage = {
     save: (key, value) => {
         try {
@@ -40,7 +43,11 @@ const Storage = {
     }
 };
 
-// File type detection
+//=============================================================================
+// FILE UTILITIES
+//=============================================================================
+
+// Detect file language based on extension
 const detectLanguage = (fileName) => {
     if (!fileName) return '';
     const extension = fileName.split('.').pop().toLowerCase();
@@ -78,7 +85,7 @@ const detectLanguage = (fileName) => {
     return langMap[extension] || '';
 };
 
-// File structure utilities
+// File structure and processing utilities
 const FileUtils = {
     // Read file content as text
     readFileContent: (file) => {
@@ -231,7 +238,10 @@ const FileUtils = {
     }
 };
 
-// Search utilities
+//=============================================================================
+// SEARCH UTILITIES
+//=============================================================================
+
 const SearchUtils = {
     // Execute search with options
     performSearch: (content, query, options = {}) => {
@@ -278,7 +288,10 @@ const SearchUtils = {
     }
 };
 
-// DOM utilities
+//=============================================================================
+// DOM UTILITIES
+//=============================================================================
+
 const DOMUtils = {
     // Find text nodes with positions
     findTextNodes: (rootNode, targetStart, targetEnd, callback) => {
@@ -316,7 +329,7 @@ const DOMUtils = {
     }
 };
 
-// Export utilities
+// Export all utilities
 window.Utils = {
     Storage,
     detectLanguage,

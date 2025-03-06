@@ -1760,3 +1760,903 @@ body.search-dragging * {
     from { opacity: 0; height: 0; }
     to { opacity: 1; height: auto; }
 }
+
+/* Mobile folder & file tree optimizations - Add these at the end of your styles.css file */
+
+/* Improve file tree items for touch interaction */
+@media screen and (max-width: 768px) {
+    /* Enhanced touch targets for folders and files */
+    .file-tree-item {
+        padding: 12px 8px;
+        margin: 4px 0;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        transition: background-color 0.2s, border-color 0.2s;
+    }
+    
+    /* Better folder item highlighting */
+    .file-tree-item.directory-item {
+        background-color: rgba(0, 0, 0, 0.03);
+        border-color: var(--divider-color);
+    }
+    
+    .dark-theme .file-tree-item.directory-item {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    /* Active state for better visual feedback */
+    .file-tree-item:active {
+        background-color: var(--button-hover);
+        transform: scale(0.98);
+    }
+    
+    /* Make folder toggle button larger */
+    .file-tree-toggle {
+        min-width: 30px;
+        min-height: 30px;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .folder-icon {
+        min-width: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    
+    /* Larger icons for better visibility */
+    .file-tree-toggle i,
+    .folder-icon i {
+        font-size: 18px;
+    }
+    
+    /* Visual feedback for interactive elements */
+    .file-tree-toggle:active {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+    
+    /* Better ripple effect for mobile taps */
+    .file-tree-item::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: transparent;
+        pointer-events: none;
+        transition: background-color 0.3s;
+        border-radius: 6px;
+    }
+    
+    .file-tree-item:active::after {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark-theme .file-tree-item:active::after {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Better spacing for nested items */
+    .file-tree .file-tree {
+        padding-left: 15px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+    }
+    
+    /* Ensure the file tree action buttons are more tappable */
+    .file-tree-item .button {
+        min-height: 34px;
+        min-width: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        padding: 0;
+    }
+    
+    /* Allow space for the floating buttons at bottom */
+    .tree-container {
+        padding-bottom: 100px;
+    }
+    
+    /* Ensure position:relative for ripple effect */
+    .file-tree-item {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Make file tree labels take remaining width but not overflow */
+    .file-tree-label {
+        flex: 1;
+        font-size: 15px;
+        line-height: 1.4;
+        padding: 6px 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* State indicators for better UX */
+    .file-tree-item.directory-item.expanded {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark-theme .file-tree-item.directory-item.expanded {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Improve file selection highlighting */
+    .file-tree-item.file-item:active {
+        background-color: rgba(0, 120, 215, 0.1);
+    }
+    
+    .dark-theme .file-tree-item.file-item:active {
+        background-color: rgba(0, 120, 215, 0.2);
+    }
+}
+
+/* Very small screens (phones) */
+@media screen and (max-width: 480px) {
+    .file-tree-toggle {
+        min-width: 28px;
+        min-height: 28px;
+    }
+    
+    .folder-icon {
+        min-width: 22px;
+    }
+    
+    .file-tree-item {
+        padding: 10px 6px;
+    }
+    
+    .file-tree-label {
+        font-size: 14px;
+    }
+}
+
+/* Copy button styles */
+.copy-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    margin-left: 8px;
+    opacity: 0.8;
+}
+
+.copy-button:hover {
+    background-color: var(--button-hover);
+    opacity: 1;
+}
+
+.copy-button:active {
+    transform: scale(0.95);
+}
+
+/* Section header with title and copy button */
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.section-header h3 {
+    margin: 0;
+    margin-right: 10px;
+}
+
+/* File actions container */
+.file-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Copy feedback overlay */
+.copy-feedback {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 2000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    text-align: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 1.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.copy-feedback.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -40%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Mobile optimizations for copy buttons */
+@media screen and (max-width: 768px) {
+    .copy-button {
+        width: 36px;
+        height: 36px;
+        padding: 8px;
+    }
+    
+    .file-actions {
+        gap: 8px;
+    }
+    
+    .copy-feedback {
+        padding: 10px 16px;
+        font-size: 15px;
+    }
+}
+
+/* Extract content button enhancements */
+.extract-content-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.extract-content-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    transition: background-color 0.3s;
+    border-radius: 4px;
+    z-index: -1;
+}
+
+.extract-content-button:active::before {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Improve visibility of active state */
+.extract-content-button.active {
+    background-color: var(--header-button-active);
+    opacity: 1;
+}
+
+.extract-content-button.active::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
+    animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+    0% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.3); opacity: 0.7; }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* 文件统计信息样式 */
+.file-stats {
+    margin-left: 15px;
+    font-size: 0.85em;
+    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-stats i {
+    margin-right: 3px;
+    font-size: 0.9em;
+}
+
+/* Settings Dialog Styles */
+.settings-dialog {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 950;
+    border: 1px solid var(--divider-color);
+    will-change: right, top;
+    touch-action: none;
+    user-select: none;
+    animation: slideInSettings 0.2s ease-out;
+}
+
+.settings-dialog.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    cursor: grabbing;
+}
+
+body.settings-dragging {
+    cursor: grabbing !important;
+}
+
+body.settings-dragging * {
+    cursor: grabbing !important;
+}
+
+.settings-dialog-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -ms-user-select: none;
+    touch-action: none;
+}
+
+.dragging .settings-dialog-header {
+    cursor: grabbing;
+}
+
+.settings-dialog-header .drag-handle {
+    margin-right: auto;
+    cursor: grab;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.settings-dialog-header .drag-handle i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.settings-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0 10px;
+}
+
+.settings-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--header-text);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.settings-dialog-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.settings-dialog-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-section-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.settings-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.font-size-value {
+    min-width: 50px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.settings-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.settings-button:hover {
+    background-color: var(--button-hover);
+}
+
+.settings-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.theme-control .theme-label,
+.extract-control .extract-label {
+    font-size: 14px;
+}
+
+.theme-toggle {
+    min-width: 40px;
+}
+
+.extract-toggle {
+    min-width: 40px;
+    position: relative;
+}
+
+.extract-toggle.active {
+    background-color: var(--editing-button-bg);
+    color: white;
+}
+
+.extract-toggle.active::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Header settings button */
+.settings-button {
+    position: relative;
+}
+
+.settings-button:hover {
+    background-color: var(--header-button-hover);
+}
+
+@keyframes slideInSettings {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Mobile optimizations for settings dialog */
+@media screen and (max-width: 768px) {
+    .settings-dialog {
+        width: 300px;
+    }
+    
+    .settings-section {
+        gap: 8px;
+    }
+    
+    .settings-control {
+        gap: 8px;
+    }
+    
+    .font-size-control {
+        gap: 8px;
+    }
+    
+    .settings-button {
+        padding: 8px 12px;
+        font-size: 16px;
+    }
+    
+    .settings-dialog-header {
+        padding: 12px;
+    }
+    
+    .settings-dialog-content {
+        padding: 12px;
+    }
+}
+
+/* 需要添加到 styles.css 文件末尾的新样式或修改 */
+
+/* 文件统计信息样式 */
+.file-stats {
+    margin-left: 15px;
+    font-size: 0.85em;
+    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-stats i {
+    margin-right: 3px;
+    font-size: 0.9em;
+    color: var(--text-color);
+}
+
+/* 修复在暗色主题下文件统计显示不清晰问题 */
+.dark-theme .file-stats {
+    opacity: 0.9;
+}
+
+.dark-theme .file-stats i {
+    color: var(--header-text);
+}
+
+/* Settings Dialog Styles */
+.settings-dialog {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 950;
+    border: 1px solid var(--divider-color);
+    will-change: right, top;
+    touch-action: none;
+    user-select: none;
+    animation: slideInSettings 0.2s ease-out;
+}
+
+.settings-dialog.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    cursor: grabbing;
+}
+
+body.settings-dragging {
+    cursor: grabbing !important;
+}
+
+body.settings-dragging * {
+    cursor: grabbing !important;
+}
+
+.settings-dialog-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -ms-user-select: none;
+    touch-action: none;
+}
+
+.dragging .settings-dialog-header {
+    cursor: grabbing;
+}
+
+.settings-dialog-header .drag-handle {
+    margin-right: auto;
+    cursor: grab;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.settings-dialog-header .drag-handle i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.settings-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0 10px;
+}
+
+.settings-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--header-text);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.settings-dialog-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.settings-dialog-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-section-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.settings-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.font-size-value {
+    min-width: 50px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.settings-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.settings-button:hover {
+    background-color: var(--button-hover);
+}
+
+.settings-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.theme-control .theme-label,
+.extract-control .extract-label {
+    font-size: 14px;
+}
+
+.theme-toggle {
+    min-width: 40px;
+}
+
+.extract-toggle {
+    min-width: 40px;
+    position: relative;
+}
+
+.extract-toggle.active {
+    background-color: var(--editing-button-bg);
+    color: white;
+}
+
+.extract-toggle.active::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Header settings button */
+.header-button.settings-button {
+    position: relative;
+    color: var(--header-text);
+}
+
+.header-button.settings-button:hover {
+    background-color: var(--header-button-hover);
+}
+
+/* 修复搜索框和设置对话框同时显示的问题 */
+.floating-search-dialog,
+.settings-dialog {
+    pointer-events: auto;
+}
+
+/* 确保设置对话框在搜索对话框上方显示 */
+.settings-dialog {
+    z-index: 951;
+}
+
+.floating-search-dialog {
+    z-index: 950;
+}
+
+@keyframes slideInSettings {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* 移动设备上的设置对话框优化 */
+@media screen and (max-width: 768px) {
+    .settings-dialog {
+        width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .settings-section {
+        gap: 8px;
+    }
+    
+    .settings-control {
+        gap: 8px;
+    }
+    
+    .font-size-control {
+        gap: 8px;
+    }
+    
+    .settings-button {
+        padding: 8px 12px;
+        font-size: 16px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .settings-dialog-header {
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .settings-dialog-content {
+        padding: 12px;
+    }
+    
+    /* 在移动设备上确保不会同时显示搜索按钮和设置对话框 */
+    .quick-search-button {
+        display: none;
+    }
+    
+    .settings-dialog ~ .quick-search-button {
+        display: none !important;
+    }
+}
+
+/* 超小屏幕设备优化 */
+@media screen and (max-width: 480px) {
+    .settings-dialog {
+        width: 280px;
+        right: 8px;
+        left: 8px;
+    }
+    
+    .settings-button {
+        padding: 6px 10px;
+    }
+    
+    .font-size-value {
+        min-width: 40px;
+        font-size: 14px;
+    }
+    
+    .settings-section-title {
+        font-size: 13px;
+    }
+    
+    .theme-control .theme-label,
+    .extract-control .extract-label {
+        font-size: 13px;
+    }
+}
+
+/* 确保文件统计信息在移动设备上正确显示 */
+@media screen and (max-width: 768px) {
+    .file-info {
+        flex-wrap: wrap;
+        max-width: 70%;
+    }
+    
+    .file-stats {
+        margin-left: 0;
+        margin-top: 5px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* 解决搜索对话框和设置对话框重叠的问题 */
+body.search-dragging .settings-dialog,
+body.settings-dragging .floating-search-dialog {
+    pointer-events: none;
+    opacity: 0.5;
+}

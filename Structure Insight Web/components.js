@@ -44,11 +44,27 @@ const LineNumbers = React.forwardRef(({ content, lineHeight, fontSize }, ref) =>
     );
 });
 
+// Copy feedback component with animation
+const CopyFeedback = ({ isVisible, onAnimationEnd }) => {
+    return (
+        <div 
+            className={`copy-feedback ${isVisible ? 'visible' : ''}`}
+            onAnimationEnd={onAnimationEnd}
+        >
+            已复制到剪贴板
+        </div>
+    );
+};
+
 // Component for syntax-highlighted content display with editing capabilities
 const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing, currentEditingFile, onEditContent }) => {
     const containerRef = useRef(null);
     const [processedContent, setProcessedContent] = useState('');
     const [editingContent, setEditingContent] = useState('');
+    const [showCopyFeedback, setShowCopyFeedback] = useState(false);
+    const [copyFeedbackPosition, setCopyFeedbackPosition] = useState({ top: 0, left: 0 });
+    const [fileStats, setFileStats] = useState({});
+    const fileParts = useRef([]);
     
     // Process content for display
     useEffect(() => {
@@ -72,6 +88,76 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
         
         return () => clearTimeout(timer);
     }, [content]);
+    
+    // Calculate file statistics when content changes
+    useEffect(() => {
+        if (!processedContent) return;
+        
+        // Extract file parts and calculate statistics
+        let contentPart = '';
+        if (processedContent.includes('文件结构:') && processedContent.includes('文件内容:')) {
+            const contentIndex = processedContent.indexOf('文件内容:');
+            contentPart = processedContent.substring(contentIndex);
+        } else {
+            return;
+        }
+        
+        // Use file separator to find all file parts
+        const separatorPattern = '='.repeat(40) + '\n文件名:';
+        
+        // Start after the content header line
+        const startIndex = contentPart.indexOf('\n') + 1;
+        const filePartsContent = contentPart.substring(startIndex);
+        
+        // Find all separator positions
+        const separatorPositions = [];
+        let pos = 0;
+        
+        while ((pos = filePartsContent.indexOf(separatorPattern, pos)) !== -1) {
+            separatorPositions.push(pos);
+            pos += separatorPattern.length;
+        }
+        
+        // Process each file part
+        const parts = [];
+        for (let i = 0; i < separatorPositions.length; i++) {
+            const start = separatorPositions[i];
+            const end = i < separatorPositions.length - 1 
+                ? separatorPositions[i + 1] 
+                : filePartsContent.length;
+                
+            const filePart = filePartsContent.substring(start, end);
+            parts.push(filePart);
+        }
+        
+        fileParts.current = parts;
+        
+        // Calculate statistics for each file
+        const stats = {};
+        
+        parts.forEach(part => {
+            const fileNameIndex = part.indexOf('文件名:') + 4;
+            const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
+            
+            if (fileNameIndex > 4 && fileNameEndIndex !== -1) {
+                const fileName = part.substring(fileNameIndex, fileNameEndIndex).trim();
+                
+                // Find separator end
+                const separatorEnd = part.indexOf('\n', part.indexOf('-'.repeat(71))) + 1;
+                
+                if (separatorEnd !== 0) {
+                    // Extract file content
+                    const fileContent = part.substring(separatorEnd).trim();
+                    const lineCount = fileContent.split('\n').length;
+                    const charCount = fileContent.length;
+                    
+                    stats[fileName] = { lineCount, charCount };
+                }
+            }
+        });
+        
+        setFileStats(stats);
+    }, [processedContent]);
     
     if (!processedContent) return <div className="highlighted-content"></div>;
     
@@ -100,38 +186,6 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
         structureContent = structureLines.slice(1, endLine).join('\n');
     }
     
-    // Split file content into parts
-    const fileParts = [];
-    
-    if (contentPart) {
-        // Use file separator to find all file parts
-        const separatorPattern = '='.repeat(40) + '\n文件名:';
-        
-        // Start after the content header line
-        const startIndex = contentPart.indexOf('\n') + 1;
-        const filePartsContent = contentPart.substring(startIndex);
-        
-        // Find all separator positions
-        const separatorPositions = [];
-        let pos = 0;
-        
-        while ((pos = filePartsContent.indexOf(separatorPattern, pos)) !== -1) {
-            separatorPositions.push(pos);
-            pos += separatorPattern.length;
-        }
-        
-        // Process each file part
-        for (let i = 0; i < separatorPositions.length; i++) {
-            const start = separatorPositions[i];
-            const end = i < separatorPositions.length - 1 
-                ? separatorPositions[i + 1] 
-                : filePartsContent.length;
-                
-            const filePart = filePartsContent.substring(start, end);
-            fileParts.push(filePart);
-        }
-    }
-    
     // Handle content editing
     const handleContentChange = (e) => {
         setEditingContent(e.target.value);
@@ -140,6 +194,39 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
     const handleSaveEdit = () => {
         if (onEditContent && currentEditingFile) {
             onEditContent(currentEditingFile, editingContent);
+        }
+    };
+    
+    // Copy content handlers
+    const copyToClipboard = (text, buttonElement) => {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                // Get position for feedback
+                if (buttonElement) {
+                    const rect = buttonElement.getBoundingClientRect();
+                    setCopyFeedbackPosition({
+                        top: rect.top - 40,
+                        left: rect.left + (rect.width / 2)
+                    });
+                }
+                
+                // Show feedback
+                setShowCopyFeedback(true);
+                
+                // Hide feedback after animation completes
+                setTimeout(() => {
+                    setShowCopyFeedback(false);
+                }, 1500);
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+                alert("复制失败，请手动选择内容复制");
+            });
+    };
+    
+    const handleCopyFeedbackAnimationEnd = () => {
+        if (!showCopyFeedback) {
+            setCopyFeedbackPosition({ top: 0, left: 0 });
         }
     };
     
@@ -152,10 +239,26 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                 lineHeight: `${lineHeight}px` 
             }}
         >
+            {/* Copy feedback overlay */}
+            <CopyFeedback 
+                isVisible={showCopyFeedback} 
+                onAnimationEnd={handleCopyFeedbackAnimationEnd} 
+                style={copyFeedbackPosition}
+            />
+            
             {/* Structure section */}
             {structurePart && (
                 <div>
-                    <h3 style={{marginBottom: '10px'}}>文件结构:</h3>
+                    <div className="section-header">
+                        <h3>文件结构:</h3>
+                        <button 
+                            className="copy-button" 
+                            onClick={(e) => copyToClipboard(structureContent, e.currentTarget)}
+                            title="复制文件结构"
+                        >
+                            <i className="fas fa-copy"></i>
+                        </button>
+                    </div>
                     <div className="file-structure-content">
                         {structureContent}
                     </div>
@@ -165,7 +268,7 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
             {/* Content section */}
             {contentPart && <h3 style={{margin: '20px 0 10px'}}>文件内容:</h3>}
             
-            {fileParts.map((part, index) => {
+            {fileParts.current.map((part, index) => {
                 // Extract filename and content manually
                 const fileNameIndex = part.indexOf('文件名:') + 4;
                 const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
@@ -187,23 +290,41 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                             setEditingContent(fileContent);
                         }
                         
+                        // Get file stats
+                        const stats = fileStats[fileName] || { lineCount: 0, charCount: 0 };
+                        
                         return (
                             <div key={index} className="file-content-container">
                                 <div className="file-separator">
                                     <div className="file-info">
                                         <i className="fas fa-file-alt"></i> {fileName}
+                                        <span className="file-stats">
+                                            <i className="fas fa-code"></i> {stats.lineCount} 行
+                                            <i className="fas fa-text-width"></i> {stats.charCount} 字符
+                                        </span>
                                     </div>
-                                    {/* Edit button */}
-                                    <button 
-                                        className="edit-button" 
-                                        onClick={() => {
-                                            setEditingContent(fileContent);
-                                            onEditContent(fileName, null, true); // Mark as editing
-                                        }}
-                                        disabled={isEditing}
-                                    >
-                                        <i className="fas fa-edit"></i> 编辑
-                                    </button>
+                                    <div className="file-actions">
+                                        {/* Copy button */}
+                                        <button 
+                                            className="copy-button" 
+                                            onClick={(e) => copyToClipboard(fileContent, e.currentTarget)}
+                                            title="复制文件内容"
+                                        >
+                                            <i className="fas fa-copy"></i>
+                                        </button>
+                                        
+                                        {/* Edit button */}
+                                        <button 
+                                            className="edit-button" 
+                                            onClick={() => {
+                                                setEditingContent(fileContent);
+                                                onEditContent(fileName, null, true); // Mark as editing
+                                            }}
+                                            disabled={isEditing}
+                                        >
+                                            <i className="fas fa-edit"></i> 编辑
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 {isCurrentEditingFile ? (
@@ -279,24 +400,40 @@ const FileTree = ({ nodes, onFileSelect, onFileDelete }) => {
     );
 };
 
-// Individual file tree node component
+// Individual file tree node component - Optimized for mobile
 const FileTreeNode = ({ node, onFileSelect, onFileDelete, level }) => {
     const [expanded, setExpanded] = useState(true);
+    const isMobile = window.innerWidth <= 768;
 
     // Handle null/undefined nodes
     if (!node) {
         return null;
     }
 
+    // Enhanced toggle handler with better touch support
     const toggleExpand = (e) => {
         e.stopPropagation();
         setExpanded(!expanded);
     };
 
-    const handleSelect = () => {
-        if (!node.isDirectory && onFileSelect) {
+    // Handler for item selection
+    const handleSelect = (e) => {
+        if (node.isDirectory) {
+            // For directories, toggle expansion when clicked on mobile
+            // This makes the entire row a toggleable area
+            if (isMobile) {
+                toggleExpand(e);
+            }
+        } else if (onFileSelect) {
+            // For files, trigger selection
             onFileSelect(node);
         }
+    };
+
+    // Handler for the toggle icon specifically
+    const handleToggleClick = (e) => {
+        // Always toggle on icon click
+        toggleExpand(e);
     };
 
     const handleDelete = (e) => {
@@ -310,11 +447,17 @@ const FileTreeNode = ({ node, onFileSelect, onFileDelete, level }) => {
 
     return (
         <li>
+            {/* Make the entire directory row clickable on mobile */}
             <div 
-                className={`file-tree-item ${isSkipped ? 'file-tree-skipped' : ''}`}
+                className={`file-tree-item ${isSkipped ? 'file-tree-skipped' : ''} ${node.isDirectory ? 'directory-item' : 'file-item'} ${expanded ? 'expanded' : 'collapsed'}`}
                 onClick={handleSelect}
             >
-                <span className="file-tree-toggle" onClick={node.isDirectory ? toggleExpand : null}>
+                {/* Increase the touch target area for the toggle button */}
+                <span 
+                    className="file-tree-toggle" 
+                    onClick={node.isDirectory ? handleToggleClick : null}
+                    style={node.isDirectory ? { cursor: 'pointer' } : {}}
+                >
                     {node.isDirectory ? (
                         expanded ? 
                         <i className="fas fa-chevron-down"></i> : 
@@ -588,19 +731,14 @@ const SearchDialog = ({
     const inputRef = useRef(null);
     const dialogRef = useRef(null);
     const [position, setPosition] = useState({ right: 16, bottom: 80 });
-    const positionRef = useRef({ right: 16, bottom: 80 }); // 添加位置引用
+    const positionRef = useRef({ right: 16, bottom: 80 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef(null);
     
-    // 当位置状态改变时更新位置引用
+    // When position state changes, update position reference
     useEffect(() => {
         positionRef.current = position;
     }, [position]);
-    
-    // Initialize with default position
-    useEffect(() => {
-        console.log('Search dialog initialized with position:', position);
-    }, []);
     
     // Focus input when dialog opens
     useEffect(() => {
@@ -609,6 +747,11 @@ const SearchDialog = ({
                 inputRef.current.focus();
                 inputRef.current.select();
             }, 100);
+        }
+        
+        // Reset dragging state when dialog closes
+        if (!isOpen) {
+            setIsDragging(false);
         }
     }, [isOpen]);
     
@@ -640,9 +783,11 @@ const SearchDialog = ({
     // Start drag
     const handleDragStart = (e) => {
         e.preventDefault();
+        if (document.body.classList.contains('settings-dragging')) return;
+        
         setIsDragging(true);
         
-        // 添加拖动时的全局类样式
+        // Add global dragging style
         document.body.classList.add('search-dragging');
         
         // Record initial position
@@ -650,13 +795,13 @@ const SearchDialog = ({
             dragStartRef.current = { 
                 x: e.touches[0].clientX, 
                 y: e.touches[0].clientY,
-                position: { ...positionRef.current } // 使用positionRef而不是未定义的引用
+                position: { ...positionRef.current }
             };
         } else {
             dragStartRef.current = { 
                 x: e.clientX, 
                 y: e.clientY,
-                position: { ...positionRef.current } // 使用positionRef而不是未定义的引用
+                position: { ...positionRef.current }
             };
         }
         
@@ -703,7 +848,7 @@ const SearchDialog = ({
     const handleDragEnd = () => {
         setIsDragging(false);
         
-        // 移除拖动时的全局类样式
+        // Remove global dragging styles
         document.body.classList.remove('search-dragging');
         
         // Remove global event listeners
@@ -713,7 +858,7 @@ const SearchDialog = ({
         document.removeEventListener('touchend', handleDragEnd);
     };
     
-    // 组件卸载时清理
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             document.removeEventListener('mousemove', handleDragMove);
@@ -801,7 +946,10 @@ const SearchDialog = ({
                             <input 
                                 type="checkbox" 
                                 checked={useRegex} 
-                                onChange={() => setUseRegex(!useRegex)}
+                                onChange={() => {
+                                    setUseRegex(!useRegex);
+                                    if (!useRegex) setWholeWord(false);
+                                }}
                             />
                             <span>正则表达式</span>
                         </label>
@@ -853,6 +1001,239 @@ const SearchDialog = ({
     );
 };
 
+//=============================================================================
+// SETTINGS DIALOG COMPONENT
+//=============================================================================
+
+const SettingsDialog = ({
+    isOpen,
+    onClose,
+    fontSize,
+    onIncreaseFontSize,
+    onDecreaseFontSize,
+    isDarkTheme,
+    onToggleTheme,
+    extractContent,
+    onToggleExtractContent
+}) => {
+    const dialogRef = useRef(null);
+    const [position, setPosition] = useState({ right: 16, top: 80 });
+    const positionRef = useRef({ right: 16, top: 80 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartRef = useRef(null);
+    
+    // When position state changes, update position reference
+    useEffect(() => {
+        positionRef.current = position;
+    }, [position]);
+    
+    // Reset dragging state when dialog closes
+    useEffect(() => {
+        if (!isOpen) {
+            setIsDragging(false);
+        }
+    }, [isOpen]);
+    
+    // Handle keyboard shortcuts
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            onClose(); // Esc to close dialog
+        }
+    };
+    
+    useEffect(() => {
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+    
+    // Start drag
+    const handleDragStart = (e) => {
+        e.preventDefault();
+        if (document.body.classList.contains('search-dragging')) return;
+        
+        setIsDragging(true);
+        
+        // Add global dragging style
+        document.body.classList.add('settings-dragging');
+        
+        // Record initial position
+        if (e.type === 'touchstart') {
+            dragStartRef.current = { 
+                x: e.touches[0].clientX, 
+                y: e.touches[0].clientY,
+                position: { ...positionRef.current }
+            };
+        } else {
+            dragStartRef.current = { 
+                x: e.clientX, 
+                y: e.clientY,
+                position: { ...positionRef.current }
+            };
+        }
+        
+        // Add global event listeners
+        document.addEventListener('mousemove', handleDragMove);
+        document.addEventListener('mouseup', handleDragEnd);
+        document.addEventListener('touchmove', handleDragMove, { passive: false });
+        document.addEventListener('touchend', handleDragEnd);
+    };
+    
+    // Handle drag movement
+    const handleDragMove = (e) => {
+        if (!isDragging || !dragStartRef.current) return;
+        
+        e.preventDefault();
+        
+        // Calculate movement
+        let clientX, clientY;
+        if (e.type === 'touchmove') {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        const deltaX = clientX - dragStartRef.current.x;
+        const deltaY = clientY - dragStartRef.current.y;
+        
+        // Update position (calculate right/top)
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        const newRight = Math.max(0, Math.min(viewportWidth - 60, dragStartRef.current.position.right - deltaX));
+        const newTop = Math.max(0, Math.min(viewportHeight - 160, dragStartRef.current.position.top + deltaY));
+        
+        setPosition({
+            right: newRight,
+            top: newTop
+        });
+    };
+    
+    // End drag
+    const handleDragEnd = () => {
+        setIsDragging(false);
+        
+        // Remove global dragging styles
+        document.body.classList.remove('settings-dragging');
+        
+        // Remove global event listeners
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+        document.removeEventListener('touchmove', handleDragMove);
+        document.removeEventListener('touchend', handleDragEnd);
+    };
+    
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            document.removeEventListener('mousemove', handleDragMove);
+            document.removeEventListener('mouseup', handleDragEnd);
+            document.removeEventListener('touchmove', handleDragMove);
+            document.removeEventListener('touchend', handleDragEnd);
+            document.body.classList.remove('settings-dragging');
+        };
+    }, []);
+    
+    if (!isOpen) return null;
+    
+    return (
+        <div 
+            className={`settings-dialog ${isDragging ? 'dragging' : ''}`}
+            ref={dialogRef}
+            style={{ 
+                right: `${position.right}px`, 
+                top: `${position.top}px`,
+                cursor: isDragging ? 'grabbing' : 'default'
+            }}
+        >
+            <div 
+                className="settings-dialog-header" 
+                onMouseDown={handleDragStart}
+                onTouchStart={handleDragStart}
+            >
+                <div className="drag-handle">
+                    <i className="fas fa-grip-lines"></i>
+                </div>
+                <span className="settings-title">设置</span>
+                <button 
+                    className="settings-dialog-close" 
+                    onClick={onClose}
+                    title="关闭 (Esc)"
+                >
+                    <i className="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div className="settings-dialog-content">
+                {/* Font Size Control */}
+                <div className="settings-section">
+                    <h4 className="settings-section-title">字体大小</h4>
+                    <div className="settings-control font-size-control">
+                        <button 
+                            className="settings-button" 
+                            onClick={onDecreaseFontSize}
+                            title="减小字体"
+                            disabled={fontSize <= 12}
+                        >
+                            <i className="fas fa-minus"></i>
+                        </button>
+                        <span className="font-size-value">{fontSize}px</span>
+                        <button 
+                            className="settings-button" 
+                            onClick={onIncreaseFontSize}
+                            title="增大字体"
+                            disabled={fontSize >= 28}
+                        >
+                            <i className="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                {/* Theme Control */}
+                <div className="settings-section">
+                    <h4 className="settings-section-title">主题</h4>
+                    <div className="settings-control theme-control">
+                        <span className="theme-label">
+                            {isDarkTheme ? '深色主题' : '浅色主题'}
+                        </span>
+                        <button 
+                            className="settings-button theme-toggle" 
+                            onClick={onToggleTheme}
+                            title="切换主题"
+                        >
+                            {isDarkTheme ? 
+                                <i className="fas fa-sun"></i> : 
+                                <i className="fas fa-moon"></i>}
+                        </button>
+                    </div>
+                </div>
+                
+                {/* Extract Content Control */}
+                <div className="settings-section">
+                    <h4 className="settings-section-title">内容提取</h4>
+                    <div className="settings-control extract-control">
+                        <span className="extract-label">
+                            {extractContent ? '自动提取文件内容' : '不提取文件内容'}
+                        </span>
+                        <button 
+                            className={`settings-button extract-toggle ${extractContent ? 'active' : ''}`} 
+                            onClick={onToggleExtractContent}
+                            title="切换内容提取"
+                        >
+                            <i className="fas fa-code"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // Export components to global scope
 window.Components = {
     // Editor components
@@ -868,5 +1249,8 @@ window.Components = {
     ScrollToTop,
     
     // Search components
-    SearchDialog
+    SearchDialog,
+    
+    // Settings component
+    SettingsDialog
 };
