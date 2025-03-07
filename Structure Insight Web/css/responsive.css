@@ -1,0 +1,717 @@
+/**
+ * Structure Insight Web - Responsive Styles
+ * 媒体查询和响应式样式
+ */
+
+/* MOBILE OPTIMIZATIONS */
+@media screen and (max-width: 768px) {
+    /* Faster transitions for mobile */
+    * {
+        transition-duration: 0.2s !important;
+    }
+    
+    /* Use hardware acceleration for smoother animations */
+    .app-header, .left-panel, .right-panel, .view-toggle, .mobile-transition {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        perspective: 1000px;
+    }
+    
+    /* Container for flexible layout */
+    .container {
+        flex-direction: column;
+    }
+
+    .left-panel, .right-panel {
+        flex: none;
+        width: 100% !important;
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .left-panel {
+        height: 70%; 
+        border-right: none;
+        border-bottom: 1px solid var(--accent-color);
+    }
+
+    .right-panel {
+        height: 30%;
+    }
+
+    .resizer {
+        width: 100%;
+        height: var(--resizer-size);
+        cursor: row-resize;
+        left: 0;
+        right: 0;
+    }
+
+    /* Optimized header for mobile */
+    .app-header {
+        flex-wrap: nowrap;
+        padding: 0 8px;
+        height: var(--mobile-header-height);
+        min-height: var(--mobile-header-height);
+        justify-content: space-between;
+    }
+    
+    .app-logo {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        max-width: 40%;
+    }
+    
+    .app-logo img {
+        height: 24px;
+        margin-right: 5px;
+    }
+    
+    /* Hide app name on all mobile devices */
+    .app-logo span {
+        display: none;
+    }
+    
+    /* Mobile controls in header */
+    .mobile-title-controls {
+        display: flex;
+        align-items: center;
+        margin-left: 5px;
+        gap: var(--mobile-button-gap);
+    }
+    
+    .mobile-title-controls .header-button {
+        height: 28px;
+        width: 28px;
+        padding: 0;
+        margin: 0 1px;
+        font-size: 12px;
+    }
+    
+    /* Compact header buttons */
+    .header-buttons {
+        margin-top: 0;
+        justify-content: flex-end;
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Hide scrollbar in Firefox */
+        -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+        max-width: 60%;
+        gap: var(--mobile-button-gap);
+        padding-right: 5px; /* Space at the end for better scrolling */
+    }
+    
+    /* Hide scrollbar in Webkit browsers */
+    .header-buttons::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Remove dividers on mobile for cleaner look */
+    .header-controls {
+        margin-top: 0;
+        border-left: none;
+        padding-left: 5px;
+        border-top: none;
+        padding-top: 0;
+        margin-left: 2px;
+        gap: var(--mobile-button-gap);
+    }
+    
+    /* Compact buttons for mobile */
+    .header-button {
+        height: 32px;
+        width: 32px;
+        padding: 6px;
+        margin: 0;
+        font-size: 14px;
+    }
+    
+    /* Improved touch targets for file tree */
+    .file-tree-item {
+        padding: 12px 8px;
+        margin: 2px 0;
+        border-radius: 4px;
+        border-bottom: 1px solid var(--divider-color);
+    }
+    
+    .file-tree-item:active {
+        background-color: var(--button-hover);
+    }
+    
+    .file-tree-item:last-child {
+        border-bottom: none;
+    }
+    
+    .file-tree-toggle, 
+    .folder-icon {
+        font-size: 18px;
+        margin-right: 10px;
+        width: 18px;
+    }
+    
+    .file-tree-label {
+        font-size: 15px;
+        padding: 5px 0;
+    }
+    
+    /* File tree improved for touch */
+    .file-tree {
+        padding-left: 10px;
+    }
+    
+    /* Improved status bar */
+    .status-bar {
+        height: var(--mobile-status-height);
+        padding: 0 10px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        font-size: 13px;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    /* Improved edit buttons */
+    .edit-button {
+        font-size: 15px;
+        opacity: 1;
+        padding: 5px 10px;
+        background-color: var(--button-bg);
+        border-radius: 4px;
+        margin-left: 5px;
+    }
+    
+    .edit-button:active {
+        background-color: var(--button-hover);
+    }
+    
+    /* Editor improvements */
+    .editor-buttons {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .editor-buttons .button {
+        flex: 1;
+        justify-content: center;
+        margin: 0 4px;
+        padding: 12px;
+        font-size: 15px;
+        height: 44px; /* Larger touch target */
+    }
+    
+    /* Mobile-optimized textarea */
+    .editor-textarea {
+        min-height: 150px;
+        font-size: 16px; /* iOS minimum to prevent zoom */
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    
+    /* Improved file separators */
+    .file-separator {
+        margin: 10px 0;
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .file-separator:active {
+        background-color: var(--button-hover);
+    }
+    
+    /* Code blocks */
+    pre code.hljs {
+        padding: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+        border-radius: 8px;
+    }
+    
+    /* Improved highlighted content for mobile */
+    .highlighted-content {
+        padding: 12px 10px;
+    }
+
+    /* Improved line numbers for mobile */
+    .line-numbers {
+        padding: 12px 5px 12px 0;
+    }
+    
+    /* View transition states */
+    .mobile-hidden {
+        display: none !important;
+        height: 0 !important;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    .mobile-full {
+        height: 100% !important;
+        display: flex !important;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .mobile-transition {
+        transition: opacity 0.25s ease-out, transform 0.25s ease-out !important;
+    }
+    
+    /* Better tooltips for mobile */
+    .tooltip {
+        position: absolute;
+        bottom: 45px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        display: none;
+        pointer-events: none;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1002;
+        animation: fadeIn 0.2s ease-out;
+    }
+    
+    .header-button:active .tooltip {
+        display: block;
+    }
+    
+    /* Prevent overscrolling */
+    .tree-container, .highlighted-content {
+        overscroll-behavior: contain;
+    }
+    
+    /* Improve file tree spacing at bottom */
+    .file-tree {
+        padding-bottom: 90px; /* Make space for floating action button */
+    }
+    
+    /* 修改初始提示在移动设备上的样式 */
+    .left-panel-prompt {
+        width: 90%;
+        max-width: 300px;
+    }
+    
+    .initial-prompt {
+        background-color: rgba(var(--editor-bg-rgb, 255, 255, 255), 0.8);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    
+    .prompt-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .prompt-content i {
+        font-size: 48px;
+        color: var(--header-bg);
+    }
+    
+    .prompt-content p {
+        font-size: 16px;
+        max-width: 280px;
+        line-height: 1.5;
+        text-align: center;
+    }
+    
+    /* Mobile device search dialog optimization */
+    .search-dialog {
+        width: 95%;
+        max-width: none;
+        max-height: 80vh;
+    }
+    
+    .search-dialog-content {
+        padding: 12px;
+        gap: 12px;
+    }
+    
+    .search-options {
+        gap: 10px;
+        font-size: 13px;
+    }
+    
+    .search-option {
+        font-size: 13px;
+    }
+    
+    .search-button, .search-nav-button {
+        padding: 6px 10px;
+    }
+    
+    .search-input {
+        font-size: 16px; /* Keep font large enough to prevent auto-zoom on iOS */
+    }
+    
+    /* Copy button improvements */
+    .copy-button {
+        width: 36px;
+        height: 36px;
+        padding: 8px;
+    }
+    
+    .file-actions {
+        gap: 8px;
+    }
+    
+    .copy-feedback {
+        padding: 10px 16px;
+        font-size: 15px;
+    }
+    
+    /* File info on mobile */
+    .file-info {
+        flex-wrap: wrap;
+        max-width: 70%;
+    }
+    
+    .file-stats {
+        margin-left: 0;
+        margin-top: 5px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    /* Settings dialog on mobile */
+    .settings-dialog {
+        width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .settings-section {
+        gap: 8px;
+    }
+    
+    .settings-control {
+        gap: 8px;
+    }
+    
+    .font-size-control {
+        gap: 8px;
+    }
+    
+    .settings-button {
+        padding: 8px 12px;
+        font-size: 16px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
+    .settings-dialog-header {
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .settings-dialog-content {
+        padding: 12px;
+    }
+    
+    /* In mobile devices, hide search button when settings dialog is open */
+    .quick-search-button {
+        display: none;
+    }
+    
+    .settings-dialog ~ .quick-search-button {
+        display: none !important;
+    }
+    
+    /* Mobile file tree optimizations */
+    .file-tree-item {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .file-tree-toggle {
+        min-width: 30px;
+        min-height: 30px;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .folder-icon {
+        min-width: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    
+    .file-tree-toggle i,
+    .folder-icon i {
+        font-size: 18px;
+    }
+    
+    .file-tree-toggle:active {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+    
+    /* Ripple effect for mobile taps */
+    .file-tree-item::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: transparent;
+        pointer-events: none;
+        transition: background-color 0.3s;
+        border-radius: 6px;
+    }
+    
+    .file-tree-item:active::after {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark-theme .file-tree-item:active::after {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .file-tree .button {
+        min-height: 34px;
+        min-width: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        padding: 0;
+    }
+    
+    .tree-container {
+        padding-bottom: 100px;
+    }
+}
+
+/* Extra small screens optimization */
+@media screen and (max-width: 480px) {
+    .app-header {
+        padding: 0 5px;
+        height: var(--mobile-header-height);
+    }
+    
+    /* Further reduced button size */
+    .header-button {
+        height: 30px;
+        width: 30px;
+        padding: 5px;
+    }
+    
+    /* Hide app name completely on small screens */
+    .app-logo span {
+        display: none;
+    }
+    
+    /* Even smaller app logo */
+    .app-logo img {
+        height: 22px;
+    }
+    
+    /* Optimize checkbox labels */
+    .header-controls .checkbox-container label {
+        font-size: 12px;
+    }
+    
+    .header-controls .checkbox-container label .full-text {
+        display: none;
+    }
+    
+    .header-controls .checkbox-container label .short-text {
+        display: inline;
+    }
+    
+    /* Hide font size display */
+    .font-size-display {
+        display: none;
+    }
+    
+    /* Reduce status bar height */
+    .status-bar {
+        font-size: 12px;
+        height: 28px;
+        padding: 0 8px;
+    }
+    
+    /* Better scroll to top button */
+    .scroll-to-top {
+        bottom: 80px; /* Position above the view toggle button */
+        right: 16px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Make toggle buttons smaller on very small screens */
+    .view-toggle {
+        width: 44px;
+        height: 44px;
+        bottom: 12px;
+        right: 12px;
+    }
+    
+    /* Optimize file tree for very small screens */
+    .file-tree-item {
+        padding: 10px 6px;
+    }
+    
+    .file-tree-toggle, 
+    .folder-icon {
+        font-size: 16px;
+        margin-right: 8px;
+        width: 16px;
+    }
+    
+    .file-tree-label {
+        font-size: 14px;
+    }
+    
+    /* Smaller edit buttons */
+    .edit-button {
+        font-size: 13px;
+        padding: 4px 8px;
+    }
+    
+    /* Smaller editor buttons */
+    .editor-buttons .button {
+        padding: 10px 8px;
+        height: 40px;
+        font-size: 14px;
+    }
+    
+    /* File tree toggle size for small screens */
+    .file-tree-toggle {
+        min-width: 28px;
+        min-height: 28px;
+    }
+    
+    .folder-icon {
+        min-width: 22px;
+    }
+    
+    /* Settings dialog for very small screens */
+    .settings-dialog {
+        width: 280px;
+        right: 8px;
+        left: 8px;
+    }
+    
+    .settings-button {
+        padding: 6px 10px;
+    }
+    
+    .font-size-value {
+        min-width: 40px;
+        font-size: 14px;
+    }
+    
+    .settings-section-title {
+        font-size: 13px;
+    }
+    
+    .theme-control .theme-label,
+    .extract-control .extract-label {
+        font-size: 13px;
+    }
+    
+    /* 更小屏幕设备上的左侧面板提示 */
+    .left-panel-prompt {
+        max-width: 260px;
+    }
+    
+    .prompt-content p {
+        font-size: 14px;
+    }
+}
+
+/* Tablet landscape mode optimizations */
+@media screen and (min-width: 481px) and (max-width: 768px) and (orientation: landscape) {
+    .container {
+        flex-direction: row; /* Use horizontal layout in landscape */
+    }
+    
+    .left-panel, .right-panel {
+        height: 100% !important;
+    }
+    
+    .left-panel {
+        width: 65% !important;
+        border-right: 1px solid var(--accent-color);
+        border-bottom: none;
+    }
+    
+    .right-panel {
+        width: 35% !important;
+    }
+    
+    .resizer {
+        width: var(--resizer-size);
+        height: 100%;
+        cursor: col-resize;
+        top: 0;
+        bottom: 0;
+    }
+    
+    /* Show app name in tablet landscape */
+    .app-logo span {
+        display: inline;
+    }
+    
+    /* Slightly larger controls for tablet */
+    .header-button {
+        height: 34px;
+        width: 34px;
+    }
+    
+    /* Hide view toggle button in landscape tablet mode */
+    .tablet-landscape .view-toggle {
+        display: none;
+    }
+    
+    /* Optimize tree for tablet landscape */
+    .tablet-landscape .file-tree-item {
+        padding: 8px 6px;
+    }
+}
+
+/* iOS-specific fixes */
+@supports (-webkit-touch-callout: none) {
+    /* Fix for iOS height issues */
+    #app {
+        height: -webkit-fill-available;
+    }
+    
+    /* Fix for iOS button touch feedback */
+    .header-button:active,
+    .button:active,
+    .edit-button:active {
+        opacity: 0.7;
+    }
+    
+    /* Fix iOS textarea zoom */
+    .editor-textarea {
+        font-size: 16px; /* Minimum font size to prevent iOS zoom */
+    }
+}

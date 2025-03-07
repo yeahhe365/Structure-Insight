@@ -384,6 +384,16 @@ const App = () => {
                                 onEditContent={handleEditContent}
                             />
                         </div>
+                        
+                        {/* 初始提示，移到左侧面板内部 */}
+                        {!currentContent && !processing && (
+                            <div className="initial-prompt left-panel-prompt">
+                                <div className="prompt-content">
+                                    <i className="fas fa-folder-open"></i>
+                                    <p>拖放文件夹到此处，或点击左上角的文件夹图标</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="progress-container">
                         <div className="progress-bar">
@@ -443,16 +453,6 @@ const App = () => {
                     <div className="drop-message">
                         <i className="fas fa-upload"></i>
                         <span>释放鼠标以导入文件夹</span>
-                    </div>
-                </div>
-            )}
-            
-            {/* Initial prompt */}
-            {!currentContent && !processing && (
-                <div className="initial-prompt">
-                    <div className="prompt-content">
-                        <i className="fas fa-folder-open"></i>
-                        <p>拖放文件夹到此处，或点击左上角的文件夹图标</p>
                     </div>
                 </div>
             )}

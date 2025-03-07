@@ -1,0 +1,269 @@
+/**
+ * Structure Insight Web - Components Styles
+ * UI组件(按钮、进度条等)
+ */
+
+/* Standard button styles */
+.button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+    font-size: var(--font-size-base);
+}
+
+.button:hover {
+    background-color: var(--button-hover);
+}
+
+.button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+/* Copy button styles */
+.copy-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    margin-left: 8px;
+    opacity: 0.8;
+}
+
+.copy-button:hover {
+    background-color: var(--button-hover);
+    opacity: 1;
+}
+
+.copy-button:active {
+    transform: scale(0.95);
+}
+
+/* Refresh button styles */
+.button .fa-sync-alt,
+.header-button .fa-redo {
+    color: var(--refresh-button-bg);
+}
+
+.button:hover .fa-sync-alt,
+.header-button:hover .fa-redo {
+    color: var(--refresh-button-hover);
+}
+
+.button:disabled .fa-sync-alt,
+.header-button:disabled .fa-redo {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.button.refreshing {
+    animation: spin 1s linear infinite;
+}
+
+/* Extract content button */
+.extract-content-button {
+    background-color: var(--header-button-bg);
+    color: var(--header-text);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.extract-content-button.active {
+    background-color: var(--header-button-active);
+    opacity: 1;
+    position: relative;
+}
+
+.extract-content-button.active::after {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+}
+
+.extract-content-button:hover {
+    opacity: 1;
+}
+
+/* Extract content button enhancements */
+.extract-content-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.extract-content-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    transition: background-color 0.3s;
+    border-radius: 4px;
+    z-index: -1;
+}
+
+.extract-content-button:active::before {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Improve visibility of active state */
+.extract-content-button.active {
+    background-color: var(--header-button-active);
+    opacity: 1;
+}
+
+.extract-content-button.active::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
+    animation: pulseDot 2s infinite;
+}
+
+/* Font size controls */
+.font-size-controls {
+    display: flex;
+    align-items: center;
+}
+
+.font-size-display {
+    margin: 0 5px;
+    min-width: 40px;
+    text-align: center;
+}
+
+.font-size-button {
+    width: 30px;
+    height: 30px;
+    padding: 4px;
+}
+
+.font-size-display {
+    color: var(--header-text);
+}
+
+.font-size-display-mobile {
+    color: var(--header-text);
+    font-size: 12px;
+    min-width: 14px;
+    text-align: center;
+}
+
+/* Resizer styles */
+.resizer {
+    background-color: var(--resizer-color);
+    position: absolute;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.resizer.vertical {
+    width: var(--resizer-size);
+    top: 0;
+    bottom: 0;
+    transform: translateX(-50%);
+    will-change: left;
+}
+
+.resizer.horizontal {
+    height: var(--resizer-size);
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    will-change: top;
+}
+
+.resizer:hover, .resizer.active {
+    background-color: var(--resizer-hover);
+}
+
+/* Resizer handle */
+.resizer-handle {
+    background-color: var(--resizer-handle-color, #999);
+    opacity: 0.6;
+}
+
+.resizer.vertical .resizer-handle {
+    height: 40px;
+    width: 2px;
+    border-radius: 1px;
+}
+
+.resizer.horizontal .resizer-handle {
+    width: 40px;
+    height: 2px;
+    border-radius: 1px;
+}
+
+.resizer:hover .resizer-handle,
+.resizer.active .resizer-handle {
+    opacity: 1;
+}
+
+/* Quick search button */
+.quick-search-button {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--header-bg);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 90;
+    transition: transform 0.2s, background-color 0.2s;
+    border: none;
+    font-size: 18px;
+}
+
+.quick-search-button:hover,
+.quick-search-button:active {
+    background-color: var(--mobile-toggle-active);
+    transform: scale(1.05);
+}
+
+/* Touch feedback states */
+@media (hover: none) {
+    .header-button:active,
+    .button:active,
+    .file-tree-item:active,
+    .edit-button:active {
+        transform: scale(0.97);
+    }
+}

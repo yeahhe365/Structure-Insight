@@ -1,0 +1,308 @@
+/**
+ * Structure Insight Web - Editor Styles
+ * 编辑器和代码显示样式
+ */
+
+/* Code editor styles */
+.code-editor {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+}
+
+.line-numbers {
+    background-color: var(--line-number-bg);
+    color: var(--line-number-text);
+    padding: 10px 5px;
+    text-align: right;
+    user-select: none;
+    overflow-y: hidden;
+    font-family: monospace;
+    font-size: inherit;
+    white-space: pre;
+}
+
+.editor-content {
+    flex: 1;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    border: 1px solid var(--editor-border);
+    padding: 10px;
+    font-family: monospace;
+    white-space: pre;
+    tab-size: 4;
+    overflow: auto;
+    resize: none;
+    position: relative;
+    font-size: inherit;
+    line-height: 1.5;
+}
+
+.editor-content:focus {
+    outline: none;
+}
+
+/* Editor styles */
+.editor-container {
+    margin: 10px 0;
+    border: 1px solid var(--editing-border);
+    border-radius: 4px;
+    background-color: var(--editing-bg);
+    padding: 5px;
+}
+
+.editor-textarea {
+    width: 100%;
+    min-height: 200px;
+    border: 1px solid var(--editor-border);
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    font-family: monospace;
+    white-space: pre;
+    tab-size: 4;
+    resize: vertical;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.editor-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.editor-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.edit-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.edit-button:hover {
+    text-decoration: underline;
+}
+
+/* File content container */
+.file-content-container {
+    margin-bottom: 20px;
+    border-radius: 4px;
+    scroll-margin-top: 70px; /* Add scroll margin for better positioning */
+    transition: background-color 0.3s ease;
+}
+
+.highlight-file {
+    animation: highlightFile 1.5s ease-out;
+}
+
+/* Highlighted code block styles */
+pre code.hljs {
+    font-family: monospace;
+    font-size: inherit;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 5px 0;
+    display: block;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* File structure format */
+.file-structure-content {
+    white-space: pre;
+    font-family: monospace;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: var(--editor-bg);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+/* Editor container */
+.highlighted-content {
+    font-family: monospace;
+    font-size: inherit;
+    line-height: 1.5;
+    overflow: auto;
+    flex: 1;
+    position: relative;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+    padding: 10px;
+}
+
+/* Progress bar styles */
+.progress-container {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 16px;
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    background-color: var(--progress-bg);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--progress-fill);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* File separator styles */
+.file-separator {
+    background-color: var(--file-separator);
+    border-top: 1px solid var(--file-separator-border);
+    border-bottom: 1px solid var(--file-separator-border);
+    padding: 8px 12px;
+    margin: 15px 0;
+    font-weight: bold;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* File statistics information styles */
+.file-stats {
+    margin-left: 15px;
+    font-size: 0.85em;
+    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-stats i {
+    margin-right: 3px;
+    font-size: 0.9em;
+    color: var(--text-color);
+}
+
+/* Dark mode code highlighting overrides */
+.dark-theme .hljs {
+    background: #2d2d2d;
+    color: #ccc;
+}
+
+.dark-theme .hljs-comment,
+.dark-theme .hljs-quote {
+    color: #999;
+}
+
+.dark-theme .hljs-keyword,
+.dark-theme .hljs-selector-tag,
+.dark-theme .hljs-literal {
+    color: #88aece;
+}
+
+.dark-theme .hljs-string,
+.dark-theme .hljs-doctag {
+    color: #b5bd68;
+}
+
+.dark-theme .hljs-number,
+.dark-theme .hljs-selector-class,
+.dark-theme .hljs-selector-id {
+    color: #de935f;
+}
+
+.dark-theme .hljs-section,
+.dark-theme .hljs-title {
+    color: #f0c674;
+}
+
+/* Fix in dark theme */
+.dark-theme .file-stats {
+    opacity: 0.9;
+}
+
+.dark-theme .file-stats i {
+    color: var(--header-text);
+}
+
+/* Highlight search matches */
+.search-highlight {
+    background-color: rgba(255, 213, 0, 0.3);
+    outline: 1px solid rgba(255, 213, 0, 0.7);
+}
+
+.search-highlight.current {
+    background-color: rgba(255, 165, 0, 0.5);
+    outline: 2px solid rgba(255, 165, 0, 0.9);
+}
+
+.search-highlight.blink {
+    animation: blinkHighlight 0.6s ease-in-out;
+}
+
+/* Section header with title and copy button */
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.section-header h3 {
+    margin: 0;
+    margin-right: 10px;
+}
+
+/* Copy feedback overlay */
+.copy-feedback {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 2000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    text-align: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: fadeIn 0.3s forwards, fadeOut 0.3s forwards 1.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.copy-feedback.visible {
+    opacity: 1;
+    transform: translateY(0);
+}

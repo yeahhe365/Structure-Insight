@@ -516,7 +516,7 @@ const useFileManagement = (extractContent) => {
         }, 100);
     };
     
-    // File tree selection handler
+    // File tree selection handler - FIXED JUMPING FUNCTIONALITY
     const handleFileTreeSelect = (node, editorScrollRef, isMobile, setMobileView, isTransitioning, setIsTransitioning, lineHeight) => {
         if (!node || !node.name) return;
         
@@ -541,34 +541,61 @@ const useFileManagement = (extractContent) => {
                 }, 50);
             }
             
-            // Scroll to file position
-            const position = filePositions[node.name];
-            const targetElement = editorScrollRef.current;
+            // Try to find file element by ID first (most reliable method)
+            const fileId = `file-${encodeURIComponent(node.name)}`;
+            const fileElement = document.getElementById(fileId);
             
-            if (targetElement) {
-                // Calculate approximate scroll position
-                const textBeforePosition = currentContent.substring(0, position);
-                const linesBefore = textBeforePosition.split('\n').length;
+            if (fileElement) {
+                // Use scrollIntoView for more reliable scrolling
+                fileElement.scrollIntoView({
+                    behavior: isMobile ? 'smooth' : 'auto',
+                    block: 'start'
+                });
                 
-                // Estimate scroll position
-                const scrollPosition = linesBefore * lineHeight;
-                
-                // Use smooth scrolling on mobile for better experience
-                if (isMobile) {
-                    targetElement.scrollTo({
-                        top: scrollPosition,
-                        behavior: 'smooth'
-                    });
-                } else {
-                    targetElement.scrollTop = scrollPosition;
-                }
-                
-                // Update status message
-                setStatusMessage(`已跳转到: ${node.name}`);
+                // Add a small offset to account for header/spacing
                 setTimeout(() => {
-                    setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
-                }, 2000);
+                    if (editorScrollRef.current) {
+                        editorScrollRef.current.scrollTop -= 60; // Adjust based on header size
+                    }
+                }, isMobile ? 50 : 0);
+            } else {
+                // Fallback to position-based scrolling if element not found
+                const position = filePositions[node.name];
+                const targetElement = editorScrollRef.current;
+                
+                if (targetElement) {
+                    // Calculate approximate scroll position
+                    const textBeforePosition = currentContent.substring(0, position);
+                    const linesBefore = textBeforePosition.split('\n').length;
+                    
+                    // Estimate scroll position with improved calculation
+                    const scrollPosition = linesBefore * lineHeight - 60; // Subtract header offset
+                    
+                    // Use smooth scrolling on mobile for better experience
+                    targetElement.scrollTo({
+                        top: Math.max(0, scrollPosition),
+                        behavior: isMobile ? 'smooth' : 'auto'
+                    });
+                }
             }
+            
+            // Highlight file section temporarily
+            setTimeout(() => {
+                const fileElement = document.getElementById(fileId);
+                if (fileElement) {
+                    // Add highlight animation
+                    fileElement.classList.add('highlight-file');
+                    setTimeout(() => {
+                        fileElement.classList.remove('highlight-file');
+                    }, 1500);
+                }
+            }, isMobile ? 300 : 100);
+            
+            // Update status message
+            setStatusMessage(`已跳转到: ${node.name}`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
         }
     };
     

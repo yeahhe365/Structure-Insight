@@ -217,6 +217,16 @@ const FileUtils = {
                         isDirectory: false,
                         file
                     });
+                    
+                    // Sort children after adding new file (maintain alphabetical order)
+                    currentFolder.children.sort((a, b) => {
+                        // Directories first
+                        if (a.isDirectory !== b.isDirectory) {
+                            return a.isDirectory ? -1 : 1;
+                        }
+                        // Then sort by name (alphabetically)
+                        return a.name.localeCompare(b.name);
+                    });
                 }
                 // Otherwise it's a folder
                 else {
@@ -228,10 +238,30 @@ const FileUtils = {
                             children: []
                         };
                         currentFolder.children.push(folders[currentPath]);
+                        
+                        // Sort children after adding new folder
+                        currentFolder.children.sort((a, b) => {
+                            // Directories first
+                            if (a.isDirectory !== b.isDirectory) {
+                                return a.isDirectory ? -1 : 1;
+                            }
+                            // Then sort by name (alphabetically)
+                            return a.name.localeCompare(b.name);
+                        });
                     }
                     currentFolder = folders[currentPath];
                 }
             }
+        });
+        
+        // Final sort of top-level items if there are direct files added to tree
+        tree.sort((a, b) => {
+            // Directories first
+            if (a.isDirectory !== b.isDirectory) {
+                return a.isDirectory ? -1 : 1;
+            }
+            // Then sort by name
+            return a.name.localeCompare(b.name);
         });
         
         return tree;

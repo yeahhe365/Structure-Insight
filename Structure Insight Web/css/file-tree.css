@@ -1,0 +1,87 @@
+/**
+ * Structure Insight Web - File Tree Styles
+ * 文件树和导航
+ */
+
+/* File tree styles */
+.tree-container {
+    flex: 1;
+    background-color: var(--editor-bg);
+    border: 1px solid var(--editor-border);
+    padding: 10px;
+    overflow: auto;
+    font-size: var(--font-size-base);
+}
+
+.tree-label {
+    padding: 10px;
+    color: var(--text-color);
+    font-weight: bold;
+}
+
+.file-tree {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.file-tree-item {
+    padding: 2px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.file-tree-item:hover {
+    background-color: var(--button-hover);
+}
+
+.file-tree-toggle {
+    margin-right: 5px;
+    width: 12px;
+    text-align: center;
+}
+
+.file-tree-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-tree-skipped {
+    color: var(--text-disabled);
+}
+
+/* Individual file tree node styling */
+.file-tree-item.directory-item {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-color: var(--divider-color);
+}
+
+.dark-theme .file-tree-item.directory-item {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.file-tree-item.directory-item.expanded {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .file-tree-item.directory-item.expanded {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.file-tree-item.file-item:active {
+    background-color: rgba(0, 120, 215, 0.1);
+}
+
+.dark-theme .file-tree-item.file-item:active {
+    background-color: rgba(0, 120, 215, 0.2);
+}
+
+/* Folder icon styling */
+.folder-icon {
+    margin-right: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

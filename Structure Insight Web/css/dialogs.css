@@ -1,0 +1,429 @@
+/**
+ * Structure Insight Web - Dialogs Styles
+ * 搜索和设置对话框
+ */
+
+/* Floating search dialog styles */
+.floating-search-dialog {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 950;
+    border: 1px solid var(--divider-color);
+    /* Remove transition and animation that could interfere with dragging */
+    will-change: right, bottom; /* Optimize for GPU acceleration */
+    touch-action: none; /* Prevent browser handling of touch events */
+    user-select: none; /* Prevent text selection during drag */
+}
+
+/* Add animation only when initially appearing */
+.floating-search-dialog:not(.dragging) {
+    animation: slideInSearch 0.2s ease-out;
+}
+
+/* Apply stronger visual feedback when dragging */
+.floating-search-dialog.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Make the whole document show proper cursor during drag */
+body.search-dragging {
+    cursor: grabbing !important;
+}
+
+/* Make all elements inside the dialog inherit the grabbing cursor during drag */
+body.search-dragging * {
+    cursor: grabbing !important;
+}
+
+.floating-search-dialog.dragging {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+    cursor: grabbing;
+}
+
+/* Enhanced search dialog header for better dragging */
+.search-dialog-header {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -ms-user-select: none;
+    touch-action: none; /* Prevent default touch behaviors */
+}
+
+/* Change cursor when dragging */
+.dragging .search-dialog-header {
+    cursor: grabbing;
+}
+
+.search-dialog-header .drag-handle {
+    margin-right: auto;
+    cursor: grab;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.search-dialog-header .drag-handle i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.search-option-toggle,
+.search-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--header-text);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.search-option-toggle:hover,
+.search-dialog-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.search-option-toggle.active {
+    opacity: 1;
+    color: #4CAF50;
+}
+
+.search-dialog-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--divider-color);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--editor-bg);
+    color: var(--text-color);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--header-bg);
+    box-shadow: 0 0 0 2px rgba(42, 63, 84, 0.2);
+}
+
+.search-button {
+    padding: 8px 16px;
+    background-color: var(--header-bg);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.2s;
+}
+
+.search-button:hover {
+    background-color: var(--mobile-toggle-active);
+}
+
+.search-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.search-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.search-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.search-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.search-results {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.search-result-count {
+    color: var(--text-color);
+}
+
+.search-no-results {
+    color: #e74c3c;
+}
+
+.search-navigation {
+    display: flex;
+    gap: 8px;
+}
+
+.search-nav-button {
+    background-color: var(--button-bg);
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.search-nav-button:hover {
+    background-color: var(--button-hover);
+}
+
+.search-nav-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+/* Settings Dialog Styles */
+.settings-dialog {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    background-color: var(--editor-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 951;
+    border: 1px solid var(--divider-color);
+    will-change: right, top;
+    touch-action: none;
+    user-select: none;
+    animation: slideInSettings 0.2s ease-out;
+}
+
+.settings-dialog.dragging {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    cursor: grabbing;
+}
+
+body.settings-dragging {
+    cursor: grabbing !important;
+}
+
+body.settings-dragging * {
+    cursor: grabbing !important;
+}
+
+.settings-dialog-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--divider-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: grab;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -ms-user-select: none;
+    touch-action: none;
+}
+
+.dragging .settings-dialog-header {
+    cursor: grabbing;
+}
+
+.settings-dialog-header .drag-handle {
+    margin-right: auto;
+    cursor: grab;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.settings-dialog-header .drag-handle i {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.settings-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0 10px;
+}
+
+.settings-dialog-close {
+    background: transparent;
+    border: none;
+    color: var(--header-text);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.settings-dialog-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.settings-dialog-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-section-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.settings-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.font-size-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.font-size-value {
+    min-width: 50px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.settings-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.settings-button:hover {
+    background-color: var(--button-hover);
+}
+
+.settings-button:disabled {
+    background-color: var(--button-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+.theme-control .theme-label,
+.extract-control .extract-label {
+    font-size: 14px;
+}
+
+.theme-toggle {
+    min-width: 40px;
+}
+
+.extract-toggle {
+    min-width: 40px;
+    position: relative;
+}
+
+.extract-toggle.active {
+    background-color: var(--editing-button-bg);
+    color: white;
+}
+
+.extract-toggle.active::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+/* Header settings button */
+.header-button.settings-button {
+    position: relative;
+    color: var(--header-text);
+}
+
+.header-button.settings-button:hover {
+    background-color: var(--header-button-hover);
+}
+
+/* Handle dialog overlap */
+body.search-dragging .settings-dialog,
+body.settings-dragging .floating-search-dialog {
+    pointer-events: none;
+    opacity: 0.5;
+}

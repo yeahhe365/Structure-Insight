@@ -294,7 +294,11 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                         const stats = fileStats[fileName] || { lineCount: 0, charCount: 0 };
                         
                         return (
-                            <div key={index} className="file-content-container">
+                            <div 
+                                key={index}
+                                id={`file-${encodeURIComponent(fileName)}`} 
+                                className="file-content-container"
+                            >
                                 <div className="file-separator">
                                     <div className="file-info">
                                         <i className="fas fa-file-alt"></i> {fileName}
