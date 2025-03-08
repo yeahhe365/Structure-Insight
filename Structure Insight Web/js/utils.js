@@ -1,13 +1,21 @@
 /**
- * Structure Insight Web - Utility Functions
- * Contains all utility functions organized by category
+ * Structure Insight Web - Utility Modules
+ * Contains all utility functions organized by module
  */
 
 //=============================================================================
-// STORAGE UTILITIES
+// STORAGE MODULE
 //=============================================================================
 
+/**
+ * Storage module - Local storage operations with error handling
+ */
 const Storage = {
+    /**
+     * Save data to local storage
+     * @param {string} key - Storage key 
+     * @param {any} value - Value to store (will be JSON stringified)
+     */
     save: (key, value) => {
         try {
             localStorage.setItem(key, JSON.stringify(value));
@@ -16,6 +24,12 @@ const Storage = {
         }
     },
     
+    /**
+     * Load data from local storage
+     * @param {string} key - Storage key
+     * @param {any} defaultValue - Default value if key doesn't exist
+     * @returns {any} Parsed value or default value
+     */
     load: (key, defaultValue) => {
         try {
             const value = localStorage.getItem(key);
@@ -26,6 +40,10 @@ const Storage = {
         }
     },
     
+    /**
+     * Remove item from local storage
+     * @param {string} key - Storage key to remove
+     */
     remove: (key) => {
         try {
             localStorage.removeItem(key);
@@ -34,6 +52,9 @@ const Storage = {
         }
     },
     
+    /**
+     * Clear all items from local storage
+     */
     clear: () => {
         try {
             localStorage.clear();
@@ -44,10 +65,14 @@ const Storage = {
 };
 
 //=============================================================================
-// FILE UTILITIES
+// FILE MODULE
 //=============================================================================
 
-// Detect file language based on extension
+/**
+ * Detect file language based on extension
+ * @param {string} fileName - Name of the file to detect language for
+ * @returns {string} Language identifier or empty string
+ */
 const detectLanguage = (fileName) => {
     if (!fileName) return '';
     const extension = fileName.split('.').pop().toLowerCase();
@@ -85,9 +110,15 @@ const detectLanguage = (fileName) => {
     return langMap[extension] || '';
 };
 
-// File structure and processing utilities
+/**
+ * File utilities module - File operations and structure processing
+ */
 const FileUtils = {
-    // Read file content as text
+    /**
+     * Read file content as text
+     * @param {File} file - File object to read
+     * @returns {Promise<string>} Promise resolving to file content
+     */
     readFileContent: (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -97,75 +128,116 @@ const FileUtils = {
         });
     },
     
-    // Build text representation of file structure
+    /**
+     * Build text representation of file structure
+     * @param {FileList|Array<File>} files - File list to process
+     * @returns {string} Text representation of file structure
+     */
     buildFileStructure: (files) => {
         if (!files || files.length === 0) {
             return "无文件";
         }
         
         // Build tree structure
-        const root = { name: files[0]?.webkitRelativePath?.split('/')[0] || 'Files', children: {}, isFolder: true };
+        const rootName = files[0]?.webkitRelativePath?.split('/')[0] || 'Files';
+        const root = { 
+            name: rootName, 
+            children: [], 
+            isDirectory: true 
+        };
+        
+        // File mapping for quick lookup
+        const nodesMap = new Map();
+        nodesMap.set(rootName, root);
         
         // Process all files to build directory tree
-        files.forEach(file => {
+        for (const file of files) {
             const path = file.webkitRelativePath || file.name;
             const parts = path.split('/');
             
-            let current = root;
-            
-            // Create file path
+            // Skip the first part (root folder name)
             for (let i = 1; i < parts.length; i++) {
                 const part = parts[i];
+                const parentPath = parts.slice(0, i).join('/');
+                const currentPath = parts.slice(0, i + 1).join('/');
                 const isFile = i === parts.length - 1;
                 
-                if (!current.children[part]) {
-                    current.children[part] = { 
-                        name: part, 
-                        children: {}, 
-                        isFolder: !isFile 
-                    };
-                }
+                // Skip if node already exists
+                if (nodesMap.has(currentPath)) continue;
                 
-                current = current.children[part];
+                // Get parent node
+                const parent = nodesMap.get(parentPath);
+                if (!parent) continue;  // This shouldn't happen with well-formed paths
+                
+                // Create new node
+                const newNode = {
+                    name: part,
+                    children: [],
+                    isDirectory: !isFile,
+                    file: isFile ? file : null
+                };
+                
+                // Add to parent's children
+                parent.children.push(newNode);
+                
+                // Add to map for quick lookup
+                nodesMap.set(currentPath, newNode);
             }
-        });
+        }
         
-        // Generate formatted output
-        const result = [];
-        result.push(root.name);
-        
-        // Recursive function to generate structure text
-        const generateStructure = (node, prefix = '', isLast = true) => {
-            // Convert children object to array and sort (folders first)
-            const childrenArray = Object.values(node.children).sort((a, b) => {
-                // Folders first
-                if (a.isFolder !== b.isFolder) {
-                    return a.isFolder ? -1 : 1;
+        // Sort the tree (directories first, then alphabetically)
+        const sortNode = (node) => {
+            node.children.sort((a, b) => {
+                if (a.isDirectory !== b.isDirectory) {
+                    return a.isDirectory ? -1 : 1;
                 }
-                // By name
                 return a.name.localeCompare(b.name);
             });
             
-            // Process each child node
-            childrenArray.forEach((child, index) => {
-                const isChildLast = index === childrenArray.length - 1;
-                const childPrefix = `${prefix}${isLast ? '    ' : '│   '}`;
-                const lineSymbol = isChildLast ? '└── ' : '├── ';
-                
-                result.push(`${prefix}${lineSymbol}${child.name}`);
-                
-                if (child.isFolder && Object.keys(child.children).length > 0) {
-                    generateStructure(child, childPrefix, isChildLast);
+            for (const child of node.children) {
+                if (child.isDirectory) {
+                    sortNode(child);
                 }
-            });
+            }
+            
+            return node;
         };
         
-        generateStructure(root);
+        sortNode(root);
+        
+        // Generate string representation
+        let result = [rootName];
+        
+        // Recursive function to build ASCII tree
+        const buildTreeLines = (node, prefix = '', lastChild = true) => {
+            const children = node.children;
+            
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                const isLast = i === children.length - 1;
+                
+                // Line for current node
+                result.push(`${prefix}${isLast ? '└── ' : '├── '}${child.name}`);
+                
+                // If directory with children, process children
+                if (child.isDirectory && child.children.length > 0) {
+                    // Next level prefix
+                    const nextPrefix = prefix + (isLast ? '    ' : '│   ');
+                    buildTreeLines(child, nextPrefix, isLast);
+                }
+            }
+        };
+        
+        buildTreeLines(root);
         
         return result.join('\n');
     },
     
-    // Build tree data structure for UI
+    /**
+     * Build tree data structure for UI rendering
+     * @param {FileList|Array<File>} files - File list to process
+     * @returns {Array} Tree data structure for UI rendering
+     */
     buildTreeData: (files) => {
         if (!files || files.length === 0) {
             return [];
@@ -269,11 +341,20 @@ const FileUtils = {
 };
 
 //=============================================================================
-// SEARCH UTILITIES
+// SEARCH MODULE
 //=============================================================================
 
+/**
+ * Search utilities module - Advanced text search functionality
+ */
 const SearchUtils = {
-    // Execute search with options
+    /**
+     * Execute search with options
+     * @param {string} content - Text content to search in
+     * @param {string} query - Search query
+     * @param {Object} options - Search options (caseSensitive, useRegex, wholeWord)
+     * @returns {Array} Array of match objects with positions
+     */
     performSearch: (content, query, options = {}) => {
         if (!query || !content) return [];
         
@@ -312,18 +393,31 @@ const SearchUtils = {
         return matches;
     },
     
-    // Escape special regex characters
+    /**
+     * Escape special regex characters
+     * @param {string} string - String to escape
+     * @returns {string} Escaped string safe for regex
+     */
     escapeRegExp: (string) => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 };
 
 //=============================================================================
-// DOM UTILITIES
+// DOM MODULE
 //=============================================================================
 
+/**
+ * DOM utilities module - DOM manipulation functions
+ */
 const DOMUtils = {
-    // Find text nodes with positions
+    /**
+     * Find text nodes with positions for highlighting
+     * @param {Node} rootNode - Root node to search in
+     * @param {number} targetStart - Start position in text
+     * @param {number} targetEnd - End position in text
+     * @param {Function} callback - Callback function for found text nodes
+     */
     findTextNodes: (rootNode, targetStart, targetEnd, callback) => {
         // Recursive function to find and process text nodes
         const processNode = (node, currentOffset) => {
@@ -359,7 +453,7 @@ const DOMUtils = {
     }
 };
 
-// Export all utilities
+// Export all utilities modules
 window.Utils = {
     Storage,
     detectLanguage,

@@ -25,16 +25,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/markdown.min.js"></script>
-    <!-- Application CSS - 模块化CSS -->
+    <!-- Application CSS -->
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
     <div id="app"></div>
 
     <!-- 注意：脚本加载顺序非常重要！ -->
-    <script type="text/babel" src="utils.js"></script>
-    <script type="text/babel" src="components.js"></script>
-    <script type="text/babel" src="hooks.js"></script>
-    <script type="text/babel" src="app.js"></script>
+    <!-- Utils must load first -->
+    <script type="text/babel" src="js/utils.js"></script>
+    
+    <!-- Hooks load next -->
+    <script type="text/babel" src="js/hooks/settingsHooks.js"></script>
+    <script type="text/babel" src="js/hooks/fileHooks.js"></script>
+    <script type="text/babel" src="js/hooks/uiHooks.js"></script>
+    
+    <!-- Components depend on utils and hooks -->
+    <script type="text/babel" src="js/components/editorComponents.js"></script>
+    <script type="text/babel" src="js/components/fileComponents.js"></script>
+    <script type="text/babel" src="js/components/uiComponents.js"></script>
+    
+    <!-- App loads last -->
+    <script type="text/babel" src="js/app/appHelpers.js"></script>
+    <script type="text/babel" src="js/app/app.js"></script>
 </body>
 </html>

@@ -1,517 +1,21 @@
 /**
  * Structure Insight Web - UI Components
- * Contains all React components organized by functionality
+ * Dialogs, resizers, and UI utility components
  */
 
 const { useState, useEffect, useRef, useCallback } = React;
-const { DOMUtils, SearchUtils } = window.Utils;
-
-//=============================================================================
-// CODE EDITOR COMPONENTS
-//=============================================================================
-
-// Component for line numbers display - using forwardRef for ref access
-const LineNumbers = React.forwardRef(({ content, lineHeight, fontSize }, ref) => {
-    const [lineNumbers, setLineNumbers] = useState([]);
-    
-    // Update line numbers when content changes
-    useEffect(() => {
-        if (!content) {
-            setLineNumbers([]);
-            return;
-        }
-        
-        // Calculate line count
-        const lines = content.split('\n');
-        
-        // Generate line number array
-        setLineNumbers(Array.from({ length: lines.length }, (_, i) => i + 1));
-    }, [content]);
-    
-    return (
-        <div 
-            ref={ref}
-            className="line-numbers" 
-            style={{ 
-                fontSize: `${fontSize}px`,
-                lineHeight: `${lineHeight}px`
-            }}
-        >
-            {lineNumbers.map(num => (
-                <div key={num} style={{ height: `${lineHeight}px` }}>{num}</div>
-            ))}
-        </div>
-    );
-});
-
-// Copy feedback component with animation
-const CopyFeedback = ({ isVisible, onAnimationEnd }) => {
-    return (
-        <div 
-            className={`copy-feedback ${isVisible ? 'visible' : ''}`}
-            onAnimationEnd={onAnimationEnd}
-        >
-            已复制到剪贴板
-        </div>
-    );
-};
-
-// Component for syntax-highlighted content display with editing capabilities
-const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing, currentEditingFile, onEditContent }) => {
-    const containerRef = useRef(null);
-    const [processedContent, setProcessedContent] = useState('');
-    const [editingContent, setEditingContent] = useState('');
-    const [showCopyFeedback, setShowCopyFeedback] = useState(false);
-    const [copyFeedbackPosition, setCopyFeedbackPosition] = useState({ top: 0, left: 0 });
-    const [fileStats, setFileStats] = useState({});
-    const fileParts = useRef([]);
-    
-    // Process content for display
-    useEffect(() => {
-        if (!content) {
-            setProcessedContent('');
-            return;
-        }
-        
-        // Set processed content
-        setProcessedContent(content);
-        
-        // Apply syntax highlighting in next render cycle
-        const timer = setTimeout(() => {
-            if (containerRef.current) {
-                const codeBlocks = containerRef.current.querySelectorAll('pre code');
-                codeBlocks.forEach(block => {
-                    hljs.highlightElement(block);
-                });
-            }
-        }, 10);
-        
-        return () => clearTimeout(timer);
-    }, [content]);
-    
-    // Calculate file statistics when content changes
-    useEffect(() => {
-        if (!processedContent) return;
-        
-        // Extract file parts and calculate statistics
-        let contentPart = '';
-        if (processedContent.includes('文件结构:') && processedContent.includes('文件内容:')) {
-            const contentIndex = processedContent.indexOf('文件内容:');
-            contentPart = processedContent.substring(contentIndex);
-        } else {
-            return;
-        }
-        
-        // Use file separator to find all file parts
-        const separatorPattern = '='.repeat(40) + '\n文件名:';
-        
-        // Start after the content header line
-        const startIndex = contentPart.indexOf('\n') + 1;
-        const filePartsContent = contentPart.substring(startIndex);
-        
-        // Find all separator positions
-        const separatorPositions = [];
-        let pos = 0;
-        
-        while ((pos = filePartsContent.indexOf(separatorPattern, pos)) !== -1) {
-            separatorPositions.push(pos);
-            pos += separatorPattern.length;
-        }
-        
-        // Process each file part
-        const parts = [];
-        for (let i = 0; i < separatorPositions.length; i++) {
-            const start = separatorPositions[i];
-            const end = i < separatorPositions.length - 1 
-                ? separatorPositions[i + 1] 
-                : filePartsContent.length;
-                
-            const filePart = filePartsContent.substring(start, end);
-            parts.push(filePart);
-        }
-        
-        fileParts.current = parts;
-        
-        // Calculate statistics for each file
-        const stats = {};
-        
-        parts.forEach(part => {
-            const fileNameIndex = part.indexOf('文件名:') + 4;
-            const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
-            
-            if (fileNameIndex > 4 && fileNameEndIndex !== -1) {
-                const fileName = part.substring(fileNameIndex, fileNameEndIndex).trim();
-                
-                // Find separator end
-                const separatorEnd = part.indexOf('\n', part.indexOf('-'.repeat(71))) + 1;
-                
-                if (separatorEnd !== 0) {
-                    // Extract file content
-                    const fileContent = part.substring(separatorEnd).trim();
-                    const lineCount = fileContent.split('\n').length;
-                    const charCount = fileContent.length;
-                    
-                    stats[fileName] = { lineCount, charCount };
-                }
-            }
-        });
-        
-        setFileStats(stats);
-    }, [processedContent]);
-    
-    if (!processedContent) return <div className="highlighted-content"></div>;
-    
-    // Separate structure and content sections
-    let structurePart = '';
-    let contentPart = '';
-    
-    // Split content more precisely to avoid issues with Chinese characters
-    if (processedContent.includes('文件结构:') && processedContent.includes('文件内容:')) {
-        const contentIndex = processedContent.indexOf('文件内容:');
-        structurePart = processedContent.substring(0, contentIndex);
-        contentPart = processedContent.substring(contentIndex);
-    } else {
-        structurePart = processedContent;
-    }
-    
-    // Process structure section
-    const structureLines = structurePart.split('\n');
-    let structureContent = '';
-    
-    if (structureLines.length > 1 && structureLines[0].includes('文件结构:')) {
-        // Find content until first empty line
-        let endLine = structureLines.findIndex((line, index) => index > 0 && line.trim() === '');
-        if (endLine === -1) endLine = structureLines.length;
-        
-        structureContent = structureLines.slice(1, endLine).join('\n');
-    }
-    
-    // Handle content editing
-    const handleContentChange = (e) => {
-        setEditingContent(e.target.value);
-    };
-    
-    const handleSaveEdit = () => {
-        if (onEditContent && currentEditingFile) {
-            onEditContent(currentEditingFile, editingContent);
-        }
-    };
-    
-    // Copy content handlers
-    const copyToClipboard = (text, buttonElement) => {
-        navigator.clipboard.writeText(text)
-            .then(() => {
-                // Get position for feedback
-                if (buttonElement) {
-                    const rect = buttonElement.getBoundingClientRect();
-                    setCopyFeedbackPosition({
-                        top: rect.top - 40,
-                        left: rect.left + (rect.width / 2)
-                    });
-                }
-                
-                // Show feedback
-                setShowCopyFeedback(true);
-                
-                // Hide feedback after animation completes
-                setTimeout(() => {
-                    setShowCopyFeedback(false);
-                }, 1500);
-            })
-            .catch(err => {
-                console.error('复制失败:', err);
-                alert("复制失败，请手动选择内容复制");
-            });
-    };
-    
-    const handleCopyFeedbackAnimationEnd = () => {
-        if (!showCopyFeedback) {
-            setCopyFeedbackPosition({ top: 0, left: 0 });
-        }
-    };
-    
-    return (
-        <div 
-            className="highlighted-content" 
-            ref={containerRef}
-            style={{ 
-                fontSize: `${fontSize}px`,
-                lineHeight: `${lineHeight}px` 
-            }}
-        >
-            {/* Copy feedback overlay */}
-            <CopyFeedback 
-                isVisible={showCopyFeedback} 
-                onAnimationEnd={handleCopyFeedbackAnimationEnd} 
-                style={copyFeedbackPosition}
-            />
-            
-            {/* Structure section */}
-            {structurePart && (
-                <div>
-                    <div className="section-header">
-                        <h3>文件结构:</h3>
-                        <button 
-                            className="copy-button" 
-                            onClick={(e) => copyToClipboard(structureContent, e.currentTarget)}
-                            title="复制文件结构"
-                        >
-                            <i className="fas fa-copy"></i>
-                        </button>
-                    </div>
-                    <div className="file-structure-content">
-                        {structureContent}
-                    </div>
-                </div>
-            )}
-            
-            {/* Content section */}
-            {contentPart && <h3 style={{margin: '20px 0 10px'}}>文件内容:</h3>}
-            
-            {fileParts.current.map((part, index) => {
-                // Extract filename and content manually
-                const fileNameIndex = part.indexOf('文件名:') + 4;
-                const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
-                
-                if (fileNameIndex > 4 && fileNameEndIndex !== -1) {
-                    const fileName = part.substring(fileNameIndex, fileNameEndIndex).trim();
-                    
-                    // Find separator end
-                    const separatorEnd = part.indexOf('\n', part.indexOf('-'.repeat(71))) + 1;
-                    
-                    if (separatorEnd !== 0) {
-                        // Extract file content
-                        let fileContent = part.substring(separatorEnd).trim();
-                        const fileLanguage = window.Utils.detectLanguage(fileName);
-                        const isCurrentEditingFile = isEditing && currentEditingFile === fileName;
-                        
-                        // Initialize editing content
-                        if (isCurrentEditingFile && editingContent === '') {
-                            setEditingContent(fileContent);
-                        }
-                        
-                        // Get file stats
-                        const stats = fileStats[fileName] || { lineCount: 0, charCount: 0 };
-                        
-                        return (
-                            <div 
-                                key={index}
-                                id={`file-${encodeURIComponent(fileName)}`} 
-                                className="file-content-container"
-                            >
-                                <div className="file-separator">
-                                    <div className="file-info">
-                                        <i className="fas fa-file-alt"></i> {fileName}
-                                        <span className="file-stats">
-                                            <i className="fas fa-code"></i> {stats.lineCount} 行
-                                            <i className="fas fa-text-width"></i> {stats.charCount} 字符
-                                        </span>
-                                    </div>
-                                    <div className="file-actions">
-                                        {/* Copy button */}
-                                        <button 
-                                            className="copy-button" 
-                                            onClick={(e) => copyToClipboard(fileContent, e.currentTarget)}
-                                            title="复制文件内容"
-                                        >
-                                            <i className="fas fa-copy"></i>
-                                        </button>
-                                        
-                                        {/* Edit button */}
-                                        <button 
-                                            className="edit-button" 
-                                            onClick={() => {
-                                                setEditingContent(fileContent);
-                                                onEditContent(fileName, null, true); // Mark as editing
-                                            }}
-                                            disabled={isEditing}
-                                        >
-                                            <i className="fas fa-edit"></i> 编辑
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                {isCurrentEditingFile ? (
-                                    <div className="editor-container">
-                                        <textarea 
-                                            className="editor-textarea"
-                                            value={editingContent}
-                                            onChange={handleContentChange}
-                                            style={{ 
-                                                fontSize: `${fontSize}px`,
-                                                lineHeight: `${lineHeight}px` 
-                                            }}
-                                        />
-                                        <div className="editor-buttons">
-                                            <button className="button" onClick={handleSaveEdit}>
-                                                <i className="fas fa-save"></i> 保存
-                                            </button>
-                                            <button className="button" onClick={() => onEditContent(null)}>
-                                                <i className="fas fa-times"></i> 取消
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    fileContent.trim() ? (
-                                        <pre><code className={fileLanguage ? `language-${fileLanguage}` : ''}>
-                                            {fileContent}
-                                        </code></pre>
-                                    ) : (
-                                        <p>（未提取内容）</p>
-                                    )
-                                )}
-                            </div>
-                        );
-                    }
-                }
-                return null;
-            })}
-        </div>
-    );
-};
-
-//=============================================================================
-// FILE TREE COMPONENTS
-//=============================================================================
-
-// File tree container component
-const FileTree = ({ nodes, onFileSelect, onFileDelete }) => {
-    const renderTree = (nodes, level = 0) => {
-        if (!Array.isArray(nodes)) {
-            return null;
-        }
-        
-        return (
-            <ul className="file-tree" style={{ paddingLeft: level === 0 ? 0 : 20 }}>
-                {nodes.map((node, index) => (
-                    <FileTreeNode 
-                        key={`${node.path || 'node'}-${index}`} 
-                        node={node} 
-                        onFileSelect={onFileSelect}
-                        onFileDelete={onFileDelete}
-                        level={level}
-                    />
-                ))}
-            </ul>
-        );
-    };
-
-    return (
-        <div className="tree-container">
-            <div className="tree-label">文件列表：</div>
-            {nodes && nodes.length > 0 ? renderTree(nodes) : <div>无文件</div>}
-        </div>
-    );
-};
-
-// Individual file tree node component - Optimized for mobile
-const FileTreeNode = ({ node, onFileSelect, onFileDelete, level }) => {
-    const [expanded, setExpanded] = useState(true);
-    const isMobile = window.innerWidth <= 768;
-
-    // Handle null/undefined nodes
-    if (!node) {
-        return null;
-    }
-
-    // Enhanced toggle handler with better touch support
-    const toggleExpand = (e) => {
-        e.stopPropagation();
-        setExpanded(!expanded);
-    };
-
-    // Handler for item selection
-    const handleSelect = (e) => {
-        if (node.isDirectory) {
-            // For directories, toggle expansion when clicked on mobile
-            // This makes the entire row a toggleable area
-            if (isMobile) {
-                toggleExpand(e);
-            }
-        } else if (onFileSelect) {
-            // For files, trigger selection
-            onFileSelect(node);
-        }
-    };
-
-    // Handler for the toggle icon specifically
-    const handleToggleClick = (e) => {
-        // Always toggle on icon click
-        toggleExpand(e);
-    };
-
-    const handleDelete = (e) => {
-        e.stopPropagation();
-        if (!node.isDirectory && onFileDelete) {
-            onFileDelete(node);
-        }
-    };
-
-    const isSkipped = node.status === 'skipped' || node.status === 'error';
-
-    return (
-        <li>
-            {/* Make the entire directory row clickable on mobile */}
-            <div 
-                className={`file-tree-item ${isSkipped ? 'file-tree-skipped' : ''} ${node.isDirectory ? 'directory-item' : 'file-item'} ${expanded ? 'expanded' : 'collapsed'}`}
-                onClick={handleSelect}
-            >
-                {/* Increase the touch target area for the toggle button */}
-                <span 
-                    className="file-tree-toggle" 
-                    onClick={node.isDirectory ? handleToggleClick : null}
-                    style={node.isDirectory ? { cursor: 'pointer' } : {}}
-                >
-                    {node.isDirectory ? (
-                        expanded ? 
-                        <i className="fas fa-chevron-down"></i> : 
-                        <i className="fas fa-chevron-right"></i>
-                    ) : ''}
-                </span>
-                <span className="folder-icon">
-                    {node.isDirectory ? 
-                        <i className="fas fa-folder"></i> : 
-                        <i className="fas fa-file-alt"></i>}
-                </span>
-                <span className="file-tree-label" title={node.name}>
-                    {node.status === 'skipped' ? `跳过: ${node.name}` : 
-                     node.status === 'error' ? `错误: ${node.name}` : node.name}
-                </span>
-                {!node.isDirectory && (
-                    <button 
-                        className="button" 
-                        style={{ padding: '2px 5px', marginLeft: '5px' }}
-                        onClick={handleDelete}
-                        title="从结果中删除"
-                    >
-                        <i className="fas fa-trash-alt"></i>
-                    </button>
-                )}
-            </div>
-            {node.isDirectory && node.children && expanded && (
-                <ul className="file-tree">
-                    {node.children.map((childNode, index) => (
-                        childNode ? (
-                            <FileTreeNode 
-                                key={`${childNode.path || 'child'}-${index}`} 
-                                node={childNode} 
-                                onFileSelect={onFileSelect}
-                                onFileDelete={onFileDelete}
-                                level={level + 1}
-                            />
-                        ) : null
-                    ))}
-                </ul>
-            )}
-        </li>
-    );
-};
 
 //=============================================================================
 // UI UTILITY COMPONENTS
 //=============================================================================
 
-// Resizable panel divider component
+/**
+ * Resizable panel divider component
+ * @param {Object} props Component props
+ * @param {Function} props.onResize Callback when resize completes
+ * @param {number} props.position Current position percentage
+ * @param {boolean} props.isVertical Whether resizer is vertical
+ */
 const Resizer = ({ onResize, position, isVertical = true }) => {
     const [isDragging, setIsDragging] = useState(false);
     const resizerRef = useRef(null);
@@ -653,7 +157,11 @@ const Resizer = ({ onResize, position, isVertical = true }) => {
     );
 };
 
-// Scroll to top button component
+/**
+ * Scroll to top button component
+ * @param {Object} props Component props
+ * @param {Object} props.targetRef Reference to scrollable element
+ */
 const ScrollToTop = ({ targetRef }) => {
     const [isVisible, setIsVisible] = useState(false);
     const buttonRef = useRef(null);
@@ -716,7 +224,18 @@ const ScrollToTop = ({ targetRef }) => {
 // SEARCH COMPONENTS
 //=============================================================================
 
-// Search dialog component
+/**
+ * Search dialog component
+ * @param {Object} props Component props
+ * @param {boolean} props.isOpen Whether dialog is open
+ * @param {Function} props.onClose Close dialog callback
+ * @param {Function} props.onSearch Execute search callback
+ * @param {Function} props.onNext Go to next match callback
+ * @param {Function} props.onPrevious Go to previous match callback
+ * @param {number} props.resultCount Number of search results
+ * @param {number} props.currentMatchIndex Current match index
+ * @param {string} props.initialQuery Initial search query
+ */
 const SearchDialog = ({ 
     isOpen, 
     onClose, 
@@ -1009,6 +528,20 @@ const SearchDialog = ({
 // SETTINGS DIALOG COMPONENT
 //=============================================================================
 
+/**
+ * Settings dialog component
+ * @param {Object} props Component props
+ * @param {boolean} props.isOpen Whether dialog is open
+ * @param {Function} props.onClose Close dialog callback
+ * @param {number} props.fontSize Current font size
+ * @param {Function} props.onIncreaseFontSize Increase font size callback
+ * @param {Function} props.onDecreaseFontSize Decrease font size callback
+ * @param {boolean} props.isDarkTheme Whether dark theme is active
+ * @param {Function} props.onToggleTheme Toggle theme callback
+ * @param {boolean} props.extractContent Whether to extract content
+ * @param {Function} props.onToggleExtractContent Toggle extract content callback
+ * @param {Function} props.onClearCache Callback to clear all cache data
+ */
 const SettingsDialog = ({
     isOpen,
     onClose,
@@ -1018,7 +551,8 @@ const SettingsDialog = ({
     isDarkTheme,
     onToggleTheme,
     extractContent,
-    onToggleExtractContent
+    onToggleExtractContent,
+    onClearCache
 }) => {
     const dialogRef = useRef(null);
     const [position, setPosition] = useState({ right: 16, top: 80 });
@@ -1143,6 +677,13 @@ const SettingsDialog = ({
         };
     }, []);
     
+    // Handle clearing cache with confirmation
+    const handleClearCache = () => {
+        if (confirm('确定要清除所有缓存吗？此操作不可撤销。')) {
+            onClearCache();
+        }
+    };
+    
     if (!isOpen) return null;
     
     return (
@@ -1233,28 +774,29 @@ const SettingsDialog = ({
                         </button>
                     </div>
                 </div>
+                
+                {/* 新增: 缓存管理部分 */}
+                <div className="settings-section">
+                    <h4 className="settings-section-title">缓存管理</h4>
+                    <div className="settings-control cache-control">
+                        <span className="cache-label">清除所有本地缓存数据</span>
+                        <button 
+                            className="settings-button clear-cache-button" 
+                            onClick={handleClearCache}
+                            title="清除所有缓存数据"
+                        >
+                            <i className="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-// Export components to global scope
-window.Components = {
-    // Editor components
-    LineNumbers,
-    HighlightedContent,
-    
-    // File tree components
-    FileTree,
-    FileTreeNode,
-    
-    // UI utility components
-    Resizer,
-    ScrollToTop,
-    
-    // Search components
-    SearchDialog,
-    
-    // Settings component
-    SettingsDialog
-};
+// Export components
+window.Components = window.Components || {};
+window.Components.Resizer = Resizer;
+window.Components.ScrollToTop = ScrollToTop;
+window.Components.SearchDialog = SearchDialog;
+window.Components.SettingsDialog = SettingsDialog;

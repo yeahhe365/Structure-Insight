@@ -1,167 +1,13 @@
 /**
- * Structure Insight Web - Custom React Hooks
- * Contains reusable hooks that encapsulate different aspects of the application
+ * Structure Insight Web - File Hooks
+ * Hooks for file management and operations
  */
 
 const { useState, useEffect, useRef, useCallback } = React;
-const { Storage, FileUtils, SearchUtils, DOMUtils } = window.Utils;
+const { Storage, FileUtils } = window.Utils;
 
 //=============================================================================
-// APP SETTINGS HOOKS
-//=============================================================================
-
-/**
- * Hook for managing theme and font size settings
- * @returns {Object} Theme and font size state and handlers
- */
-const useAppSettings = () => {
-    // Load settings from storage
-    const [isDarkTheme, setIsDarkTheme] = useState(Storage.load('theme', false));
-    const [fontSize, setFontSize] = useState(Storage.load('fontSize', 16));
-    const [extractContent, setExtractContent] = useState(Storage.load('extractContent', true));
-    const [lineHeight, setLineHeight] = useState(Math.round(fontSize * 1.5));
-    
-    // Save settings to storage when they change
-    useEffect(() => {
-        Storage.save('theme', isDarkTheme);
-    }, [isDarkTheme]);
-    
-    useEffect(() => {
-        Storage.save('fontSize', fontSize);
-    }, [fontSize]);
-    
-    useEffect(() => {
-        Storage.save('extractContent', extractContent);
-    }, [extractContent]);
-    
-    // Update line height when font size changes
-    useEffect(() => {
-        setLineHeight(Math.round(fontSize * 1.5));
-    }, [fontSize]);
-    
-    // Apply theme to document
-    useEffect(() => {
-        document.body.className = isDarkTheme ? 'dark-theme' : '';
-    }, [isDarkTheme]);
-    
-    // Theme toggle handler
-    const toggleTheme = useCallback(() => {
-        setIsDarkTheme(prev => !prev);
-    }, []);
-    
-    // Font size adjustment handlers
-    const increaseFontSize = useCallback(() => {
-        if (fontSize < 28) setFontSize(prev => prev + 2);
-    }, [fontSize]);
-    
-    const decreaseFontSize = useCallback(() => {
-        if (fontSize > 12) setFontSize(prev => prev - 2);
-    }, [fontSize]);
-    
-    // Extract content toggle handler
-    const toggleExtractContent = useCallback(() => {
-        setExtractContent(prev => !prev);
-    }, []);
-    
-    return {
-        isDarkTheme,
-        fontSize,
-        lineHeight,
-        extractContent,
-        toggleTheme,
-        increaseFontSize,
-        decreaseFontSize,
-        toggleExtractContent
-    };
-};
-
-//=============================================================================
-// DEVICE DETECTION HOOK
-//=============================================================================
-
-/**
- * Hook for detecting device type and orientation
- * @returns {Object} Device information and state
- */
-const useDeviceDetection = () => {
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-    const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
-    const [mobileView, setMobileView] = useState(Storage.load('mobileView', 'editor'));
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const mobileToggleRef = useRef(null);
-    
-    // Update device detection on resize
-    useEffect(() => {
-        const handleResize = () => {
-            const newIsMobile = window.innerWidth <= 768;
-            const newIsLandscape = window.innerWidth > window.innerHeight;
-            
-            setIsMobile(newIsMobile);
-            setIsLandscape(newIsLandscape);
-            
-            // Special handling for tablets in landscape mode
-            if (newIsMobile && newIsLandscape && window.innerWidth > 480) {
-                document.documentElement.classList.add('tablet-landscape');
-            } else {
-                document.documentElement.classList.remove('tablet-landscape');
-            }
-        };
-        
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('orientationchange', handleResize);
-        
-        // Initial run
-        handleResize();
-        
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('orientationchange', handleResize);
-        };
-    }, []);
-    
-    // Save current mobile view state
-    useEffect(() => {
-        if (isMobile) {
-            Storage.save('mobileView', mobileView);
-        }
-    }, [mobileView, isMobile]);
-    
-    // Toggle mobile view handler
-    const toggleMobileView = useCallback(() => {
-        // Add animation class
-        if (mobileToggleRef.current) {
-            mobileToggleRef.current.classList.add('clicked');
-            setTimeout(() => {
-                if (mobileToggleRef.current) {
-                    mobileToggleRef.current.classList.remove('clicked');
-                }
-            }, 300);
-        }
-        
-        // Add animation effect
-        setIsTransitioning(true);
-        setTimeout(() => {
-            setMobileView(prev => prev === 'editor' ? 'tree' : 'editor');
-            // Delay ending animation state to match CSS transition time
-            setTimeout(() => setIsTransitioning(false), 300);
-        }, 50);
-    }, []);
-    
-    return {
-        isMobile, 
-        isLandscape,
-        mobileView,
-        isTransitioning,
-        mobileToggleRef,
-        toggleMobileView,
-        setMobileView,
-        setIsTransitioning,
-        isTabletLandscape: isMobile && isLandscape && window.innerWidth > 480
-    };
-};
-
-//=============================================================================
-// FILE MANAGEMENT HOOK
+// FILE MANAGEMENT HOOKS MODULE
 //=============================================================================
 
 /**
@@ -170,6 +16,9 @@ const useDeviceDetection = () => {
  * @returns {Object} File operations state and handlers
  */
 const useFileManagement = (extractContent) => {
+    // 添加拖放计数器引用
+    const dragCounter = useRef(0);
+    
     // File content state
     const [fileStructure, setFileStructure] = useState(Storage.load('fileStructure', ''));
     const [filesContent, setFilesContent] = useState(Storage.load('filesContent', []));
@@ -194,6 +43,16 @@ const useFileManagement = (extractContent) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentEditingFile, setCurrentEditingFile] = useState(null);
     const [editedContent, setEditedContent] = useState({});
+
+    // Hidden file input reference
+    const fileInputRef = useRef(null);
+    
+    // 确保在组件卸载时重置拖放计数器
+    useEffect(() => {
+        return () => {
+            dragCounter.current = 0;
+        };
+    }, []);
 
     // Save state to storage when it changes
     useEffect(() => {
@@ -240,7 +99,38 @@ const useFileManagement = (extractContent) => {
         }
     }, [currentContent]);
     
-    // Process files main function
+    // Create file input element for directory selection
+    useEffect(() => {
+        // Create a hidden file input element
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.webkitdirectory = true;
+        input.multiple = true;
+        input.style.display = 'none';
+        
+        // Add change event listener
+        input.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleReceivedFiles(e.target.files);
+                
+                // Automatically switch to editor view on mobile
+                if (isMobile) {
+                    setMobileView('editor');
+                }
+            }
+        });
+        
+        // Add to document and save ref
+        document.body.appendChild(input);
+        fileInputRef.current = input;
+        
+        // Clean up on unmount
+        return () => {
+            document.body.removeChild(input);
+        };
+    }, []);
+    
+    // Process files main function - 已修复
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         
@@ -261,7 +151,6 @@ const useFileManagement = (extractContent) => {
         if (extractContent) {
             fullContent += "文件内容:\n";
         }
-        setCurrentContent(fullContent);
         
         // Build tree data
         const tree = FileUtils.buildTreeData(filesArray);
@@ -273,32 +162,53 @@ const useFileManagement = (extractContent) => {
         let currentPosition = fullContent.length;
         let processedCount = 0;
         
+        // 构建内容为单个字符串而不是通过状态更新
+        let accumulatedContent = fullContent;
+        
         for (const file of filesArray) {
+            // Get lowercase filename for better extension matching
+            const fileName = file.name.toLowerCase();
+            
             if (file.type.startsWith('text/') || 
-                file.name.endsWith('.js') || 
-                file.name.endsWith('.jsx') ||
-                file.name.endsWith('.ts') ||
-                file.name.endsWith('.tsx') ||
-                file.name.endsWith('.json') ||
-                file.name.endsWith('.md') ||
-                file.name.endsWith('.py') ||
-                file.name.endsWith('.html') ||
-                file.name.endsWith('.css') ||
-                file.name.endsWith('.scss') ||
-                file.name.endsWith('.less') ||
-                file.name.endsWith('.xml') ||
-                file.name.endsWith('.yml') ||
-                file.name.endsWith('.yaml') ||
-                file.name.endsWith('.java') ||
-                file.name.endsWith('.c') ||
-                file.name.endsWith('.cpp') ||
-                file.name.endsWith('.h') ||
-                file.name.endsWith('.cs') ||
-                file.name.endsWith('.php') ||
-                file.name.endsWith('.sql') ||
-                file.name.endsWith('.sh') ||
-                file.name.endsWith('.rb') ||
-                file.name.endsWith('.go')) {
+                fileName.endsWith('.js') || 
+                fileName.endsWith('.jsx') ||
+                fileName.endsWith('.ts') ||
+                fileName.endsWith('.tsx') ||
+                fileName.endsWith('.json') ||
+                fileName.endsWith('.md') ||
+                fileName.endsWith('.py') ||
+                fileName.endsWith('.html') ||
+                fileName.endsWith('.css') ||
+                fileName.endsWith('.scss') ||
+                fileName.endsWith('.less') ||
+                fileName.endsWith('.xml') ||
+                fileName.endsWith('.yml') ||
+                fileName.endsWith('.yaml') ||
+                fileName.endsWith('.java') ||
+                fileName.endsWith('.c') ||
+                fileName.endsWith('.cpp') ||
+                fileName.endsWith('.h') ||
+                fileName.endsWith('.cs') ||
+                fileName.endsWith('.php') ||
+                fileName.endsWith('.sql') ||
+                fileName.endsWith('.sh') ||
+                fileName.endsWith('.rb') ||
+                fileName.endsWith('.go') ||
+                fileName.endsWith('.config') ||
+                fileName.endsWith('.properties') ||
+                fileName.endsWith('.txt') ||
+                fileName.endsWith('.ini') ||
+                fileName.endsWith('.env') ||
+                fileName.endsWith('.gitignore') ||
+                fileName.endsWith('.htaccess') ||
+                fileName.endsWith('.vue') ||
+                fileName.endsWith('.svelte') ||
+                // 检测无扩展名的常见配置文件
+                fileName === 'dockerfile' ||
+                fileName === 'makefile' ||
+                fileName === 'readme' ||
+                fileName === 'license' ||
+                fileName === 'changelog') {
                 
                 try {
                     // Read file content
@@ -313,11 +223,8 @@ const useFileManagement = (extractContent) => {
                         positions[file.name] = currentPosition;
                         currentPosition += separator.length + content.length + 2; // Add separator, content, and newlines
                         
-                        // Use functional update to ensure latest state
-                        setCurrentContent(prev => {
-                            const newContent = prev + separator + content + "\n\n";
-                            return newContent;
-                        });
+                        // 附加到本地字符串而不是更新状态
+                        accumulatedContent += separator + content + "\n\n";
                     }
                 } catch (error) {
                     console.error(`Error reading file ${file.name}:`, error);
@@ -333,13 +240,22 @@ const useFileManagement = (extractContent) => {
             setProgress(processedCount);
         }
         
+        // 在所有文件处理完成后一次性设置内容
+        setCurrentContent(accumulatedContent);
+        
         setFilesContent(fileContents);
         setFilePositions(positions);
         setProcessing(false);
         
-        // Update status bar info with latest line and character count
+        // Update line and character count with the new content
+        const newLineCount = accumulatedContent.split('\n').length;
+        const newCharCount = accumulatedContent.length;
+        setLineCount(newLineCount);
+        setCharCount(newCharCount);
+        
+        // Update status bar info
         setTimeout(() => {
-            setStatusMessage(`就绪 - 共 ${document.querySelectorAll('.line-numbers > div').length} 行, ${currentContent.length} 字符`);
+            setStatusMessage(`就绪 - 共 ${newLineCount} 行, ${newCharCount} 字符`);
         }, 100);
     };
     
@@ -371,9 +287,14 @@ const useFileManagement = (extractContent) => {
         });
     };
     
+    // File operation functions
+    
     // Handle received files
-    const handleReceivedFiles = (files, setMobileView, isMobile) => {
+    const handleReceivedFiles = (files) => {
         if (files && files.length > 0) {
+            // 确保完全重置之前的状态
+            resetContent();
+            
             // Save file reference for refresh
             setReceivedFiles(files);
             
@@ -394,57 +315,15 @@ const useFileManagement = (extractContent) => {
             
             // Process files
             processFiles(files);
-            
-            // Automatically switch to editor view on mobile
-            if (isMobile) {
-                setMobileView('editor');
-            }
         }
     };
     
-    // Select local folder
+    // Select local folder - UPDATED TO USE STANDARD FILE INPUT
     const handleLocalFolderSelect = (isMobile, setMobileView) => {
-        // Use showDirectoryPicker API
-        if (window.showDirectoryPicker) {
-            showDirectoryPicker()
-                .then(async (dirHandle) => {
-                    const files = [];
-                    
-                    // Recursively read all files in the folder
-                    async function readFilesRecursively(dirHandle, path = '') {
-                        for await (const entry of dirHandle.values()) {
-                            if (entry.kind === 'file') {
-                                const file = await entry.getFile();
-                                // Add relative path information to file
-                                Object.defineProperty(file, 'webkitRelativePath', {
-                                    value: path ? `${path}/${entry.name}` : entry.name
-                                });
-                                files.push(file);
-                            } else if (entry.kind === 'directory') {
-                                const newPath = path ? `${path}/${entry.name}` : entry.name;
-                                await readFilesRecursively(entry, newPath);
-                            }
-                        }
-                    }
-                    
-                    try {
-                        await readFilesRecursively(dirHandle, dirHandle.name);
-                        // Process files
-                        handleReceivedFiles(files, setMobileView, isMobile);
-                    } catch (error) {
-                        console.error('读取文件夹时出错:', error);
-                        setStatusMessage('读取文件夹失败');
-                        setTimeout(() => setStatusMessage('就绪'), 2000);
-                    }
-                })
-                .catch(error => {
-                    // User canceled selection or error occurred
-                    console.log('选择文件夹取消或失败:', error);
-                });
-        } else {
-            // Browser doesn't support File System Access API
-            setStatusMessage('您的浏览器不支持文件夹选择，请使用拖放功能');
-            setTimeout(() => setStatusMessage('就绪'), 3000);
+        // 先重置当前file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+            fileInputRef.current.click();
         }
     };
     
@@ -463,13 +342,41 @@ const useFileManagement = (extractContent) => {
         setCurrentEditingFile(null);
         setEditedContent({});
         
+        // 清除所有文件引用
+        setReceivedFiles(null);
+        
         // Clear cache
         Storage.remove('fileStructure');
         Storage.remove('filesContent');
         Storage.remove('treeData');
         Storage.remove('currentContent');
         Storage.remove('filePositions');
+        Storage.remove('lastOpenedFiles');
     };
+    
+    // Clear all cache data - 清除缓存功能
+    const clearCache = useCallback(() => {
+        // 先重置内容
+        resetContent();
+        
+        // 清空接收的文件引用
+        setReceivedFiles(null);
+        setLastOpenedFiles(null);
+        
+        // 重置文件输入框
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        
+        // 清除所有本地存储
+        Storage.clear();
+        
+        // 更新状态消息
+        setStatusMessage('已清除所有缓存数据');
+        setTimeout(() => {
+            setStatusMessage('就绪');
+        }, 2000);
+    }, []);
     
     // Cancel file processing
     const cancelProcessing = () => {
@@ -736,11 +643,15 @@ const useFileManagement = (extractContent) => {
         }
     };
     
-    // Drag and drop handlers
+    // 修复拖放闪烁问题的拖放处理函数
     const dragDropHandlers = {
         handleDragEnter: (e) => {
             e.preventDefault();
             e.stopPropagation();
+            
+            // 增加计数器
+            dragCounter.current++;
+            
             if (!isEditing) {
                 setIsDragging(true);
             }
@@ -749,23 +660,34 @@ const useFileManagement = (extractContent) => {
         handleDragOver: (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (!isEditing) {
-                setIsDragging(true);
-            }
+            // 不需要在这里设置 isDragging，这样可以避免不必要的渲染
         },
         
         handleDragLeave: (e) => {
             e.preventDefault();
             e.stopPropagation();
-            setIsDragging(false);
+            
+            // 减少计数器
+            dragCounter.current--;
+            
+            // 只有当计数器归零时，才真正认为离开了拖放区域
+            if (dragCounter.current === 0) {
+                setIsDragging(false);
+            }
         },
         
         handleDrop: async (e, setMobileView, isMobile) => {
             e.preventDefault();
             e.stopPropagation();
+            
+            // 重置计数器
+            dragCounter.current = 0;
             setIsDragging(false);
             
             if (isEditing) return;
+
+            // 完全重置现有状态
+            resetContent();
 
             // Show processing status
             setStatusMessage('正在处理拖放的文件...');
@@ -853,7 +775,12 @@ const useFileManagement = (extractContent) => {
                     
                     // Process all collected files
                     if (allFiles.length > 0) {
-                        handleReceivedFiles(allFiles, setMobileView, isMobile);
+                        handleReceivedFiles(allFiles);
+                        
+                        // Automatically switch to editor view on mobile
+                        if (isMobile) {
+                            setMobileView('editor');
+                        }
                     } else {
                         setStatusMessage('未找到有效文件');
                         setTimeout(() => setStatusMessage('就绪'), 2000);
@@ -865,7 +792,12 @@ const useFileManagement = (extractContent) => {
                 }
             } else if (droppedFiles.length > 0) {
                 // Process file list directly
-                handleReceivedFiles(Array.from(droppedFiles), setMobileView, isMobile);
+                handleReceivedFiles(Array.from(droppedFiles));
+                
+                // Automatically switch to editor view on mobile
+                if (isMobile) {
+                    setMobileView('editor');
+                }
             } else {
                 setStatusMessage('没有检测到文件或文件夹');
                 setTimeout(() => setStatusMessage('就绪'), 2000);
@@ -902,392 +834,13 @@ const useFileManagement = (extractContent) => {
         handleFileDelete,
         handleEditContent,
         dragDropHandlers,
+        clearCache, // 清除缓存功能
         
         // Status info
         setStatusMessage
     };
 };
 
-//=============================================================================
-// SEARCH FUNCTIONALITY HOOK
-//=============================================================================
-
-/**
- * Hook for search functionality
- * @param {String} currentContent Content to search in
- * @param {Number} lineHeight Line height for scroll calculations
- * @param {Function} setStatusMessage Function to update status message
- * @returns {Object} Search state and handlers
- */
-const useSearchFunctionality = (currentContent, lineHeight, setStatusMessage) => {
-    const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchMatches, setSearchMatches] = useState([]);
-    const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
-    const [searchOptions, setSearchOptions] = useState({
-        caseSensitive: false,
-        useRegex: false,
-        wholeWord: false
-    });
-    
-    // Clear search highlights function
-    const clearSearchHighlights = useCallback((editorScrollRef) => {
-        // Skip if not in DOM
-        if (!editorScrollRef?.current) return;
-        
-        // Use more efficient approach to remove all highlights
-        const highlights = editorScrollRef.current.querySelectorAll('.search-highlight');
-        
-        if (highlights.length === 0) return;
-        
-        // Optimize: batch DOM operations
-        const fragment = document.createDocumentFragment();
-        const toReplace = [];
-        
-        highlights.forEach(el => {
-            toReplace.push({
-                element: el,
-                text: el.textContent
-            });
-        });
-        
-        // Perform replacements
-        toReplace.forEach(item => {
-            const parent = item.element.parentNode;
-            if (parent) {
-                // Replace highlight element with text node
-                parent.replaceChild(document.createTextNode(item.text), item.element);
-                // Normalize text nodes, merging adjacent ones
-                parent.normalize();
-            }
-        });
-    }, []);
-    
-    // Clear search state when content changes
-    useEffect(() => {
-        if (searchMatches.length > 0) {
-            setSearchMatches([]);
-            setCurrentMatchIndex(0);
-        }
-    }, [currentContent]);
-    
-    // Highlight matches function
-    const highlightMatches = useCallback((matches, currentIndex, editorScrollRef) => {
-        if (!editorScrollRef?.current || !matches.length) return;
-        
-        // First clear previous highlights
-        clearSearchHighlights(editorScrollRef);
-        
-        // Use DOM interface to add highlights
-        const range = document.createRange();
-        
-        // Batch processing of highlights
-        const batchSize = 50; // Process 50 matches at a time to avoid blocking UI
-        let processed = 0;
-        
-        const processNextBatch = () => {
-            const startIdx = processed;
-            const endIdx = Math.min(processed + batchSize, matches.length);
-            
-            for (let i = startIdx; i < endIdx; i++) {
-                const match = matches[i];
-                
-                // Convert match position to DOM node context
-                DOMUtils.findTextNodes(editorScrollRef.current, match.start, match.end, (textNode, startOffset, endOffset) => {
-                    try {
-                        range.setStart(textNode, startOffset);
-                        range.setEnd(textNode, endOffset);
-                        
-                        // Create highlight element
-                        const highlight = document.createElement('span');
-                        highlight.className = `search-highlight ${i === currentIndex ? 'current' : ''}`;
-                        
-                        // Wrap text with highlight element
-                        range.surroundContents(highlight);
-                    } catch (e) {
-                        // Ignore highlighting errors, usually due to DOM structure changes
-                    }
-                });
-            }
-            
-            processed = endIdx;
-            
-            // If more matches remain, schedule next batch
-            if (processed < matches.length) {
-                requestAnimationFrame(processNextBatch);
-            }
-        };
-        
-        // Start batch processing
-        processNextBatch();
-    }, [clearSearchHighlights]);
-    
-    // Scroll to match function
-    const scrollToMatch = useCallback((match, editorScrollRef, isMobile) => {
-        if (!match || !editorScrollRef?.current) return;
-        
-        // Calculate approximate line number of match
-        const textBeforeMatch = currentContent.substring(0, match.start);
-        const linesBefore = textBeforeMatch.split('\n').length;
-        
-        // Estimate scroll position - center the match in view
-        const scrollPosition = linesBefore * lineHeight - editorScrollRef.current.clientHeight / 3;
-        
-        // Scroll to position
-        editorScrollRef.current.scrollTo({
-            top: Math.max(0, scrollPosition),
-            behavior: 'smooth'
-        });
-        
-        // Enhanced visual feedback
-        setTimeout(() => {
-            const currentHighlight = editorScrollRef.current.querySelector('.search-highlight.current');
-            if (currentHighlight) {
-                currentHighlight.classList.add('blink');
-                setTimeout(() => {
-                    if (currentHighlight) {
-                        currentHighlight.classList.remove('blink');
-                    }
-                }, 600);
-            }
-        }, 300);
-    }, [currentContent, lineHeight]);
-    
-    // Perform search function
-    const performSearchInternal = useCallback((query, options = {}, editorScrollRef) => {
-        if (!query || !currentContent) {
-            setSearchMatches([]);
-            setCurrentMatchIndex(0);
-            clearSearchHighlights(editorScrollRef);
-            return;
-        }
-        
-        // Save search parameters
-        setSearchQuery(query);
-        setSearchOptions(options);
-        
-        // Prepare search content and matches
-        const content = currentContent;
-        let matches = [];
-        
-        try {
-            // Find all matches using utility function
-            matches = SearchUtils.performSearch(content, query, options);
-        } catch (error) {
-            console.error('Search error:', error);
-            setStatusMessage(`搜索错误: ${error.message}`);
-            setTimeout(() => {
-                setStatusMessage(`就绪`);
-            }, 2000);
-            return;
-        }
-        
-        // Update search results
-        setSearchMatches(matches);
-        
-        // If matches found, highlight and scroll to first match
-        if (matches.length > 0) {
-            setCurrentMatchIndex(0);
-            highlightMatches(matches, 0, editorScrollRef);
-            scrollToMatch(matches[0], editorScrollRef);
-            setStatusMessage(`找到 ${matches.length} 个匹配结果`);
-        } else {
-            setCurrentMatchIndex(-1);
-            clearSearchHighlights(editorScrollRef);
-            setStatusMessage(`未找到匹配项: "${query}"`);
-            setTimeout(() => {
-                setStatusMessage(`就绪`);
-            }, 2000);
-        }
-    }, [currentContent, clearSearchHighlights, highlightMatches, scrollToMatch, setStatusMessage]);
-    
-    // Export performSearch with wrapper function
-    const performSearch = useCallback((query, options = {}, editorScrollRef) => {
-        performSearchInternal(query, options, editorScrollRef);
-    }, [performSearchInternal]);
-    
-    // Go to next/previous match functions
-    const goToNextMatch = useCallback((editorScrollRef) => {
-        const { length } = searchMatches;
-        if (length === 0) return;
-        
-        const newIndex = (currentMatchIndex + 1) % length;
-        setCurrentMatchIndex(newIndex);
-        highlightMatches(searchMatches, newIndex, editorScrollRef);
-        scrollToMatch(searchMatches[newIndex], editorScrollRef);
-    }, [searchMatches, currentMatchIndex, highlightMatches, scrollToMatch]);
-    
-    const goToPreviousMatch = useCallback((editorScrollRef) => {
-        const { length } = searchMatches;
-        if (length === 0) return;
-        
-        const newIndex = (currentMatchIndex - 1 + length) % length;
-        setCurrentMatchIndex(newIndex);
-        highlightMatches(searchMatches, newIndex, editorScrollRef);
-        scrollToMatch(searchMatches[newIndex], editorScrollRef);
-    }, [searchMatches, currentMatchIndex, highlightMatches, scrollToMatch]);
-    
-    // Search dialog open/close functions
-    const openSearchDialog = useCallback((isMobile, mobileView, setIsTransitioning, setMobileView) => {
-        if (!currentContent) return;
-        
-        // Ensure editor view on mobile
-        if (isMobile && mobileView !== 'editor') {
-            setIsTransitioning(true);
-            setTimeout(() => {
-                setMobileView('editor');
-                setTimeout(() => {
-                    setIsTransitioning(false);
-                    setIsSearchDialogOpen(true);
-                }, 300);
-            }, 50);
-        } else {
-            setIsSearchDialogOpen(true);
-        }
-    }, [currentContent]);
-    
-    const closeSearchDialog = useCallback(() => {
-        setIsSearchDialogOpen(false);
-    }, []);
-    
-    return {
-        isSearchDialogOpen,
-        searchQuery,
-        searchMatches,
-        currentMatchIndex,
-        searchOptions,
-        setIsSearchDialogOpen,
-        performSearch,
-        goToNextMatch,
-        goToPreviousMatch,
-        openSearchDialog,
-        closeSearchDialog,
-        clearSearchHighlights,
-        highlightMatches
-    };
-};
-
-//=============================================================================
-// UI INTERACTIONS HOOK
-//=============================================================================
-
-/**
- * Hook for UI interactions and scroll syncing
- * @returns {Object} UI interaction handlers and state
- */
-const useUIInteractions = () => {
-    const [leftPanelWidth, setLeftPanelWidth] = useState(Storage.load('leftPanelWidth', 75));
-    const [scrollToTopVisible, setScrollToTopVisible] = useState(false);
-    const [isScrolling, setIsScrolling] = useState(false);
-    
-    const containerRef = useRef(null);
-    const editorScrollRef = useRef(null);
-    const lineNumbersRef = useRef(null);
-    const appRef = useRef(null);
-    
-    // Save left panel width
-    useEffect(() => {
-        Storage.save('leftPanelWidth', leftPanelWidth);
-    }, [leftPanelWidth]);
-    
-    // Handle panel resize update
-    const handleResizeUpdate = useCallback((newPercentage) => {
-        setLeftPanelWidth(newPercentage);
-    }, []);
-    
-    // Sync line numbers with content scrolling
-    useEffect(() => {
-        const syncScroll = () => {
-            if (editorScrollRef.current && lineNumbersRef.current) {
-                lineNumbersRef.current.scrollTop = editorScrollRef.current.scrollTop;
-            }
-        };
-        
-        const editorElement = editorScrollRef.current;
-        if (editorElement) {
-            // Add scroll event listener
-            editorElement.addEventListener('scroll', syncScroll);
-            
-            // Use ResizeObserver to monitor size changes
-            if (typeof ResizeObserver !== 'undefined') {
-                const observer = new ResizeObserver(syncScroll);
-                observer.observe(editorElement);
-                
-                // Also observe container size changes
-                if (containerRef.current) {
-                    observer.observe(containerRef.current);
-                }
-                
-                return () => {
-                    editorElement.removeEventListener('scroll', syncScroll);
-                    observer.disconnect();
-                };
-            } else {
-                // Fallback: listen to window resize
-                window.addEventListener('resize', syncScroll);
-                return () => {
-                    editorElement.removeEventListener('scroll', syncScroll);
-                    window.removeEventListener('resize', syncScroll);
-                };
-            }
-        }
-    }, [editorScrollRef.current, lineNumbersRef.current, containerRef.current]);
-    
-    // Force sync scrolling after divider adjustment
-    useEffect(() => {
-        // Force sync scrolling
-        if (editorScrollRef.current && lineNumbersRef.current) {
-            lineNumbersRef.current.scrollTop = editorScrollRef.current.scrollTop;
-        }
-    }, [leftPanelWidth]);
-    
-    // Mobile scroll event handling
-    const handleMobileScroll = useCallback(() => {
-        if (!editorScrollRef.current) return;
-        
-        // Show/hide scroll to top button
-        const scrollPosition = editorScrollRef.current.scrollTop;
-        const showScrollButton = scrollPosition > 300;
-        
-        if (showScrollButton !== scrollToTopVisible) {
-            setScrollToTopVisible(showScrollButton);
-        }
-        
-        // Track scrolling state
-        if (!isScrolling) {
-            setIsScrolling(true);
-            setTimeout(() => setIsScrolling(false), 100);
-        }
-    }, [scrollToTopVisible, isScrolling]);
-    
-    // Scroll to top function
-    const scrollToTop = useCallback(() => {
-        if (editorScrollRef.current) {
-            editorScrollRef.current.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
-    }, []);
-    
-    return {
-        leftPanelWidth,
-        scrollToTopVisible,
-        containerRef,
-        editorScrollRef,
-        lineNumbersRef,
-        appRef,
-        handleResizeUpdate,
-        handleMobileScroll,
-        scrollToTop
-    };
-};
-
-// Export all hooks
-window.Hooks = {
-    useAppSettings,
-    useDeviceDetection,
-    useFileManagement,
-    useSearchFunctionality,
-    useUIInteractions
-};
+// Export hooks
+window.Hooks = window.Hooks || {};
+window.Hooks.useFileManagement = useFileManagement;

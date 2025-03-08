@@ -1,15 +1,26 @@
 /**
  * Structure Insight Web - Main Application
- * Core application component and entry point
+ * Core application component and entry point with modular organization
  */
 
 const { useState, useEffect, useRef, useCallback } = React;
 const { LineNumbers, HighlightedContent, FileTree, Resizer, ScrollToTop, SearchDialog, SettingsDialog } = window.Components;
 const { useAppSettings, useDeviceDetection, useFileManagement, useSearchFunctionality, useUIInteractions } = window.Hooks;
 
-// Main application component
+//=============================================================================
+// MAIN APPLICATION COMPONENT
+//=============================================================================
+
+/**
+ * Main application component
+ * Integrates all hooks and components
+ */
 const App = () => {
-    // Application hooks
+    //=========================================================================
+    // HOOK INITIALIZATION
+    //=========================================================================
+    
+    // App settings hook for theme, font size, etc.
     const { 
         isDarkTheme, 
         fontSize, 
@@ -21,6 +32,7 @@ const App = () => {
         toggleExtractContent 
     } = useAppSettings();
     
+    // Device detection hook for responsive behavior
     const { 
         isMobile, 
         isLandscape, 
@@ -33,6 +45,7 @@ const App = () => {
         isTabletLandscape 
     } = useDeviceDetection();
     
+    // File management hook for handling files and content
     const { 
         fileStructure, 
         filesContent, 
@@ -58,22 +71,33 @@ const App = () => {
         handleFileDelete, 
         handleEditContent, 
         dragDropHandlers, 
-        setStatusMessage 
+        setStatusMessage,
+        clearCache // 添加清除缓存函数
     } = useFileManagement(extractContent);
     
+    // Search functionality hook - 优化搜索功能
     const { 
         isSearchDialogOpen, 
         searchQuery, 
         searchMatches, 
         currentMatchIndex, 
+        searchOptions, // 新增: 搜索选项
+        searchHistory, // 新增: 搜索历史
+        searchInProgress, // 新增: 搜索进行中状态
+        contextLines, // 新增: 上下文行数
         performSearch, 
         goToNextMatch, 
         goToPreviousMatch, 
         openSearchDialog, 
         closeSearchDialog, 
-        clearSearchHighlights 
+        clearSearchHighlights,
+        selectFromHistory, // 新增: 从历史记录中选择
+        setSearchContextLines, // 新增: 设置上下文行数
+        clearSearchHistory, // 新增: 清除搜索历史
+        setSearchOptions // 新增: 设置搜索选项
     } = useSearchFunctionality(currentContent, lineHeight, setStatusMessage);
     
+    // UI interactions hook for layout and scrolling
     const { 
         leftPanelWidth, 
         containerRef, 
@@ -84,6 +108,10 @@ const App = () => {
         handleMobileScroll, 
         scrollToTop 
     } = useUIInteractions();
+    
+    //=========================================================================
+    // SETTINGS DIALOG STATE
+    //=========================================================================
     
     // Settings dialog state
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -97,68 +125,37 @@ const App = () => {
     }, []);
     
     //=========================================================================
-    // KEYBOARD SHORTCUTS
+    // EVENT HANDLERS AND EFFECTS
     //=========================================================================
 
     // Set up keyboard shortcuts
     useEffect(() => {
-        const handleKeyDown = (e) => {
-            // Ctrl+F Search
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                // Only open search if settings is not open to avoid conflict
-                if (!isSettingsOpen) {
-                    openSearchDialog(isMobile, mobileView, setIsTransitioning, setMobileView);
-                }
-            }
-            
-            // Ctrl+S Save
-            if (e.ctrlKey && e.key === 's') {
-                e.preventDefault();
-                saveContent();
-            }
-            
-            // Ctrl+C Copy
-            if (e.ctrlKey && e.key === 'c' && !window.getSelection().toString()) {
-                // Only trigger global copy if no text is selected
-                copyContent();
-            }
-            
-            // Esc Exit edit mode
-            if (e.key === 'Escape' && isEditing) {
-                e.preventDefault();
-                handleEditContent(null);
-            }
-            
-            // Esc Close settings
-            if (e.key === 'Escape' && isSettingsOpen) {
-                e.preventDefault();
-                closeSettings();
-            }
-            
-            // F3 Find next
-            if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && searchMatches.length > 0) {
-                e.preventDefault();
-                if (e.shiftKey) {
-                    goToPreviousMatch(editorScrollRef);
-                } else {
-                    goToNextMatch(editorScrollRef);
-                }
-            }
-        };
-        
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
+        return AppHelpers.setupKeyboardShortcuts({
+            currentContent, 
+            isEditing, 
+            processing, 
+            searchMatches, 
+            currentMatchIndex,
+            isMobile, 
+            mobileView, 
+            openSearchDialog, 
+            saveContent, 
+            copyContent,
+            goToNextMatch, 
+            goToPreviousMatch, 
+            handleEditContent, 
+            isSettingsOpen,
+            closeSettings, 
+            editorScrollRef, 
+            setIsTransitioning, 
+            setMobileView
+        });
     }, [
         currentContent, isEditing, processing, searchMatches, currentMatchIndex, 
         isMobile, mobileView, openSearchDialog, saveContent, copyContent, 
         goToNextMatch, goToPreviousMatch, handleEditContent, isSettingsOpen,
         closeSettings, editorScrollRef, setIsTransitioning, setMobileView
     ]);
-
-    //=========================================================================
-    // EVENT HANDLERS
-    //=========================================================================
 
     // Mobile scroll event listener
     useEffect(() => {
@@ -174,20 +171,12 @@ const App = () => {
 
     // Set up drag and drop event listeners
     useEffect(() => {
-        const app = document.getElementById('app');
-        if (app) {
-            app.addEventListener('dragenter', dragDropHandlers.handleDragEnter);
-            app.addEventListener('dragover', dragDropHandlers.handleDragOver);
-            app.addEventListener('dragleave', dragDropHandlers.handleDragLeave);
-            app.addEventListener('drop', (e) => dragDropHandlers.handleDrop(e, setMobileView, isMobile));
-            
-            return () => {
-                app.removeEventListener('dragenter', dragDropHandlers.handleDragEnter);
-                app.removeEventListener('dragover', dragDropHandlers.handleDragOver);
-                app.removeEventListener('dragleave', dragDropHandlers.handleDragLeave);
-                app.removeEventListener('drop', (e) => dragDropHandlers.handleDrop(e, setMobileView, isMobile));
-            };
-        }
+        return AppHelpers.setupDragAndDrop({
+            isEditing,
+            dragDropHandlers,
+            setMobileView,
+            isMobile
+        });
     }, [isEditing, dragDropHandlers, setMobileView, isMobile]);
 
     // Check if scroll-to-top button should be shown when content length changes
@@ -204,59 +193,45 @@ const App = () => {
     }, [isMobile, currentContent, editorScrollRef, handleMobileScroll]);
 
     //=========================================================================
-    // HELPER FUNCTIONS
+    // WRAPPER FUNCTIONS FOR EVENTS
     //=========================================================================
 
-    // Wrapper functions for event handlers
-    const handleLocalFolderSelectWrapper = useCallback(() => {
+    // 修改后的包装函数
+    const handleLocalFolderSelectWrapper = () => {
         handleLocalFolderSelect(isMobile, setMobileView);
-    }, [handleLocalFolderSelect, isMobile, setMobileView]);
+    };
     
-    const handleFileTreeSelectWrapper = useCallback((node) => {
+    const handleFileTreeSelectWrapper = (node) => {
         handleFileTreeSelect(node, editorScrollRef, isMobile, setMobileView, isTransitioning, setIsTransitioning, lineHeight);
-    }, [handleFileTreeSelect, editorScrollRef, isMobile, setMobileView, isTransitioning, setIsTransitioning, lineHeight]);
+    };
     
-    const handleSearchWrapper = useCallback((query, options) => {
-        performSearch(query, options, editorScrollRef);
-    }, [performSearch, editorScrollRef]);
+    // 修改搜索包装函数以支持文件内容参数
+    const handleSearchWrapper = (query, options) => {
+        performSearch(query, options, editorScrollRef, filesContent);
+    };
     
-    const handleNextMatchWrapper = useCallback(() => {
+    const handleNextMatchWrapper = () => {
         goToNextMatch(editorScrollRef);
-    }, [goToNextMatch, editorScrollRef]);
+    };
     
-    const handlePreviousMatchWrapper = useCallback(() => {
+    const handlePreviousMatchWrapper = () => {
         goToPreviousMatch(editorScrollRef);
-    }, [goToPreviousMatch, editorScrollRef]);
+    };
     
-    const openSearchDialogWrapper = useCallback(() => {
-        // Only open search if settings is not open
-        if (!isSettingsOpen) {
+    // 直接的搜索打开处理函数，避免通过包装器
+    const handleOpenSearch = useCallback(() => {
+        if (currentContent && !isEditing) {
             openSearchDialog(isMobile, mobileView, setIsTransitioning, setMobileView);
         }
-    }, [isSettingsOpen, openSearchDialog, isMobile, mobileView, setIsTransitioning, setMobileView]);
-
+    }, [currentContent, isEditing, openSearchDialog, isMobile, mobileView, setIsTransitioning, setMobileView]);
+    
     //=========================================================================
     // RENDERING HELPERS
     //=========================================================================
 
     // Mobile class names
-    const getLeftPanelClassNames = useCallback(() => {
-        if (!isMobile) return '';
-        const classNames = [
-            mobileView === 'editor' ? 'mobile-full' : 'mobile-hidden'
-        ];
-        if (isTransitioning) classNames.push('mobile-transition');
-        return classNames.join(' ');
-    }, [isMobile, mobileView, isTransitioning]);
-    
-    const getRightPanelClassNames = useCallback(() => {
-        if (!isMobile) return '';
-        const classNames = [
-            mobileView === 'tree' ? 'mobile-full' : 'mobile-hidden'
-        ];
-        if (isTransitioning) classNames.push('mobile-transition');
-        return classNames.join(' ');
-    }, [isMobile, mobileView, isTransitioning]);
+    const { getLeftPanelClassNames, getRightPanelClassNames } = 
+        AppHelpers.getMobilePanelClassNames(isMobile, mobileView, isTransitioning);
 
     //=========================================================================
     // MAIN RENDER
@@ -274,7 +249,7 @@ const App = () => {
                     {isMobile && (
                         <div className="mobile-title-controls">
                             <button 
-                                className="header-button settings-button" 
+                                className="header-button" 
                                 onClick={openSettings}
                                 title="设置"
                             >
@@ -332,7 +307,7 @@ const App = () => {
                     </button>
                     <button
                         className="header-button"
-                        onClick={openSearchDialogWrapper}
+                        onClick={handleOpenSearch}
                         disabled={!currentContent || isEditing}
                         title="搜索内容 (Ctrl+F)"
                     >
@@ -340,15 +315,16 @@ const App = () => {
                         {isMobile && <span className="tooltip">搜索</span>}
                     </button>
                     
-                    {/* Settings button */}
-                    <button 
-                        className="header-button settings-button" 
-                        onClick={openSettings}
-                        title="设置"
-                    >
-                        <i className="fas fa-cog"></i>
-                        {isMobile && <span className="tooltip">设置</span>}
-                    </button>
+                    {/* Settings button - only show on non-mobile */}
+                    {!isMobile && (
+                        <button 
+                            className="header-button" 
+                            onClick={openSettings}
+                            title="设置"
+                        >
+                            <i className="fas fa-cog"></i>
+                        </button>
+                    )}
                 </div>
             </div>
             
@@ -388,9 +364,13 @@ const App = () => {
                         {/* 初始提示，移到左侧面板内部 */}
                         {!currentContent && !processing && (
                             <div className="initial-prompt left-panel-prompt">
-                                <div className="prompt-content">
+                                <div 
+                                    className="prompt-content" 
+                                    onClick={handleLocalFolderSelectWrapper}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <i className="fas fa-folder-open"></i>
-                                    <p>拖放文件夹到此处，或点击左上角的文件夹图标</p>
+                                    <p>拖放文件夹到此处，或点击此处选择文件夹</p>
                                 </div>
                             </div>
                         )}
@@ -426,11 +406,13 @@ const App = () => {
                 </div>
             </div>
             
+            {/* 更新状态栏显示以包含更多搜索信息 */}
             <div className="status-bar">
                 {processing ? statusMessage : `${statusMessage} - 共 ${lineCount} 行, ${charCount} 字符`}
                 {isEditing && !processing && " - 编辑模式"}
                 {searchMatches.length > 0 && !processing && !isEditing && 
                     ` - 找到 ${searchMatches.length} 个匹配项 (${currentMatchIndex + 1}/${searchMatches.length})`}
+                {searchInProgress && !processing && " - 搜索中..."}
             </div>
             
             {/* Mobile view toggle button */}
@@ -462,7 +444,7 @@ const App = () => {
                 <ScrollToTop targetRef={editorScrollRef} />
             )}
             
-            {/* Search dialog */}
+            {/* 更新搜索对话框组件，添加新的属性 */}
             <SearchDialog 
                 isOpen={isSearchDialogOpen}
                 onClose={closeSearchDialog}
@@ -472,9 +454,18 @@ const App = () => {
                 resultCount={searchMatches.length}
                 currentMatchIndex={currentMatchIndex < 0 ? 0 : currentMatchIndex}
                 initialQuery={searchQuery}
+                searchHistory={searchHistory}
+                onSelectHistory={(item) => selectFromHistory(item, editorScrollRef)} 
+                searchOptions={searchOptions}
+                onUpdateOptions={setSearchOptions}
+                searchInProgress={searchInProgress}
+                onClearHistory={clearSearchHistory}
+                contextLines={contextLines}
+                onSetContextLines={setSearchContextLines}
+                filesContent={filesContent}
             />
             
-            {/* Settings dialog */}
+            {/* Settings dialog - 添加 onClearCache 属性 */}
             <SettingsDialog
                 isOpen={isSettingsOpen}
                 onClose={closeSettings}
@@ -485,21 +476,15 @@ const App = () => {
                 onToggleTheme={toggleTheme}
                 extractContent={extractContent}
                 onToggleExtractContent={toggleExtractContent}
+                onClearCache={clearCache}
             />
-            
-            {/* Quick search button */}
-            {currentContent && !isEditing && !isSearchDialogOpen && !isSettingsOpen && (
-                <button 
-                    className="quick-search-button"
-                    onClick={openSearchDialogWrapper}
-                    title="搜索 (Ctrl+F)"
-                >
-                    <i className="fas fa-search"></i>
-                </button>
-            )}
         </>
     );
 };
+
+//=============================================================================
+// APPLICATION INITIALIZATION
+//=============================================================================
 
 // Render the application
 const root = ReactDOM.createRoot(document.getElementById('app'));

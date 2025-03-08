@@ -172,14 +172,14 @@ body.resizing.horizontal * {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: var(--editor-bg);
+    background-color: transparent;
     border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     padding: 20px;
     text-align: center;
     z-index: 10;
     width: 90%;
     max-width: 400px;
+    box-shadow: none;
 }
 
 /* 添加左侧面板专用的提示样式 */
@@ -192,6 +192,8 @@ body.resizing.horizontal * {
     width: 280px;
     margin: 0 auto;
     z-index: 5;
+    border: none;
+    background-color: transparent;
 }
 
 .prompt-content {
@@ -204,6 +206,7 @@ body.resizing.horizontal * {
 .prompt-content i {
     font-size: 48px;
     color: var(--header-bg);
+    opacity: 0.8;
 }
 
 .prompt-content p {

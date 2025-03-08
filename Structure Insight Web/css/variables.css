@@ -47,6 +47,9 @@
     --mobile-toggle-bg: #4A6491;
     --mobile-toggle-active: #5D77A4;
     --mobile-toggle-shadow: rgba(0, 0, 0, 0.3);
+    /* 危险按钮颜色 */
+    --button-danger-bg: #d9534f;
+    --button-danger-hover: #c9302c;
     /* Mobile optimization variables */
     --mobile-header-height: 48px;
     --mobile-status-height: 32px;
@@ -97,4 +100,7 @@
     --mobile-toggle-bg: #1A2534;
     --mobile-toggle-active: #2A3F54;
     --mobile-toggle-shadow: rgba(0, 0, 0, 0.5);
+    /* 危险按钮颜色 */
+    --button-danger-bg: #d9534f;
+    --button-danger-hover: #c9302c;
 }
