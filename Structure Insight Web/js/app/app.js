@@ -4,8 +4,8 @@
  */
 
 const { useState, useEffect, useRef, useCallback } = React;
-const { LineNumbers, HighlightedContent, FileTree, Resizer, ScrollToTop, SearchDialog, SettingsDialog } = window.Components;
-const { useAppSettings, useDeviceDetection, useFileManagement, useSearchFunctionality, useUIInteractions } = window.Hooks;
+const { LineNumbers, HighlightedContent, FileTree, Resizer, ScrollToTop, SettingsDialog } = window.Components;
+const { useAppSettings, useDeviceDetection, useFileManagement, useUIInteractions } = window.Hooks;
 
 //=============================================================================
 // MAIN APPLICATION COMPONENT
@@ -61,6 +61,8 @@ const App = () => {
         isDragging, 
         isEditing, 
         currentEditingFile, 
+        isProcessingZip,
+        zipProgress,
         resetContent, 
         cancelProcessing, 
         copyContent, 
@@ -72,30 +74,8 @@ const App = () => {
         handleEditContent, 
         dragDropHandlers, 
         setStatusMessage,
-        clearCache // 添加清除缓存函数
+        clearCache
     } = useFileManagement(extractContent);
-    
-    // Search functionality hook - 优化搜索功能
-    const { 
-        isSearchDialogOpen, 
-        searchQuery, 
-        searchMatches, 
-        currentMatchIndex, 
-        searchOptions, // 新增: 搜索选项
-        searchHistory, // 新增: 搜索历史
-        searchInProgress, // 新增: 搜索进行中状态
-        contextLines, // 新增: 上下文行数
-        performSearch, 
-        goToNextMatch, 
-        goToPreviousMatch, 
-        openSearchDialog, 
-        closeSearchDialog, 
-        clearSearchHighlights,
-        selectFromHistory, // 新增: 从历史记录中选择
-        setSearchContextLines, // 新增: 设置上下文行数
-        clearSearchHistory, // 新增: 清除搜索历史
-        setSearchOptions // 新增: 设置搜索选项
-    } = useSearchFunctionality(currentContent, lineHeight, setStatusMessage);
     
     // UI interactions hook for layout and scrolling
     const { 
@@ -134,15 +114,10 @@ const App = () => {
             currentContent, 
             isEditing, 
             processing, 
-            searchMatches, 
-            currentMatchIndex,
             isMobile, 
             mobileView, 
-            openSearchDialog, 
             saveContent, 
             copyContent,
-            goToNextMatch, 
-            goToPreviousMatch, 
             handleEditContent, 
             isSettingsOpen,
             closeSettings, 
@@ -151,9 +126,9 @@ const App = () => {
             setMobileView
         });
     }, [
-        currentContent, isEditing, processing, searchMatches, currentMatchIndex, 
-        isMobile, mobileView, openSearchDialog, saveContent, copyContent, 
-        goToNextMatch, goToPreviousMatch, handleEditContent, isSettingsOpen,
+        currentContent, isEditing, processing, 
+        isMobile, mobileView, saveContent, copyContent, 
+        handleEditContent, isSettingsOpen,
         closeSettings, editorScrollRef, setIsTransitioning, setMobileView
     ]);
 
@@ -204,26 +179,6 @@ const App = () => {
     const handleFileTreeSelectWrapper = (node) => {
         handleFileTreeSelect(node, editorScrollRef, isMobile, setMobileView, isTransitioning, setIsTransitioning, lineHeight);
     };
-    
-    // 修改搜索包装函数以支持文件内容参数
-    const handleSearchWrapper = (query, options) => {
-        performSearch(query, options, editorScrollRef, filesContent);
-    };
-    
-    const handleNextMatchWrapper = () => {
-        goToNextMatch(editorScrollRef);
-    };
-    
-    const handlePreviousMatchWrapper = () => {
-        goToPreviousMatch(editorScrollRef);
-    };
-    
-    // 直接的搜索打开处理函数，避免通过包装器
-    const handleOpenSearch = useCallback(() => {
-        if (currentContent && !isEditing) {
-            openSearchDialog(isMobile, mobileView, setIsTransitioning, setMobileView);
-        }
-    }, [currentContent, isEditing, openSearchDialog, isMobile, mobileView, setIsTransitioning, setMobileView]);
     
     //=========================================================================
     // RENDERING HELPERS
@@ -304,15 +259,6 @@ const App = () => {
                     >
                         <i className="fas fa-stop"></i>
                         {isMobile && <span className="tooltip">取消</span>}
-                    </button>
-                    <button
-                        className="header-button"
-                        onClick={handleOpenSearch}
-                        disabled={!currentContent || isEditing}
-                        title="搜索内容 (Ctrl+F)"
-                    >
-                        <i className="fas fa-search"></i>
-                        {isMobile && <span className="tooltip">搜索</span>}
                     </button>
                     
                     {/* Settings button - only show on non-mobile */}
@@ -406,13 +352,10 @@ const App = () => {
                 </div>
             </div>
             
-            {/* 更新状态栏显示以包含更多搜索信息 */}
+            {/* 更新状态栏显示 */}
             <div className="status-bar">
                 {processing ? statusMessage : `${statusMessage} - 共 ${lineCount} 行, ${charCount} 字符`}
                 {isEditing && !processing && " - 编辑模式"}
-                {searchMatches.length > 0 && !processing && !isEditing && 
-                    ` - 找到 ${searchMatches.length} 个匹配项 (${currentMatchIndex + 1}/${searchMatches.length})`}
-                {searchInProgress && !processing && " - 搜索中..."}
             </div>
             
             {/* Mobile view toggle button */}
@@ -439,33 +382,25 @@ const App = () => {
                 </div>
             )}
             
+            {/* ZIP extraction overlay */}
+            {isProcessingZip && (
+                <div className="zip-overlay">
+                    <div className="zip-message">
+                        <i className="fas fa-file-archive"></i>
+                        <div className="zip-spinner">
+                            <i className="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <span>{zipProgress || '正在处理ZIP文件...'}</span>
+                    </div>
+                </div>
+            )}
+            
             {/* Mobile scroll to top button */}
             {isMobile && (
                 <ScrollToTop targetRef={editorScrollRef} />
             )}
             
-            {/* 更新搜索对话框组件，添加新的属性 */}
-            <SearchDialog 
-                isOpen={isSearchDialogOpen}
-                onClose={closeSearchDialog}
-                onSearch={handleSearchWrapper}
-                onNext={handleNextMatchWrapper}
-                onPrevious={handlePreviousMatchWrapper}
-                resultCount={searchMatches.length}
-                currentMatchIndex={currentMatchIndex < 0 ? 0 : currentMatchIndex}
-                initialQuery={searchQuery}
-                searchHistory={searchHistory}
-                onSelectHistory={(item) => selectFromHistory(item, editorScrollRef)} 
-                searchOptions={searchOptions}
-                onUpdateOptions={setSearchOptions}
-                searchInProgress={searchInProgress}
-                onClearHistory={clearSearchHistory}
-                contextLines={contextLines}
-                onSetContextLines={setSearchContextLines}
-                filesContent={filesContent}
-            />
-            
-            {/* Settings dialog - 添加 onClearCache 属性 */}
+            {/* Settings dialog */}
             <SettingsDialog
                 isOpen={isSettingsOpen}
                 onClose={closeSettings}

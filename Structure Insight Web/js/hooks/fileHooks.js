@@ -12,10 +12,18 @@ const { Storage, FileUtils } = window.Utils;
 
 /**
  * Hook for managing file operations and content
- * @param {Boolean} extractContent Whether to extract file content
+ * @param {Boolean} extractContentProp Whether to extract file content
  * @returns {Object} File operations state and handlers
  */
-const useFileManagement = (extractContent) => {
+const useFileManagement = (extractContentProp) => {
+    // Use a ref to track the current value of extractContent
+    const extractContentRef = useRef(extractContentProp);
+    
+    // Update the ref when the prop changes
+    useEffect(() => {
+        extractContentRef.current = extractContentProp;
+    }, [extractContentProp]);
+    
     // 添加拖放计数器引用
     const dragCounter = useRef(0);
     
@@ -43,6 +51,10 @@ const useFileManagement = (extractContent) => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentEditingFile, setCurrentEditingFile] = useState(null);
     const [editedContent, setEditedContent] = useState({});
+    
+    // ZIP processing state
+    const [isProcessingZip, setIsProcessingZip] = useState(false);
+    const [zipProgress, setZipProgress] = useState('');
 
     // Hidden file input reference
     const fileInputRef = useRef(null);
@@ -130,7 +142,36 @@ const useFileManagement = (extractContent) => {
         };
     }, []);
     
-    // Process files main function - 已修复
+    // Process ZIP file
+    const processZipFile = async (zipFile) => {
+        if (!zipFile || !FileUtils.isZipFile(zipFile)) return null;
+        
+        setIsProcessingZip(true);
+        setZipProgress('开始处理ZIP文件...');
+        
+        try {
+            // Progress callback function for ZIP extraction
+            const progressCallback = (message) => {
+                setZipProgress(message);
+            };
+            
+            // Extract files from ZIP
+            const extractedFiles = await FileUtils.processZipFile(zipFile, progressCallback);
+            
+            setIsProcessingZip(false);
+            setZipProgress('');
+            
+            return extractedFiles;
+        } catch (error) {
+            console.error('处理ZIP文件失败:', error);
+            setStatusMessage(`处理ZIP文件失败: ${error.message}`);
+            setIsProcessingZip(false);
+            setZipProgress('');
+            return null;
+        }
+    };
+    
+    // Process files main function - 修改为使用ref
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
         
@@ -139,7 +180,32 @@ const useFileManagement = (extractContent) => {
         setStatusMessage('处理中...');
         
         // Convert FileList to array
-        const filesArray = Array.from(files);
+        let filesArray = Array.from(files);
+        setMaxProgress(filesArray.length);
+        
+        // Check for ZIP files and process them
+        const zipFiles = filesArray.filter(file => FileUtils.isZipFile(file));
+        const nonZipFiles = filesArray.filter(file => !FileUtils.isZipFile(file));
+        
+        // Process ZIP files if found
+        if (zipFiles.length > 0) {
+            setStatusMessage(`发现${zipFiles.length}个ZIP文件，正在处理...`);
+            
+            // Process each ZIP file
+            for (const zipFile of zipFiles) {
+                setStatusMessage(`正在处理 ${zipFile.name}...`);
+                const extractedFiles = await processZipFile(zipFile);
+                
+                if (extractedFiles && extractedFiles.length > 0) {
+                    // Add extracted files to non-zip files
+                    nonZipFiles.push(...extractedFiles);
+                    setStatusMessage(`已从 ${zipFile.name} 中提取 ${extractedFiles.length} 个文件`);
+                }
+            }
+        }
+        
+        // Update files array with all files (original non-ZIP + extracted from ZIPs)
+        filesArray = nonZipFiles;
         setMaxProgress(filesArray.length);
         
         // First process directory structure
@@ -148,7 +214,9 @@ const useFileManagement = (extractContent) => {
         
         // Create initial content
         let fullContent = `文件结构:\n${structure}\n\n`;
-        if (extractContent) {
+        
+        // 只有当 extractContentRef.current 为true时才添加"文件内容:"标题
+        if (extractContentRef.current) {
             fullContent += "文件内容:\n";
         }
         
@@ -213,10 +281,12 @@ const useFileManagement = (extractContent) => {
                 try {
                     // Read file content
                     const content = await FileUtils.readFileContent(file);
+                    
+                    // 始终将文件内容添加到filesContent数组以备后用
                     fileContents.push({ name: file.name, content });
                     
-                    // Add to main content
-                    if (extractContent) {
+                    // 仅当extractContentRef.current为true时添加到主内容
+                    if (extractContentRef.current) {
                         const separator = `${'='.repeat(40)}\n文件名: ${file.name}\n${'-'.repeat(71)}\n`;
                         
                         // Record current file position in global content
@@ -244,7 +314,15 @@ const useFileManagement = (extractContent) => {
         setCurrentContent(accumulatedContent);
         
         setFilesContent(fileContents);
-        setFilePositions(positions);
+        
+        // 根据是否提取内容来决定是否设置filePositions
+        if (extractContentRef.current) {
+            setFilePositions(positions);
+        } else {
+            // 如果不提取内容，则清空filePositions
+            setFilePositions({});
+        }
+        
         setProcessing(false);
         
         // Update line and character count with the new content
@@ -341,6 +419,8 @@ const useFileManagement = (extractContent) => {
         setIsEditing(false);
         setCurrentEditingFile(null);
         setEditedContent({});
+        setIsProcessingZip(false);
+        setZipProgress('');
         
         // 清除所有文件引用
         setReceivedFiles(null);
@@ -433,7 +513,8 @@ const useFileManagement = (extractContent) => {
             setCurrentEditingFile(null);
         }
         
-        if (filePositions[node.name]) {
+        // 只有在extractContentRef.current为true且文件位置存在时才跳转到文件位置
+        if (extractContentRef.current && filePositions[node.name]) {
             // Switch to editor view on mobile
             if (isMobile) {
                 // Trigger transition animation
@@ -503,6 +584,28 @@ const useFileManagement = (extractContent) => {
             setTimeout(() => {
                 setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
             }, 2000);
+        } else if (!extractContentRef.current) {
+            // 如果未提取内容，则显示相应提示
+            if (isMobile) {
+                setIsTransitioning(true);
+                setTimeout(() => {
+                    setMobileView('editor');
+                    setTimeout(() => setIsTransitioning(false), 300);
+                }, 50);
+            }
+            
+            // 提示用户未提取文件内容
+            setStatusMessage(`未提取文件内容，无法跳转到: ${node.name}`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
+            
+            // 找出文件在filesContent数组中的内容
+            const fileData = filesContent.find(f => f.name === node.name);
+            if (fileData && fileData.content) {
+                // 目前不做任何操作，只是显示提示
+                console.log(`文件 ${node.name} 的内容长度: ${fileData.content.length}`);
+            }
         }
     };
     
@@ -541,8 +644,8 @@ const useFileManagement = (extractContent) => {
         // Remove from file contents
         setFilesContent(prev => prev.filter(f => f.name !== node.name));
         
-        // Update text content
-        if (filePositions[node.name] && extractContent) {
+        // Update text content - 只有在extractContentRef.current为true时才需要处理
+        if (filePositions[node.name] && extractContentRef.current) {
             const beforePos = currentContent.substring(0, filePositions[node.name]);
             const afterStartIndex = currentContent.indexOf('\n\n', filePositions[node.name]);
             if (afterStartIndex !== -1) {
@@ -576,7 +679,7 @@ const useFileManagement = (extractContent) => {
         }, 2000);
     };
     
-    // Handle file content editing
+    // Handle file content editing - 修改后的函数，更新了文件位置计算逻辑
     const handleEditContent = (fileName, newContent, startEditing = false) => {
         // If starting edit mode
         if (startEditing) {
@@ -603,8 +706,8 @@ const useFileManagement = (extractContent) => {
                 )
             );
             
-            // Update complete content string
-            if (filePositions[fileName]) {
+            // Update complete content string - 只有在extractContentRef.current为true时才需要更新
+            if (filePositions[fileName] && extractContentRef.current) {
                 const position = filePositions[fileName];
                 
                 // Find file content start and end positions
@@ -620,26 +723,26 @@ const useFileManagement = (extractContent) => {
                     const after = currentContent.substring(end);
                     setCurrentContent(before + newContent + after);
                     
-                    // Update positions of subsequent files
+                    // Update positions of subsequent files - 使用文件实际结束位置(end)
                     const updatedPositions = { ...filePositions };
                     Object.keys(updatedPositions).forEach(name => {
-                        if (updatedPositions[name] > position + oldContent.length) {
+                        if (updatedPositions[name] > end) {
                             updatedPositions[name] += lengthDifference;
                         }
                     });
                     setFilePositions(updatedPositions);
-                    
-                    // Exit edit mode
-                    setIsEditing(false);
-                    setCurrentEditingFile(null);
-                    
-                    // Update status info
-                    setStatusMessage(`已保存修改: ${fileName}`);
-                    setTimeout(() => {
-                        setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
-                    }, 2000);
                 }
             }
+            
+            // Exit edit mode
+            setIsEditing(false);
+            setCurrentEditingFile(null);
+            
+            // Update status info
+            setStatusMessage(`已保存修改: ${fileName}`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
         }
     };
     
@@ -805,6 +908,15 @@ const useFileManagement = (extractContent) => {
         }
     };
     
+    // Add effect to reprocess files when extractContent changes
+    useEffect(() => {
+        // Check if extractContent changed and there are files to reprocess
+        if (receivedFiles && !processing) {
+            // Reprocess the current files
+            processFiles(receivedFiles);
+        }
+    }, [extractContentProp]);
+    
     return {
         // State
         fileStructure,
@@ -821,6 +933,8 @@ const useFileManagement = (extractContent) => {
         isDragging,
         isEditing,
         currentEditingFile,
+        isProcessingZip,
+        zipProgress,
         
         // File operations
         processFiles,

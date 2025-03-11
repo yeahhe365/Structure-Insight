@@ -48,15 +48,10 @@ const AppHelpers = {
         currentContent, 
         isEditing, 
         processing, 
-        searchMatches, 
-        currentMatchIndex,
         isMobile, 
         mobileView, 
-        openSearchDialog, 
         saveContent, 
         copyContent,
-        goToNextMatch, 
-        goToPreviousMatch, 
         handleEditContent, 
         isSettingsOpen,
         closeSettings, 
@@ -65,15 +60,6 @@ const AppHelpers = {
         setMobileView
     }) => {
         const handleKeyDown = (e) => {
-            // Ctrl+F Search
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                // Only open search if settings is not open to avoid conflict
-                if (!isSettingsOpen) {
-                    openSearchDialog(isMobile, mobileView, setIsTransitioning, setMobileView);
-                }
-            }
-            
             // Ctrl+S Save
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
@@ -96,16 +82,6 @@ const AppHelpers = {
             if (e.key === 'Escape' && isSettingsOpen) {
                 e.preventDefault();
                 closeSettings();
-            }
-            
-            // F3 Find next
-            if ((e.key === 'F3' || (e.ctrlKey && e.key === 'g')) && searchMatches.length > 0) {
-                e.preventDefault();
-                if (e.shiftKey) {
-                    goToPreviousMatch(editorScrollRef);
-                } else {
-                    goToNextMatch(editorScrollRef);
-                }
             }
         };
         
@@ -150,10 +126,6 @@ const AppHelpers = {
     createWrapperFunctions: ({
         handleLocalFolderSelect,
         handleFileTreeSelect,
-        performSearch,
-        goToNextMatch,
-        goToPreviousMatch,
-        openSearchDialog,
         isMobile,
         setMobileView,
         editorScrollRef,
@@ -171,32 +143,9 @@ const AppHelpers = {
             handleFileTreeSelect(node, editorScrollRef, isMobile, setMobileView, isTransitioning, setIsTransitioning, lineHeight);
         };
         
-        const handleSearchWrapper = (query, options) => {
-            performSearch(query, options, editorScrollRef);
-        };
-        
-        const handleNextMatchWrapper = () => {
-            goToNextMatch(editorScrollRef);
-        };
-        
-        const handlePreviousMatchWrapper = () => {
-            goToPreviousMatch(editorScrollRef);
-        };
-        
-        const openSearchDialogWrapper = () => {
-            // Only open search if settings is not open
-            if (!isSettingsOpen) {
-                openSearchDialog(isMobile, mobileView, setIsTransitioning, setMobileView);
-            }
-        };
-        
         return {
             handleLocalFolderSelectWrapper,
-            handleFileTreeSelectWrapper,
-            handleSearchWrapper,
-            handleNextMatchWrapper,
-            handlePreviousMatchWrapper,
-            openSearchDialogWrapper
+            handleFileTreeSelectWrapper
         };
     }
 };

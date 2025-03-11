@@ -14,8 +14,10 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     font-size: var(--font-size-base);
+    position: relative;
+    overflow: hidden;
 }
 
 .button:hover {
@@ -28,7 +30,26 @@
     cursor: not-allowed;
 }
 
-/* Copy button styles */
+/* 添加波纹效果 */
+.button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+/* Copy button styles - 增强反馈效果 */
 .copy-button {
     background-color: var(--button-bg);
     color: var(--text-color);
@@ -41,9 +62,11 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.2s;
+    transition: all 0.2s;
     margin-left: 8px;
     opacity: 0.8;
+    position: relative;
+    overflow: hidden;
 }
 
 .copy-button:hover {
@@ -52,7 +75,37 @@
 }
 
 .copy-button:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
+    opacity: 0.85;
+}
+
+.copy-button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.copy-button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0) translate(-50%, -50%);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20) translate(-50%, -50%);
+        opacity: 0;
+    }
 }
 
 /* Refresh button styles */
@@ -268,4 +321,57 @@
     }
 }
 
-/* All header buttons use the same consistent style */
+/* 编辑按钮增强 */
+.edit-button {
+    background-color: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.edit-button:hover {
+    background-color: var(--button-hover);
+    color: var(--text-color);
+}
+
+.edit-button:active {
+    transform: scale(0.95);
+}
+
+.edit-button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.edit-button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+/* 按钮点击时的活动状态 */
+.copy-button.button-active,
+.edit-button.button-active,
+.button-active {
+    transform: scale(0.92);
+    opacity: 0.85;
+    background-color: var(--button-hover);
+    transition: transform 0.1s ease-out, opacity 0.1s ease-out, background-color 0.1s ease-out;
+}

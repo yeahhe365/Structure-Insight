@@ -1,0 +1,32 @@
+{
+	"name": "Structure Insight Web",
+	"short_name": "StructureWeb",
+	"description": "文件结构分析和代码查看工具",
+	"start_url": "/index.html",
+	"display": "standalone",
+	"background_color": "#F0F0F0",
+	"theme_color": "#2A3F54",
+	"orientation": "any",
+	"icons": [
+	  {
+		"src": "favicon_io/android-chrome-192x192.png",
+		"sizes": "192x192",
+		"type": "image/png",
+		"purpose": "any maskable"
+	  },
+	  {
+		"src": "favicon_io/android-chrome-512x512.png",
+		"sizes": "512x512",
+		"type": "image/png",
+		"purpose": "any maskable"
+	  }
+	],
+	"categories": ["productivity", "utilities", "developer tools"],
+	"screenshots": [
+	  {
+		"src": "screenshots/screenshot1.jpg",
+		"sizes": "1280x720",
+		"type": "image/jpeg"
+	  }
+	]
+  }

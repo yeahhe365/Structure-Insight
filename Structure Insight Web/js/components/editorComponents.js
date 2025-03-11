@@ -57,11 +57,12 @@ const LineNumbers = React.forwardRef(({ content, lineHeight, fontSize }, ref) =>
  * @param {boolean} props.isVisible Whether feedback is visible
  * @param {Function} props.onAnimationEnd Callback when animation ends
  */
-const CopyFeedback = ({ isVisible, onAnimationEnd }) => {
+const CopyFeedback = ({ isVisible, onAnimationEnd, style }) => {
     return (
         <div 
             className={`copy-feedback ${isVisible ? 'visible' : ''}`}
             onAnimationEnd={onAnimationEnd}
+            style={style}
         >
             已复制到剪贴板
         </div>
@@ -87,16 +88,22 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
     const [copyFeedbackPosition, setCopyFeedbackPosition] = useState({ top: 0, left: 0 });
     const [fileStats, setFileStats] = useState({});
     const fileParts = useRef([]);
+    const [activeButtons, setActiveButtons] = useState({}); // 新增：跟踪活动状态的按钮
+    const [hasFileContent, setHasFileContent] = useState(false); // 新增：是否含有文件内容部分
     
     // Process content for display
     useEffect(() => {
         if (!content) {
             setProcessedContent('');
+            setHasFileContent(false);
             return;
         }
         
         // Set processed content
         setProcessedContent(content);
+        
+        // 检查是否含有文件内容部分
+        setHasFileContent(content.includes("文件内容:"));
         
         // Apply syntax highlighting in next render cycle
         const timer = setTimeout(() => {
@@ -113,7 +120,7 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
     
     // Calculate file statistics when content changes
     useEffect(() => {
-        if (!processedContent) return;
+        if (!processedContent || !hasFileContent) return;
         
         // Extract file parts and calculate statistics
         let contentPart = '';
@@ -179,7 +186,7 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
         });
         
         setFileStats(stats);
-    }, [processedContent]);
+    }, [processedContent, hasFileContent]);
     
     if (!processedContent) return <div className="highlighted-content"></div>;
     
@@ -219,8 +226,22 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
         }
     };
     
-    // Copy content handlers
-    const copyToClipboard = (text, buttonElement) => {
+    // 新增：处理按钮点击的动画效果
+    const handleButtonClick = (buttonId) => {
+        // 设置按钮为活动状态
+        setActiveButtons(prev => ({ ...prev, [buttonId]: true }));
+        
+        // 一段时间后恢复正常状态
+        setTimeout(() => {
+            setActiveButtons(prev => ({ ...prev, [buttonId]: false }));
+        }, 300);
+    };
+    
+    // Copy content handlers - 修改以添加按钮动画
+    const copyToClipboard = (text, buttonElement, buttonId) => {
+        // 添加按钮点击动画
+        handleButtonClick(buttonId);
+        
         navigator.clipboard.writeText(text)
             .then(() => {
                 // Get position for feedback
@@ -274,8 +295,8 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                     <div className="section-header">
                         <h3>文件结构:</h3>
                         <button 
-                            className="copy-button" 
-                            onClick={(e) => copyToClipboard(structureContent, e.currentTarget)}
+                            className={`copy-button ${activeButtons['structure'] ? 'button-active' : ''}`} 
+                            onClick={(e) => copyToClipboard(structureContent, e.currentTarget, 'structure')}
                             title="复制文件结构"
                         >
                             <i className="fas fa-copy"></i>
@@ -287,10 +308,10 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                 </div>
             )}
             
-            {/* Content section */}
-            {contentPart && <h3 style={{margin: '20px 0 10px'}}>文件内容:</h3>}
+            {/* Content section - 只有在hasFileContent为true时才显示 */}
+            {hasFileContent && <h3 style={{margin: '20px 0 10px'}}>文件内容:</h3>}
             
-            {fileParts.current.map((part, index) => {
+            {hasFileContent && fileParts.current.map((part, index) => {
                 // Extract filename and content manually
                 const fileNameIndex = part.indexOf('文件名:') + 4;
                 const fileNameEndIndex = part.indexOf('\n', fileNameIndex);
@@ -315,6 +336,10 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                         // Get file stats
                         const stats = fileStats[fileName] || { lineCount: 0, charCount: 0 };
                         
+                        // 为每个文件创建唯一的按钮ID
+                        const copyButtonId = `copy-${index}`;
+                        const editButtonId = `edit-${index}`;
+                        
                         return (
                             <div 
                                 key={index}
@@ -330,19 +355,20 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                                         </span>
                                     </div>
                                     <div className="file-actions">
-                                        {/* Copy button */}
+                                        {/* Copy button - 添加活动状态类 */}
                                         <button 
-                                            className="copy-button" 
-                                            onClick={(e) => copyToClipboard(fileContent, e.currentTarget)}
+                                            className={`copy-button ${activeButtons[copyButtonId] ? 'button-active' : ''}`}
+                                            onClick={(e) => copyToClipboard(fileContent, e.currentTarget, copyButtonId)}
                                             title="复制文件内容"
                                         >
                                             <i className="fas fa-copy"></i>
                                         </button>
                                         
-                                        {/* Edit button */}
+                                        {/* Edit button - 添加活动状态类 */}
                                         <button 
-                                            className="edit-button" 
+                                            className={`edit-button ${activeButtons[editButtonId] ? 'button-active' : ''}`}
                                             onClick={() => {
+                                                handleButtonClick(editButtonId);
                                                 setEditingContent(fileContent);
                                                 onEditContent(fileName, null, true); // Mark as editing
                                             }}
@@ -365,10 +391,22 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                                             }}
                                         />
                                         <div className="editor-buttons">
-                                            <button className="button" onClick={handleSaveEdit}>
+                                            <button 
+                                                className="button" 
+                                                onClick={() => {
+                                                    handleButtonClick('save');
+                                                    handleSaveEdit();
+                                                }}
+                                            >
                                                 <i className="fas fa-save"></i> 保存
                                             </button>
-                                            <button className="button" onClick={() => onEditContent(null)}>
+                                            <button 
+                                                className="button" 
+                                                onClick={() => {
+                                                    handleButtonClick('cancel');
+                                                    onEditContent(null);
+                                                }}
+                                            >
                                                 <i className="fas fa-times"></i> 取消
                                             </button>
                                         </div>
@@ -388,6 +426,13 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                 }
                 return null;
             })}
+            
+            {/* 当未提取文件内容时显示提示 */}
+            {!hasFileContent && structurePart && (
+                <div className="no-content-message">
+                    <p className="info-message">未提取文件内容。如需查看文件内容，请在设置中开启"自动提取文件内容"选项，然后重新加载文件。</p>
+                </div>
+            )}
         </div>
     );
 };

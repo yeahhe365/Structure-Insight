@@ -221,310 +221,6 @@ const ScrollToTop = ({ targetRef }) => {
 };
 
 //=============================================================================
-// SEARCH COMPONENTS
-//=============================================================================
-
-/**
- * Search dialog component
- * @param {Object} props Component props
- * @param {boolean} props.isOpen Whether dialog is open
- * @param {Function} props.onClose Close dialog callback
- * @param {Function} props.onSearch Execute search callback
- * @param {Function} props.onNext Go to next match callback
- * @param {Function} props.onPrevious Go to previous match callback
- * @param {number} props.resultCount Number of search results
- * @param {number} props.currentMatchIndex Current match index
- * @param {string} props.initialQuery Initial search query
- */
-const SearchDialog = ({ 
-    isOpen, 
-    onClose, 
-    onSearch, 
-    onNext, 
-    onPrevious,
-    resultCount,
-    currentMatchIndex,
-    initialQuery = ''
-}) => {
-    const [searchQuery, setSearchQuery] = useState(initialQuery);
-    const [caseSensitive, setCaseSensitive] = useState(false);
-    const [useRegex, setUseRegex] = useState(false);
-    const [wholeWord, setWholeWord] = useState(false);
-    const [showOptions, setShowOptions] = useState(false);
-    const inputRef = useRef(null);
-    const dialogRef = useRef(null);
-    const [position, setPosition] = useState({ right: 16, bottom: 80 });
-    const positionRef = useRef({ right: 16, bottom: 80 });
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStartRef = useRef(null);
-    
-    // When position state changes, update position reference
-    useEffect(() => {
-        positionRef.current = position;
-    }, [position]);
-    
-    // Focus input when dialog opens
-    useEffect(() => {
-        if (isOpen && inputRef.current) {
-            setTimeout(() => {
-                inputRef.current.focus();
-                inputRef.current.select();
-            }, 100);
-        }
-        
-        // Reset dragging state when dialog closes
-        if (!isOpen) {
-            setIsDragging(false);
-        }
-    }, [isOpen]);
-    
-    // Handle keyboard shortcuts
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            if (e.shiftKey) {
-                onPrevious(); // Shift+Enter to find previous
-            } else {
-                onSearch(searchQuery, { caseSensitive, useRegex, wholeWord }); // Enter to search
-            }
-        } else if (e.key === 'Escape') {
-            onClose(); // Esc to close dialog
-        } else if (e.key === 'F3' || (e.ctrlKey && e.key === 'g')) {
-            e.preventDefault();
-            if (e.shiftKey) {
-                onPrevious(); // Shift+F3 to find previous
-            } else {
-                onNext(); // F3 to find next
-            }
-        }
-    };
-    
-    // Execute search
-    const doSearch = () => {
-        onSearch(searchQuery, { caseSensitive, useRegex, wholeWord });
-    };
-    
-    // Start drag
-    const handleDragStart = (e) => {
-        e.preventDefault();
-        if (document.body.classList.contains('settings-dragging')) return;
-        
-        setIsDragging(true);
-        
-        // Add global dragging style
-        document.body.classList.add('search-dragging');
-        
-        // Record initial position
-        if (e.type === 'touchstart') {
-            dragStartRef.current = { 
-                x: e.touches[0].clientX, 
-                y: e.touches[0].clientY,
-                position: { ...positionRef.current }
-            };
-        } else {
-            dragStartRef.current = { 
-                x: e.clientX, 
-                y: e.clientY,
-                position: { ...positionRef.current }
-            };
-        }
-        
-        // Add global event listeners
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
-        document.addEventListener('touchend', handleDragEnd);
-    };
-    
-    // Handle drag movement
-    const handleDragMove = (e) => {
-        if (!isDragging || !dragStartRef.current) return;
-        
-        e.preventDefault();
-        
-        // Calculate movement
-        let clientX, clientY;
-        if (e.type === 'touchmove') {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-        
-        const deltaX = clientX - dragStartRef.current.x;
-        const deltaY = clientY - dragStartRef.current.y;
-        
-        // Update position (calculate right/bottom inversely)
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        
-        const newRight = Math.max(0, Math.min(viewportWidth - 60, dragStartRef.current.position.right - deltaX));
-        const newBottom = Math.max(0, Math.min(viewportHeight - 60, dragStartRef.current.position.bottom - deltaY));
-        
-        setPosition({
-            right: newRight,
-            bottom: newBottom
-        });
-    };
-    
-    // End drag
-    const handleDragEnd = () => {
-        setIsDragging(false);
-        
-        // Remove global dragging styles
-        document.body.classList.remove('search-dragging');
-        
-        // Remove global event listeners
-        document.removeEventListener('mousemove', handleDragMove);
-        document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchmove', handleDragMove);
-        document.removeEventListener('touchend', handleDragEnd);
-    };
-    
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            document.removeEventListener('mousemove', handleDragMove);
-            document.removeEventListener('mouseup', handleDragEnd);
-            document.removeEventListener('touchmove', handleDragMove);
-            document.removeEventListener('touchend', handleDragEnd);
-            document.body.classList.remove('search-dragging');
-        };
-    }, []);
-    
-    // Toggle options panel
-    const toggleOptions = () => {
-        setShowOptions(!showOptions);
-    };
-    
-    if (!isOpen) return null;
-    
-    return (
-        <div 
-            className={`floating-search-dialog ${isDragging ? 'dragging' : ''}`}
-            ref={dialogRef}
-            style={{ 
-                right: `${position.right}px`, 
-                bottom: `${position.bottom}px`,
-                cursor: isDragging ? 'grabbing' : 'default'
-            }}
-        >
-            <div 
-                className="search-dialog-header" 
-                onMouseDown={handleDragStart}
-                onTouchStart={handleDragStart}
-            >
-                <div className="drag-handle">
-                    <i className="fas fa-grip-lines"></i>
-                </div>
-                <button 
-                    className="search-option-toggle" 
-                    onClick={toggleOptions}
-                    title={showOptions ? "隐藏选项" : "显示选项"}
-                >
-                    <i className={`fas fa-cog ${showOptions ? 'active' : ''}`}></i>
-                </button>
-                <button 
-                    className="search-dialog-close" 
-                    onClick={onClose}
-                    title="关闭 (Esc)"
-                >
-                    <i className="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div className="search-dialog-content">
-                <div className="search-input-group">
-                    <input 
-                        ref={inputRef}
-                        type="text" 
-                        className="search-input" 
-                        value={searchQuery} 
-                        onChange={(e) => setSearchQuery(e.target.value)} 
-                        onKeyDown={handleKeyDown}
-                        placeholder="输入搜索文本..." 
-                    />
-                    <button 
-                        className="search-button" 
-                        onClick={doSearch}
-                        title="查找 (Enter)"
-                        disabled={!searchQuery.trim()}
-                    >
-                        <i className="fas fa-search"></i>
-                    </button>
-                </div>
-                
-                {showOptions && (
-                    <div className="search-options">
-                        <label className="search-option">
-                            <input 
-                                type="checkbox" 
-                                checked={caseSensitive} 
-                                onChange={() => setCaseSensitive(!caseSensitive)}
-                            />
-                            <span>区分大小写</span>
-                        </label>
-                        
-                        <label className="search-option">
-                            <input 
-                                type="checkbox" 
-                                checked={useRegex} 
-                                onChange={() => {
-                                    setUseRegex(!useRegex);
-                                    if (!useRegex) setWholeWord(false);
-                                }}
-                            />
-                            <span>正则表达式</span>
-                        </label>
-                        
-                        <label className="search-option">
-                            <input 
-                                type="checkbox" 
-                                checked={wholeWord} 
-                                onChange={() => setWholeWord(!wholeWord)}
-                                disabled={useRegex}
-                            />
-                            <span>全词匹配</span>
-                        </label>
-                    </div>
-                )}
-                
-                <div className="search-results">
-                    {resultCount !== null && (
-                        <div className="search-result-count">
-                            {resultCount > 0 ? (
-                                <span>{currentMatchIndex + 1}/{resultCount}</span>
-                            ) : searchQuery.trim() ? (
-                                <span className="no-results">无匹配</span>
-                            ) : null}
-                        </div>
-                    )}
-                    
-                    <div className="search-navigation">
-                        <button 
-                            className="search-nav-button" 
-                            onClick={onPrevious}
-                            disabled={resultCount === 0}
-                            title="上一个匹配项 (Shift+Enter 或 Shift+F3)"
-                        >
-                            <i className="fas fa-chevron-up"></i>
-                        </button>
-                        <button 
-                            className="search-nav-button" 
-                            onClick={onNext}
-                            disabled={resultCount === 0}
-                            title="下一个匹配项 (F3)"
-                        >
-                            <i className="fas fa-chevron-down"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-//=============================================================================
 // SETTINGS DIALOG COMPONENT
 //=============================================================================
 
@@ -559,6 +255,8 @@ const SettingsDialog = ({
     const positionRef = useRef({ right: 16, top: 80 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStartRef = useRef(null);
+    const [pwaState, setPwaState] = useState({ isInstallable: false, isInstalled: false });
+    const [installButtonActive, setInstallButtonActive] = useState(false);
     
     // When position state changes, update position reference
     useEffect(() => {
@@ -571,6 +269,25 @@ const SettingsDialog = ({
             setIsDragging(false);
         }
     }, [isOpen]);
+    
+    // 监听PWA安装状态变化
+    useEffect(() => {
+        const handlePwaStateChange = (e) => {
+            setPwaState(e.detail);
+        };
+        
+        // 添加PWA安装状态变化事件监听
+        document.addEventListener('pwainstallstatechange', handlePwaStateChange);
+        
+        // 获取当前PWA状态
+        if (window.pwaInstaller) {
+            setPwaState(window.pwaInstaller.getInstallState());
+        }
+        
+        return () => {
+            document.removeEventListener('pwainstallstatechange', handlePwaStateChange);
+        };
+    }, []);
     
     // Handle keyboard shortcuts
     const handleKeyDown = (e) => {
@@ -588,10 +305,9 @@ const SettingsDialog = ({
         };
     }, [isOpen, onClose]);
     
-    // Start drag
-    const handleDragStart = (e) => {
+    // Start drag - 使用回调以便清理函数能正确引用
+    const handleDragStart = useCallback((e) => {
         e.preventDefault();
-        if (document.body.classList.contains('search-dragging')) return;
         
         setIsDragging(true);
         
@@ -612,16 +328,10 @@ const SettingsDialog = ({
                 position: { ...positionRef.current }
             };
         }
-        
-        // Add global event listeners
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('mouseup', handleDragEnd);
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
-        document.addEventListener('touchend', handleDragEnd);
-    };
+    }, []);
     
-    // Handle drag movement
-    const handleDragMove = (e) => {
+    // Handle drag movement - 使用回调以便清理函数能正确引用
+    const handleDragMove = useCallback((e) => {
         if (!isDragging || !dragStartRef.current) return;
         
         e.preventDefault();
@@ -650,24 +360,28 @@ const SettingsDialog = ({
             right: newRight,
             top: newTop
         });
-    };
+    }, [isDragging]);
     
-    // End drag
-    const handleDragEnd = () => {
+    // End drag - 使用回调以便清理函数能正确引用
+    const handleDragEnd = useCallback(() => {
         setIsDragging(false);
         
         // Remove global dragging styles
         document.body.classList.remove('settings-dragging');
         
-        // Remove global event listeners
-        document.removeEventListener('mousemove', handleDragMove);
-        document.removeEventListener('mouseup', handleDragEnd);
-        document.removeEventListener('touchmove', handleDragMove);
-        document.removeEventListener('touchend', handleDragEnd);
-    };
+        // Clean up drag state
+        dragStartRef.current = null;
+    }, []);
     
-    // Cleanup on unmount
+    // 在useEffect中使用这些回调函数，并包含在依赖数组中
     useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('mouseup', handleDragEnd);
+            document.addEventListener('touchmove', handleDragMove, { passive: false });
+            document.addEventListener('touchend', handleDragEnd);
+        }
+        
         return () => {
             document.removeEventListener('mousemove', handleDragMove);
             document.removeEventListener('mouseup', handleDragEnd);
@@ -675,14 +389,49 @@ const SettingsDialog = ({
             document.removeEventListener('touchend', handleDragEnd);
             document.body.classList.remove('settings-dragging');
         };
-    }, []);
+    }, [isDragging, handleDragMove, handleDragEnd]);
     
     // Handle clearing cache with confirmation
     const handleClearCache = () => {
         if (confirm('确定要清除所有缓存吗？此操作不可撤销。')) {
             onClearCache();
+            
+            // 添加提示信息
+            alert('缓存已清除，页面将自动刷新');
+            
+            // 短暂延迟后刷新页面
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         }
     };
+    
+    // 处理PWA安装
+    const handleInstallPWA = async () => {
+        if (window.pwaInstaller && pwaState.isInstallable) {
+            setInstallButtonActive(true);
+            const result = await window.pwaInstaller.installPWA();
+            setTimeout(() => setInstallButtonActive(false), 300);
+            
+            // 如果安装失败但不是用户取消，显示错误信息
+            if (!result.success && result.message !== '用户取消了安装') {
+                alert(result.message);
+            }
+        }
+    };
+    
+    // 获取安装按钮状态
+    const getInstallButtonState = () => {
+        if (pwaState.isInstalled) {
+            return { text: '已安装', disabled: true };
+        } else if (pwaState.isInstallable) {
+            return { text: '安装应用', disabled: false };
+        } else {
+            return { text: '不可安装', disabled: true };
+        }
+    };
+    
+    const installButtonState = getInstallButtonState();
     
     if (!isOpen) return null;
     
@@ -775,7 +524,27 @@ const SettingsDialog = ({
                     </div>
                 </div>
                 
-                {/* 新增: 缓存管理部分 */}
+                {/* PWA Install Section - NEW */}
+                <div className="settings-section">
+                    <h4 className="settings-section-title">应用安装</h4>
+                    <div className="settings-control pwa-control">
+                        <span className="pwa-label">
+                            {pwaState.isInstalled ? '应用已安装' : 
+                             pwaState.isInstallable ? '可安装为本地应用' : 
+                             '当前不可安装'}
+                        </span>
+                        <button 
+                            className={`settings-button pwa-install-button ${installButtonActive ? 'button-active' : ''}`}
+                            onClick={handleInstallPWA}
+                            title={installButtonState.text}
+                            disabled={installButtonState.disabled}
+                        >
+                            <i className="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                {/* 缓存管理部分 */}
                 <div className="settings-section">
                     <h4 className="settings-section-title">缓存管理</h4>
                     <div className="settings-control cache-control">
@@ -798,5 +567,4 @@ const SettingsDialog = ({
 window.Components = window.Components || {};
 window.Components.Resizer = Resizer;
 window.Components.ScrollToTop = ScrollToTop;
-window.Components.SearchDialog = SearchDialog;
 window.Components.SettingsDialog = SettingsDialog;

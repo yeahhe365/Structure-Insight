@@ -93,6 +93,16 @@
     text-decoration: underline;
 }
 
+/* 新增：按钮点击时的活动状态 */
+.copy-button.button-active,
+.edit-button.button-active,
+.button-active {
+    transform: scale(0.92);
+    opacity: 0.85;
+    background-color: var(--button-hover);
+    transition: transform 0.1s ease-out, opacity 0.1s ease-out, background-color 0.1s ease-out;
+}
+
 /* File content container */
 .file-content-container {
     margin-bottom: 20px;
@@ -305,4 +315,79 @@ pre code.hljs {
 .copy-feedback.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* 新增：鼠标悬停和按下的状态 */
+.copy-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 8px;
+    opacity: 0.8;
+    position: relative;
+    overflow: hidden;
+}
+
+.copy-button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%, -50%);
+    transform-origin: 50% 50%;
+}
+
+.copy-button:hover {
+    background-color: var(--button-hover);
+    opacity: 1;
+}
+
+.copy-button:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+/* 新增：点击波纹动画 */
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0) translate(-50%, -50%);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20) translate(-50%, -50%);
+        opacity: 0;
+    }
+}
+
+.no-content-message {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: var(--info-bg, rgba(66, 139, 202, 0.1));
+    border: 1px solid var(--info-border, rgba(66, 139, 202, 0.2));
+    border-radius: 8px;
+    text-align: center;
+}
+
+.info-message {
+    color: var(--text-color);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.dark-theme .no-content-message {
+    background-color: rgba(66, 139, 202, 0.15);
+    border-color: rgba(66, 139, 202, 0.25);
 }

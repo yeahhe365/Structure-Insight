@@ -55,7 +55,21 @@ const FileTree = ({ nodes, onFileSelect, onFileDelete }) => {
  */
 const FileTreeNode = ({ node, onFileSelect, onFileDelete, level }) => {
     const [expanded, setExpanded] = useState(true);
-    const isMobile = window.innerWidth <= 768;
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+    // 修复：添加事件监听器以响应窗口大小变化
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+        
+        window.addEventListener('resize', handleResize);
+        
+        // 清理函数
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
 
     // Handle null/undefined nodes
     if (!node) {

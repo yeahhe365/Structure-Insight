@@ -293,3 +293,78 @@ body.resizing.horizontal * {
     font-size: 16px;
     color: var(--text-color);
 }
+
+/* ZIP extraction overlay */
+.zip-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2001; /* Higher than drop overlay */
+    animation: fadeIn 0.3s ease-out;
+}
+
+.zip-message {
+    background-color: var(--editor-bg);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 90%;
+    max-width: 340px;
+    animation: slideIn 0.4s ease-out;
+}
+
+.zip-message i.fa-file-archive {
+    font-size: 48px;
+    color: var(--header-bg);
+}
+
+.zip-spinner {
+    position: relative;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zip-spinner i {
+    font-size: 36px;
+    color: var(--header-bg);
+}
+
+.zip-message span {
+    font-size: 16px;
+    color: var(--text-color);
+    max-width: 100%;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+    .zip-message {
+        padding: 20px;
+        max-width: 300px;
+    }
+    
+    .zip-message i.fa-file-archive {
+        font-size: 40px;
+    }
+    
+    .zip-spinner i {
+        font-size: 30px;
+    }
+    
+    .zip-message span {
+        font-size: 14px;
+    }
+}

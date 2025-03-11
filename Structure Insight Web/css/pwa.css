@@ -1,0 +1,233 @@
+/**
+ * Structure Insight Web - PWA Styles
+ * PWA相关组件的样式
+ */
+
+/* 通知容器 */
+.pwa-toast-container {
+	position: fixed;
+	bottom: 20px;
+	left: 20px;
+	z-index: 9999;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 350px;
+	pointer-events: none;
+  }
+  
+  /* 简单通知 */
+  .pwa-toast {
+	background-color: rgba(0, 0, 0, 0.85);
+	color: white;
+	padding: 12px 16px;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	font-size: 14px;
+	transform: translateY(20px);
+	opacity: 0;
+	transition: all 0.3s ease;
+	max-width: 100%;
+	pointer-events: auto;
+	word-wrap: break-word;
+  }
+  
+  .pwa-toast.visible {
+	transform: translateY(0);
+	opacity: 1;
+  }
+  
+  /* 更新通知 */
+  .pwa-update-toast {
+	background-color: white;
+	color: var(--text-color);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
+	width: 100%;
+	max-width: 350px;
+	transform: translateY(20px);
+	opacity: 0;
+	transition: all 0.3s ease;
+	pointer-events: auto;
+  }
+  
+  .pwa-update-toast.visible {
+	transform: translateY(0);
+	opacity: 1;
+  }
+  
+  .toast-header {
+	background-color: var(--header-bg);
+	color: white;
+	padding: 10px 16px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+  }
+  
+  .toast-header strong {
+	font-size: 16px;
+  }
+  
+  .toast-close {
+	background: none;
+	border: none;
+	color: white;
+	opacity: 0.7;
+	cursor: pointer;
+	font-size: 14px;
+	padding: 4px;
+  }
+  
+  .toast-close:hover {
+	opacity: 1;
+  }
+  
+  .toast-body {
+	padding: 12px 16px;
+	font-size: 14px;
+  }
+  
+  .toast-body p {
+	margin: 0 0 10px 0;
+  }
+  
+  .toast-action {
+	background-color: var(--header-bg);
+	color: white;
+	border: none;
+	border-radius: 4px;
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 14px;
+	float: right;
+	transition: background-color 0.2s;
+  }
+  
+  .toast-action:hover {
+	background-color: var(--mobile-toggle-active);
+  }
+  
+  /* PWA状态指示器 */
+  .pwa-status {
+	display: inline-flex;
+	align-items: center;
+	background-color: rgba(0, 0, 0, 0.05);
+	border-radius: 12px;
+	padding: 4px 8px;
+	font-size: 12px;
+	margin-left: 12px;
+	color: var(--text-color);
+  }
+  
+  .pwa-status .status-icon {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-right: 6px;
+  }
+  
+  .pwa-status .status-online {
+	background-color: #4CAF50;
+  }
+  
+  .pwa-status .status-offline {
+	background-color: #F44336;
+  }
+  
+  /* PWA 安装按钮样式 */
+  .pwa-control {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+  }
+  
+  .pwa-label {
+	font-size: 14px;
+  }
+  
+  .settings-button.pwa-install-button {
+	background-color: var(--header-bg);
+	color: white;
+	transition: all 0.2s;
+  }
+  
+  .settings-button.pwa-install-button:hover:not(:disabled) {
+	background-color: var(--mobile-toggle-active);
+	transform: translateY(-2px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .settings-button.pwa-install-button:active:not(:disabled) {
+	transform: translateY(0);
+  }
+  
+  .settings-button.pwa-install-button:disabled {
+	background-color: var(--button-disabled);
+	color: var(--text-disabled);
+	cursor: not-allowed;
+  }
+  
+  .settings-button.pwa-install-button.button-active {
+	transform: scale(0.95);
+	opacity: 0.9;
+  }
+  
+  /* 媒体查询 */
+  @media (max-width: 768px) {
+	.pwa-toast-container {
+	  left: 10px;
+	  right: 10px;
+	  bottom: 70px; /* 避免和底部按钮重叠 */
+	  max-width: calc(100% - 20px);
+	}
+	
+	.pwa-update-toast {
+	  max-width: 100%;
+	}
+  }
+  
+  /* 深色主题 */
+  .dark-theme .pwa-update-toast {
+	background-color: #333;
+	color: white;
+  }
+  
+  .dark-theme .pwa-status {
+	background-color: rgba(255, 255, 255, 0.1);
+	color: var(--text-color);
+  }
+  
+  /* 离线状态样式 */
+  .offline-mode body::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	background-color: #F44336;
+	z-index: 9999;
+  }
+  
+  /* 网络状态指示器的动画 */
+  @keyframes pulseNetworkStatus {
+	0% {
+	  transform: scale(1);
+	  opacity: 1;
+	}
+	50% {
+	  transform: scale(1.2);
+	  opacity: 0.8;
+	}
+	100% {
+	  transform: scale(1);
+	  opacity: 1;
+	}
+  }
+  
+  .status-online.pulsing,
+  .status-offline.pulsing {
+	animation: pulseNetworkStatus 1s infinite;
+  }
