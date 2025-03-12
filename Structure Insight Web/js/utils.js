@@ -89,6 +89,7 @@ const detectLanguage = (fileName) => {
         'less': 'less',
         'json': 'json',
         'md': 'markdown',
+        'markdown': 'markdown', // 明确添加markdown扩展名
         'txt': 'plaintext',
         'yaml': 'yaml',
         'yml': 'yaml',

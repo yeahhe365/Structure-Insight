@@ -88,8 +88,27 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
     const [copyFeedbackPosition, setCopyFeedbackPosition] = useState({ top: 0, left: 0 });
     const [fileStats, setFileStats] = useState({});
     const fileParts = useRef([]);
-    const [activeButtons, setActiveButtons] = useState({}); // 新增：跟踪活动状态的按钮
-    const [hasFileContent, setHasFileContent] = useState(false); // 新增：是否含有文件内容部分
+    const [activeButtons, setActiveButtons] = useState({}); // 跟踪活动状态的按钮
+    const [hasFileContent, setHasFileContent] = useState(false); // 是否含有文件内容部分
+    const [markdownPreviews, setMarkdownPreviews] = useState({}); // 新增: 保存每个Markdown文件的预览状态
+    
+    // 新增：检查文件是否为Markdown
+    const isMarkdownFile = (fileName) => {
+        if (!fileName) return false;
+        const lowerName = fileName.toLowerCase();
+        return lowerName.endsWith('.md') || lowerName.endsWith('.markdown');
+    };
+    
+    // 新增: 渲染Markdown内容
+    const renderMarkdown = (content) => {
+        if (!window.marked) return content;
+        try {
+            return window.marked.parse(content);
+        } catch (error) {
+            console.error('Markdown解析错误:', error);
+            return `<p>Markdown解析错误: ${error.message}</p>${content}`;
+        }
+    };
     
     // Process content for display
     useEffect(() => {
@@ -226,7 +245,18 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
         }
     };
     
-    // 新增：处理按钮点击的动画效果
+    // 新增：处理Markdown预览切换
+    const toggleMarkdownPreview = (fileName) => {
+        setMarkdownPreviews(prev => ({
+            ...prev,
+            [fileName]: !prev[fileName]
+        }));
+        
+        // 添加按钮点击动画效果
+        handleButtonClick(`preview-${fileName}`);
+    };
+    
+    // 处理按钮点击的动画效果
     const handleButtonClick = (buttonId) => {
         // 设置按钮为活动状态
         setActiveButtons(prev => ({ ...prev, [buttonId]: true }));
@@ -328,6 +358,10 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                         const fileLanguage = detectLanguage(fileName);
                         const isCurrentEditingFile = isEditing && currentEditingFile === fileName;
                         
+                        // 检查是否为Markdown文件
+                        const isMarkdown = isMarkdownFile(fileName);
+                        const showMarkdownPreview = isMarkdown && markdownPreviews[fileName];
+                        
                         // Initialize editing content
                         if (isCurrentEditingFile && editingContent === '') {
                             setEditingContent(fileContent);
@@ -339,6 +373,7 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                         // 为每个文件创建唯一的按钮ID
                         const copyButtonId = `copy-${index}`;
                         const editButtonId = `edit-${index}`;
+                        const previewButtonId = `preview-${fileName}`;
                         
                         return (
                             <div 
@@ -353,8 +388,23 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                                             <i className="fas fa-code"></i> {stats.lineCount} 行
                                             <i className="fas fa-text-width"></i> {stats.charCount} 字符
                                         </span>
+                                        {showMarkdownPreview && (
+                                            <span className="preview-mode-indicator">预览模式</span>
+                                        )}
                                     </div>
                                     <div className="file-actions">
+                                        {/* Markdown预览切换按钮 - 仅对Markdown文件显示 */}
+                                        {isMarkdown && !isCurrentEditingFile && (
+                                            <button 
+                                                className={`preview-toggle-button ${showMarkdownPreview ? 'active' : ''} ${activeButtons[previewButtonId] ? 'button-active' : ''}`}
+                                                onClick={() => toggleMarkdownPreview(fileName)}
+                                                title={showMarkdownPreview ? "查看源码" : "预览Markdown"}
+                                            >
+                                                <i className={showMarkdownPreview ? "fas fa-code" : "fas fa-eye"}></i>
+                                                {showMarkdownPreview ? "源码" : "预览"}
+                                            </button>
+                                        )}
+                                        
                                         {/* Copy button - 添加活动状态类 */}
                                         <button 
                                             className={`copy-button ${activeButtons[copyButtonId] ? 'button-active' : ''}`}
@@ -413,9 +463,16 @@ const HighlightedContent = ({ content, language, fontSize, lineHeight, isEditing
                                     </div>
                                 ) : (
                                     fileContent.trim() ? (
-                                        <pre><code className={fileLanguage ? `language-${fileLanguage}` : ''}>
-                                            {fileContent}
-                                        </code></pre>
+                                        showMarkdownPreview ? (
+                                            <div 
+                                                className="markdown-preview"
+                                                dangerouslySetInnerHTML={{ __html: renderMarkdown(fileContent) }}
+                                            ></div>
+                                        ) : (
+                                            <pre><code className={fileLanguage ? `language-${fileLanguage}` : ''}>
+                                                {fileContent}
+                                            </code></pre>
+                                        )
                                     ) : (
                                         <p>（未提取内容）</p>
                                     )

@@ -1,0 +1,236 @@
+/**
+ * Structure Insight Web - Markdown Styles
+ * Markdown预览样式
+ */
+
+ .markdown-preview {
+    padding: 15px;
+    line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-color);
+    background-color: var(--editor-bg);
+    border-radius: 6px;
+    overflow-wrap: break-word;
+}
+
+/* 标题样式 */
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4,
+.markdown-preview h5,
+.markdown-preview h6 {
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-preview h1 {
+    font-size: 2em;
+    border-bottom: 1px solid var(--divider-color);
+    padding-bottom: .3em;
+}
+
+.markdown-preview h2 {
+    font-size: 1.5em;
+    border-bottom: 1px solid var(--divider-color);
+    padding-bottom: .3em;
+}
+
+.markdown-preview h3 {
+    font-size: 1.25em;
+}
+
+.markdown-preview h4 {
+    font-size: 1em;
+}
+
+/* 段落和列表样式 */
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview ol {
+    margin-bottom: 16px;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+    padding-left: 2em;
+}
+
+.markdown-preview li {
+    margin-bottom: 0.25em;
+}
+
+.markdown-preview li > p {
+    margin-top: 16px;
+}
+
+/* 代码样式 */
+.markdown-preview code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: rgba(0, 0, 0, 0.06);
+    border-radius: 3px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.dark-theme .markdown-preview code {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.markdown-preview pre {
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: rgba(0, 0, 0, 0.04);
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.dark-theme .markdown-preview pre {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.markdown-preview pre code {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    font-size: 100%;
+}
+
+/* 引用样式 */
+.markdown-preview blockquote {
+    padding: 0 1em;
+    color: var(--text-color);
+    opacity: 0.8;
+    border-left: 0.25em solid var(--divider-color);
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 16px;
+}
+
+/* 表格样式 */
+.markdown-preview table {
+    display: block;
+    width: 100%;
+    overflow: auto;
+    margin-bottom: 16px;
+    border-collapse: collapse;
+}
+
+.markdown-preview table th,
+.markdown-preview table td {
+    padding: 6px 13px;
+    border: 1px solid var(--divider-color);
+}
+
+.markdown-preview table tr {
+    background-color: var(--editor-bg);
+    border-top: 1px solid var(--divider-color);
+}
+
+.markdown-preview table tr:nth-child(2n) {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.dark-theme .markdown-preview table tr:nth-child(2n) {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* 水平线样式 */
+.markdown-preview hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: var(--divider-color);
+    border: 0;
+}
+
+/* 图片样式 */
+.markdown-preview img {
+    max-width: 100%;
+    box-sizing: content-box;
+    background-color: var(--editor-bg);
+}
+
+/* 链接样式 */
+.markdown-preview a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.dark-theme .markdown-preview a {
+    color: #58a6ff;
+}
+
+.markdown-preview a:hover {
+    text-decoration: underline;
+}
+
+/* 任务列表样式 */
+.markdown-preview input[type="checkbox"] {
+    margin-right: 0.5em;
+}
+
+/* 预览切换按钮样式 */
+.preview-toggle-button {
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    border: 1px solid var(--button-border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 10px;
+    gap: 5px;
+}
+
+.preview-toggle-button:hover {
+    background-color: var(--button-hover);
+}
+
+.preview-toggle-button.active {
+    background-color: var(--header-bg);
+    color: white;
+}
+
+.preview-toggle-button:active {
+    transform: scale(0.95);
+}
+
+/* 预览模式标识 */
+.preview-mode-indicator {
+    margin-left: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: rgba(0, 120, 215, 0.1);
+    font-size: 12px;
+}
+
+.dark-theme .preview-mode-indicator {
+    background-color: rgba(0, 120, 215, 0.2);
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 768px) {
+    .markdown-preview {
+        padding: 12px;
+    }
+    
+    .preview-toggle-button {
+        font-size: 13px;
+        margin-left: 5px;
+    }
+    
+    .preview-mode-indicator {
+        font-size: 11px;
+        padding: 2px 4px;
+    }
+}
