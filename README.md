@@ -2,8 +2,6 @@
 
 Structure Insight Web 是一个强大的基于浏览器的文件结构分析和代码查看工具。它专为开发者设计，帮助您快速可视化项目结构并生成格式化输出，**特别适合与ChatGPT、Claude等AI语言模型分享和讨论您的代码项目**。通过这个工具，您可以轻松地让AI理解您的项目结构和代码内容，获得更准确的帮助和建议。
 
-![Structure Insight Web](favicon_io/android-chrome-192x192.png)
-
 ## 🔗 访问地址
 
 **在线使用**: [https://structure-insight.pages.dev/](https://structure-insight.pages.dev/)
