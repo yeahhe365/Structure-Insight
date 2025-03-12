@@ -171,6 +171,12 @@ const useFileManagement = (extractContentProp) => {
         }
     };
     
+    // 提取文件名，忽略路径
+    const getFileName = (filePath) => {
+        const parts = filePath.split('/');
+        return parts[parts.length - 1];
+    };
+    
     // Process files main function - 修改为使用ref
     const processFiles = async (files) => {
         if (!files || files.length === 0) return;
@@ -236,6 +242,8 @@ const useFileManagement = (extractContentProp) => {
         for (const file of filesArray) {
             // Get lowercase filename for better extension matching
             const fileName = file.name.toLowerCase();
+            // 修复: 使用简单文件名作为键，确保ZIP内的文件能够正确匹配
+            const simpleFileName = getFileName(file.name);
             
             if (file.type.startsWith('text/') || 
                 fileName.endsWith('.js') || 
@@ -289,8 +297,10 @@ const useFileManagement = (extractContentProp) => {
                     if (extractContentRef.current) {
                         const separator = `${'='.repeat(40)}\n文件名: ${file.name}\n${'-'.repeat(71)}\n`;
                         
-                        // Record current file position in global content
+                        // 修复: 同时存储完整路径和简单文件名的位置
                         positions[file.name] = currentPosition;
+                        positions[simpleFileName] = currentPosition;
+                        
                         currentPosition += separator.length + content.length + 2; // Add separator, content, and newlines
                         
                         // 附加到本地字符串而不是更新状态
@@ -513,8 +523,15 @@ const useFileManagement = (extractContentProp) => {
             setCurrentEditingFile(null);
         }
         
+        // 获取文件名，无论是否有路径
+        const fileName = node.name;
+        const simpleFileName = getFileName(node.name);
+        
+        // 尝试多种可能的键查找文件位置
+        const position = filePositions[fileName] || filePositions[simpleFileName];
+        
         // 只有在extractContentRef.current为true且文件位置存在时才跳转到文件位置
-        if (extractContentRef.current && filePositions[node.name]) {
+        if (extractContentRef.current && position) {
             // Switch to editor view on mobile
             if (isMobile) {
                 // Trigger transition animation
@@ -529,9 +546,17 @@ const useFileManagement = (extractContentProp) => {
                 }, 50);
             }
             
-            // Try to find file element by ID first (most reliable method)
-            const fileId = `file-${encodeURIComponent(node.name)}`;
-            const fileElement = document.getElementById(fileId);
+            // 修复：尝试多种可能的文件ID
+            const fileId = `file-${encodeURIComponent(fileName)}`;
+            const simpleFileId = `file-${encodeURIComponent(simpleFileName)}`;
+            
+            // 首先尝试完整路径ID
+            let fileElement = document.getElementById(fileId);
+            
+            // 如果找不到，尝试简单文件名ID
+            if (!fileElement && fileName !== simpleFileName) {
+                fileElement = document.getElementById(simpleFileId);
+            }
             
             if (fileElement) {
                 // Use scrollIntoView for more reliable scrolling
@@ -546,9 +571,21 @@ const useFileManagement = (extractContentProp) => {
                         editorScrollRef.current.scrollTop -= 60; // Adjust based on header size
                     }
                 }, isMobile ? 50 : 0);
+                
+                // 修复：在同一个元素上尝试高亮
+                setTimeout(() => {
+                    // 再次获取元素，确保它还存在
+                    const elementToHighlight = document.getElementById(fileId) || document.getElementById(simpleFileId);
+                    if (elementToHighlight) {
+                        // Add highlight animation
+                        elementToHighlight.classList.add('highlight-file');
+                        setTimeout(() => {
+                            elementToHighlight.classList.remove('highlight-file');
+                        }, 1500);
+                    }
+                }, isMobile ? 300 : 100);
             } else {
                 // Fallback to position-based scrolling if element not found
-                const position = filePositions[node.name];
                 const targetElement = editorScrollRef.current;
                 
                 if (targetElement) {
@@ -567,20 +604,8 @@ const useFileManagement = (extractContentProp) => {
                 }
             }
             
-            // Highlight file section temporarily
-            setTimeout(() => {
-                const fileElement = document.getElementById(fileId);
-                if (fileElement) {
-                    // Add highlight animation
-                    fileElement.classList.add('highlight-file');
-                    setTimeout(() => {
-                        fileElement.classList.remove('highlight-file');
-                    }, 1500);
-                }
-            }, isMobile ? 300 : 100);
-            
             // Update status message
-            setStatusMessage(`已跳转到: ${node.name}`);
+            setStatusMessage(`已跳转到: ${fileName}`);
             setTimeout(() => {
                 setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
             }, 2000);
@@ -595,17 +620,24 @@ const useFileManagement = (extractContentProp) => {
             }
             
             // 提示用户未提取文件内容
-            setStatusMessage(`未提取文件内容，无法跳转到: ${node.name}`);
+            setStatusMessage(`未提取文件内容，无法跳转到: ${fileName}`);
             setTimeout(() => {
                 setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
             }, 2000);
             
             // 找出文件在filesContent数组中的内容
-            const fileData = filesContent.find(f => f.name === node.name);
+            const fileData = filesContent.find(f => f.name === fileName);
             if (fileData && fileData.content) {
                 // 目前不做任何操作，只是显示提示
-                console.log(`文件 ${node.name} 的内容长度: ${fileData.content.length}`);
+                console.log(`文件 ${fileName} 的内容长度: ${fileData.content.length}`);
             }
+        } else {
+            // 文件位置不存在的情况
+            console.warn(`找不到文件位置: ${fileName}`);
+            setStatusMessage(`无法跳转到: ${fileName} (找不到文件位置)`);
+            setTimeout(() => {
+                setStatusMessage(`就绪 - 共 ${lineCount} 行, ${charCount} 字符`);
+            }, 2000);
         }
     };
     
@@ -644,10 +676,14 @@ const useFileManagement = (extractContentProp) => {
         // Remove from file contents
         setFilesContent(prev => prev.filter(f => f.name !== node.name));
         
+        // 获取简单文件名
+        const simpleFileName = getFileName(node.name);
+        
         // Update text content - 只有在extractContentRef.current为true时才需要处理
-        if (filePositions[node.name] && extractContentRef.current) {
-            const beforePos = currentContent.substring(0, filePositions[node.name]);
-            const afterStartIndex = currentContent.indexOf('\n\n', filePositions[node.name]);
+        if ((filePositions[node.name] || filePositions[simpleFileName]) && extractContentRef.current) {
+            const pos = filePositions[node.name] || filePositions[simpleFileName];
+            const beforePos = currentContent.substring(0, pos);
+            const afterStartIndex = currentContent.indexOf('\n\n', pos);
             if (afterStartIndex !== -1) {
                 const afterStart = afterStartIndex + 2;
                 const afterPos = currentContent.substring(afterStart);
@@ -656,14 +692,14 @@ const useFileManagement = (extractContentProp) => {
                 
                 // Update file positions
                 const newPositions = {};
-                const removedLength = afterStart - filePositions[node.name];
+                const removedLength = afterStart - pos;
                 
-                Object.entries(filePositions).forEach(([name, pos]) => {
-                    if (name !== node.name) {
-                        if (pos > filePositions[node.name]) {
-                            newPositions[name] = pos - removedLength;
+                Object.entries(filePositions).forEach(([name, position]) => {
+                    if (name !== node.name && name !== simpleFileName) {
+                        if (position > pos) {
+                            newPositions[name] = position - removedLength;
                         } else {
-                            newPositions[name] = pos;
+                            newPositions[name] = position;
                         }
                     }
                 });
@@ -706,10 +742,12 @@ const useFileManagement = (extractContentProp) => {
                 )
             );
             
+            // 获取简单文件名
+            const simpleFileName = getFileName(fileName);
+            
             // Update complete content string - 只有在extractContentRef.current为true时才需要更新
-            if (filePositions[fileName] && extractContentRef.current) {
-                const position = filePositions[fileName];
-                
+            const position = filePositions[fileName] || filePositions[simpleFileName];
+            if (position && extractContentRef.current) {
                 // Find file content start and end positions
                 const start = currentContent.indexOf('-'.repeat(71) + '\n', position) + 72; // 71 dashes plus newline
                 const end = currentContent.indexOf('\n\n', start);
