@@ -36,7 +36,7 @@
 	"categories": ["productivity", "utilities", "developer tools"],
 	"screenshots": [
 	  {
-		"src": "screenshots/screenshot1.jpg",
+		"src": "screenshots/screenshot1.jpg", 
 		"sizes": "1280x720",
 		"type": "image/jpeg"
 	  }
