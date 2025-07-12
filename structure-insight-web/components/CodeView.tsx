@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileContent, SearchResult } from '../types';
-import { useLocalization } from '../hooks/useLocalization';
+import { FileContent } from '../types';
 
 declare const hljs: any;
 declare const marked: any;
@@ -39,87 +38,29 @@ interface FileCardProps {
   isMarkdown: boolean;
   isMarkdownPreview: boolean;
   onToggleMarkdownPreview: (path: string) => void;
-  searchResults: SearchResult[];
-  currentResultIndex: number | null;
   onShowToast: (message: string) => void;
   fontSize: number;
 }
 
-const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSaveEdit, onCancelEdit, isMarkdown, isMarkdownPreview, onToggleMarkdownPreview, searchResults, currentResultIndex, onShowToast, fontSize }) => {
+const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSaveEdit, onCancelEdit, isMarkdown, isMarkdownPreview, onToggleMarkdownPreview, onShowToast, fontSize }) => {
   const [editText, setEditText] = React.useState(file.content);
   const codeRef = React.useRef<HTMLElement>(null);
-  const { t } = useLocalization();
   
-  const searchResultsForFile = React.useMemo(() => 
-    searchResults.filter(r => r.path === file.path), 
-  [searchResults, file.path]);
-  
-  const currentResultIndexInFile = React.useMemo(() => {
-    if (currentResultIndex === null) return -1;
-    const currentResult = searchResults[currentResultIndex];
-    if (currentResult.path !== file.path) return -1;
-    return searchResults.slice(0, currentResultIndex + 1).filter(r => r.path === file.path).length - 1;
-  }, [currentResultIndex, searchResults, file.path]);
-
-
   React.useEffect(() => {
     setEditText(file.content);
   }, [file.content]);
 
-  const escapeHtml = (str: string) => {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
-
-  const getHighlightedContent = React.useCallback(() => {
-    if (searchResultsForFile.length === 0) {
-        return escapeHtml(file.content);
-    }
-    let lastIndex = 0;
-    let output = '';
-    let resultIndexInFile = 0;
-    
-    searchResultsForFile.forEach((result) => {
-        output += escapeHtml(file.content.substring(lastIndex, result.start));
-        const isCurrent = resultIndexInFile === currentResultIndexInFile;
-        const markClass = isCurrent ? 'bg-amber-400 dark:bg-yellow-500' : 'bg-yellow-200 dark:bg-yellow-700';
-        output += `<mark class="${markClass} rounded px-0.5" id="search-result-${file.path}-${resultIndexInFile}">${escapeHtml(result.matchText)}</mark>`;
-        lastIndex = result.end;
-        resultIndexInFile++;
-    });
-    output += escapeHtml(file.content.substring(lastIndex));
-    return output;
-  }, [file.content, file.path, searchResultsForFile, currentResultIndexInFile]);
-
-
   React.useEffect(() => {
     if (codeRef.current && !isEditing && !isMarkdownPreview) {
-        const highlighted = getHighlightedContent();
-        if (codeRef.current.innerHTML !== highlighted) {
-            codeRef.current.innerHTML = highlighted;
-        }
-        hljs.highlightElement(codeRef.current);
+      codeRef.current.textContent = file.content;
+      hljs.highlightElement(codeRef.current);
     }
-  }, [isEditing, isMarkdownPreview, getHighlightedContent]);
-
-  // Effect for blinking the current search result
-  React.useEffect(() => {
-    if (currentResultIndexInFile !== -1) {
-      const resultElId = `search-result-${file.path}-${currentResultIndexInFile}`;
-      const resultEl = document.getElementById(resultElId);
-      if (resultEl) {
-        // Blink animation
-        resultEl.classList.add('blink-me');
-        setTimeout(() => {
-          resultEl.classList.remove('blink-me');
-        }, 600); // Animation duration
-      }
-    }
-  }, [currentResultIndexInFile, file.path]); // Reruns when the current result inside this file changes
+  }, [file.content, isEditing, isMarkdownPreview]);
 
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    onShowToast(t('copied_to_clipboard'));
+    onShowToast('已复制到剪贴板！');
   };
 
   const lineNumbers = Array.from({ length: file.stats.lines }, (_, i) => i + 1).join('\n');
@@ -141,18 +82,18 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
           <i className="fa-regular fa-file-lines mr-2"></i>{file.path}
         </div>
         <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text">
-          <span>{file.stats.lines} {t('lines')}</span>
-          <span>{file.stats.chars} {t('characters')}</span>
+          <span>{file.stats.lines} 行</span>
+          <span>{file.stats.chars} 字符</span>
           {isMarkdown && (
-             <button onClick={() => onToggleMarkdownPreview(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={isMarkdownPreview ? t("show_raw") : t("preview_markdown")} disabled={isEditing}>
-                <i className={`fa-regular ${isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} mr-1`}></i> {isMarkdownPreview ? t("raw") : t("preview")}
+             <button onClick={() => onToggleMarkdownPreview(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={isMarkdownPreview ? "显示原文" : "预览 Markdown"} disabled={isEditing}>
+                <i className={`fa-regular ${isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} mr-1`}></i> {isMarkdownPreview ? "原文" : "预览"}
             </button>
           )}
-          <button onClick={() => onStartEdit(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={t("edit_content")} disabled={isEditing}>
-            <i className="fa-regular fa-pen-to-square mr-1"></i> {t('edit')}
+          <button onClick={() => onStartEdit(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="编辑内容" disabled={isEditing}>
+            <i className="fa-regular fa-pen-to-square mr-1"></i> 编辑
           </button>
-          <button onClick={() => handleCopy(file.content)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={t("copy_content")} disabled={isEditing}>
-            <i className="fa-regular fa-copy mr-1"></i> {t('copy')}
+          <button onClick={() => handleCopy(file.content)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="复制内容" disabled={isEditing}>
+            <i className="fa-regular fa-copy mr-1"></i> 复制
           </button>
         </div>
       </div>
@@ -165,8 +106,8 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
                 style={codeStyle}
             />
             <div className="flex justify-end space-x-2 mt-2">
-                <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">{t('cancel')}</button>
-                <button onClick={() => onSaveEdit(file.path, editText)} className="px-3 py-1 rounded-md text-sm bg-primary text-white hover:bg-primary-hover">{t('save')}</button>
+                <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">取消</button>
+                <button onClick={() => onSaveEdit(file.path, editText)} className="px-3 py-1 rounded-md text-sm bg-primary text-white hover:bg-primary-hover">保存</button>
             </div>
         </div>
       ) : isMarkdown && isMarkdownPreview ? (
@@ -180,7 +121,6 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
                 <pre className="py-3 pr-3 whitespace-pre-wrap break-words"><code 
                     ref={codeRef}
                     className={`language-${file.language} hljs`} 
-                    dangerouslySetInnerHTML={{ __html: getHighlightedContent() }}
                 /></pre>
             </div>
         </div>
@@ -193,9 +133,6 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
 interface CodeViewProps {
   structureString: string | null;
   fileContents: FileContent[] | null;
-  // Search
-  searchResults: SearchResult[];
-  currentResultIndex: number | null;
   // Edit
   editingPath: string | null;
   onStartEdit: (path: string) => void;
@@ -209,12 +146,11 @@ interface CodeViewProps {
 }
 
 const CodeView: React.FC<CodeViewProps> = (props) => {
-  const { structureString, fileContents, searchResults, currentResultIndex, editingPath, onStartEdit, onSaveEdit, onCancelEdit, markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize } = props;
-  const { t } = useLocalization();
+  const { structureString, fileContents, editingPath, onStartEdit, onSaveEdit, onCancelEdit, markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize } = props;
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    onShowToast(t('copied_to_clipboard'));
+    onShowToast('已复制到剪贴板！');
   };
   
   return (
@@ -226,13 +162,13 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">{t('file_structure')}</h2>
+              <h2 className="text-xl font-semibold">文件结构</h2>
               <button
                 onClick={() => handleCopy(structureString)}
                 className="text-sm text-primary hover:text-primary-hover"
-                title={t('copy_structure')}
+                title="复制结构"
               >
-                <i className="fa-regular fa-copy mr-1"></i> {t('copy')}
+                <i className="fa-regular fa-copy mr-1"></i> 复制
               </button>
             </div>
             <pre className="bg-light-panel dark:bg-dark-panel p-4 rounded-lg text-sm overflow-x-auto" style={{fontSize: `${fontSize}px`}}><code>{structureString}</code></pre>
@@ -242,7 +178,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
 
       {fileContents && fileContents.length > 0 && (
         <div>
-          <h2 className="text-xl font-semibold mb-4">{t('file_contents')}</h2>
+          <h2 className="text-xl font-semibold mb-4">文件内容</h2>
           <div className="space-y-6">
             <AnimatePresence>
               {fileContents.map((file) => (
@@ -263,8 +199,6 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
                     isMarkdown={file.language === 'markdown'}
                     isMarkdownPreview={markdownPreviewPaths.has(file.path)}
                     onToggleMarkdownPreview={onToggleMarkdownPreview}
-                    searchResults={searchResults}
-                    currentResultIndex={currentResultIndex}
                     onShowToast={onShowToast}
                     fontSize={fontSize}
                   />
@@ -278,8 +212,8 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
       {structureString && fileContents && fileContents.length === 0 && (
         <div className="text-center p-8 mt-8 text-light-subtle-text dark:text-dark-subtle-text bg-light-panel dark:bg-dark-panel rounded-lg">
             <i className="fa-solid fa-info-circle text-2xl mb-2 text-primary"></i>
-            <p className="font-semibold">{t('content_not_extracted')}</p>
-            <p className="text-sm">{t('content_not_extracted_prompt')}</p>
+            <p className="font-semibold">未提取文件内容。</p>
+            <p className="text-sm">要查看内容，请在“设置”中启用“提取内容”并重新处理文件夹。</p>
         </div>
       )}
     </div>

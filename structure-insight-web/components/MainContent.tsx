@@ -6,7 +6,6 @@ import AiChatPanel from './AiChatPanel';
 import InitialPrompt from './InitialPrompt';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useAppLogic } from '../hooks/useAppLogic';
-import { useLocalization } from '../hooks/useLocalization';
 
 interface MainContentProps {
     logic: ReturnType<typeof useAppLogic>;
@@ -18,7 +17,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
     const { state, handlers } = logic;
     const windowSize = useWindowSize();
     const isMobile = windowSize.width <= 768;
-    const { t } = useLocalization();
 
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
@@ -30,20 +28,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
         }
     }
 
-    const LoadingIndicator: React.FC = () => (
-         <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i>
-            <p className="text-lg font-semibold">{t('processing_files')}</p>
-            <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{state.progressMessage}</p>
-        </div>
-    );
-
     return (
         <main className="flex-1 flex overflow-hidden relative">
             <AnimatePresence>
                 {state.isDragging && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-primary/50 flex items-center justify-center z-30 pointer-events-none">
-                        <div className="text-center text-white bg-primary/80 p-8 rounded-lg"><i className="fa-solid fa-upload fa-3x mb-4"></i><p className="text-xl font-bold">{t('drop_folder_prompt')}</p></div>
+                        <div className="text-center text-white bg-primary/80 p-8 rounded-lg"><i className="fa-solid fa-upload fa-3x mb-4"></i><p className="text-xl font-bold">拖放文件夹以进行分析</p></div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -59,9 +49,9 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                         {state.mobileView === 'editor' && (
                             <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: state.mobileView === 'tree' ? '100%' : '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
                                 {state.isLoading ? (
-                                    <LoadingIndicator />
+                                    <div className="flex flex-col items-center justify-center h-full text-center p-4"><i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i><p className="text-lg font-semibold">正在处理文件...</p><p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{state.progressMessage}</p></div>
                                 ) : state.processedData ? (
-                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...state.processedData, searchResults: state.searchResults, currentResultIndex: state.currentSearchResultIndex, editingPath: state.editingPath, markdownPreviewPaths: state.markdownPreviewPaths, onStartEdit: handlers.setEditingPath, onSaveEdit: handlers.handleSaveEdit, onCancelEdit:() => handlers.setEditingPath(null), onToggleMarkdownPreview: handlers.handleToggleMarkdownPreview, onShowToast: (msg: string) => handlers.setToastMessage(msg), fontSize: state.fontSize}} /></div>
+                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} /></div>
                                 ) : (
                                     <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect}/></div>
                                 )}
@@ -83,9 +73,9 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                     <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex">
                         <div className="flex-1 h-full flex flex-col min-w-0">
                             {state.isLoading ? (
-                                <LoadingIndicator />
+                                <div className="flex flex-col items-center justify-center h-full text-center p-4"><i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i><p className="text-lg font-semibold">正在处理文件...</p><p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{state.progressMessage}</p></div>
                             ) : state.processedData ? (
-                                <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...state.processedData, searchResults: state.searchResults, currentResultIndex: state.currentSearchResultIndex, editingPath: state.editingPath, markdownPreviewPaths: state.markdownPreviewPaths, onStartEdit: handlers.setEditingPath, onSaveEdit: handlers.handleSaveEdit, onCancelEdit:() => handlers.setEditingPath(null), onToggleMarkdownPreview: handlers.handleToggleMarkdownPreview, onShowToast: (msg: string) => handlers.setToastMessage(msg), fontSize: state.fontSize}} /></div>
+                                <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} /></div>
                             ) : (
                                 <InitialPrompt onOpenFolder={handlers.handleFileSelect}/>
                             )}

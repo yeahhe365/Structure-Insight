@@ -1,7 +1,7 @@
 {
   "name": "Structure Insight Web",
   "short_name": "StructureInsight",
-  "description": "A powerful browser-based tool for analyzing file structures and viewing code, perfect for AI-driven development.",
+  "description": "一个强大的基于浏览器的工具，用于分析文件结构和查看代码，非常适合 AI 驱动的开发。",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#111827",

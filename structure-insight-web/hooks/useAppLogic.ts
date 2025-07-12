@@ -5,7 +5,7 @@ import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { useAIChat } from './useAIChat';
 import { generateFullOutput } from '../services/fileProcessor';
-import { useLocalization } from './useLocalization';
+import { SearchOptions } from '../types';
 
 declare const hljs: any;
 declare const marked: any;
@@ -14,12 +14,10 @@ export const useAppLogic = (
     codeViewRef: React.RefObject<HTMLDivElement>,
     leftPanelRef: React.RefObject<HTMLDivElement>
 ) => {
-    const { t } = useLocalization();
     // --- UI & Shell State ---
     const [isDragging, setIsDragging] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
     const [progressMessage, setProgressMessage] = React.useState("");
-    const [isSearchOpen, setIsSearchOpen] = React.useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
     const [toastMessage, setToastMessage] = React.useState<string | null>(null);
     const [isAiChatOpen, setIsAiChatOpen] = React.useState(false);
@@ -38,10 +36,13 @@ export const useAppLogic = (
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
     
-    // --- Layout State ---
+    // --- Layout & Search State ---
     const windowSize = useWindowSize();
     const [mobileView, setMobileView] = React.useState<'tree' | 'editor' | 'chat'>('editor');
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
+    const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+    const [searchResults, setSearchResults] = React.useState<HTMLElement[]>([]);
+    const [currentResultIndex, setCurrentResultIndex] = React.useState<number | null>(null);
 
     const handleShowToast = (message: string) => {
         setToastMessage(message);
@@ -54,21 +55,21 @@ export const useAppLogic = (
       handleFileSelect, handleDrop, handleRefresh, handleCancel, abortControllerRef
     } = useFileProcessing({
         extractContent, setIsLoading, setProgressMessage, 
-        setMobileView, handleShowToast, isMobile, t
+        setMobileView, handleShowToast, isMobile
     });
 
     const {
-        editingPath, setEditingPath, markdownPreviewPaths, setMarkdownPreviewPaths, searchResults, setSearchResults,
-        currentSearchResultIndex, setCurrentSearchResultIndex, handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
-        handleToggleMarkdownPreview, handleSearch, handleSearchNavigate, navigateToSearchResult
+        editingPath, setEditingPath, markdownPreviewPaths, setMarkdownPreviewPaths,
+        handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
+        handleToggleMarkdownPreview,
     } = useInteraction({
-        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef, t
+        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef
     });
     
     const { 
       chatHistory, setChatHistory, isApiKeyMissing, handleSendMessage, resetChat
     } = useAIChat({
-        processedData, isAiLoading, setIsAiLoading, handleShowToast, t
+        processedData, isAiLoading, setIsAiLoading, handleShowToast
     });
     
     // --- Central Reset Logic ---
@@ -78,15 +79,15 @@ export const useAppLogic = (
         setLastProcessedFiles(null);
         setIsLoading(false);
         setProgressMessage("");
-        setIsSearchOpen(false);
         setIsSettingsOpen(false);
         setEditingPath(null);
         setMarkdownPreviewPaths(new Set());
-        setSearchResults([]);
-        setCurrentSearchResultIndex(null);
         setIsAiChatOpen(false);
+        setIsSearchOpen(false);
+        setSearchResults([]);
+        setCurrentResultIndex(null);
         resetChat();
-        if(showToast) handleShowToast(t("content_reset"));
+        if(showToast) handleShowToast("内容已重置。");
     };
 
     // --- Effects for Theme and Markdown ---
@@ -108,7 +109,7 @@ export const useAppLogic = (
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
         const beforeInstallPrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); setIsInstallable(true); };
-        const handleAppInstalled = () => { setIsInstalled(true); setIsInstallable(false); setDeferredPrompt(null); handleShowToast(t("app_installed_message")); };
+        const handleAppInstalled = () => { setIsInstalled(true); setIsInstallable(false); setDeferredPrompt(null); handleShowToast("应用安装成功！"); };
         const handleUpdateAvailable = (e: Event) => setUpdateWorker((e as CustomEvent).detail);
 
         window.addEventListener('online', handleOnline);
@@ -124,7 +125,110 @@ export const useAppLogic = (
             window.removeEventListener('appinstalled', handleAppInstalled);
             window.removeEventListener('update-available', handleUpdateAvailable);
         };
-    }, [t]);
+    }, []);
+
+    // --- Search Logic ---
+    const handleSearch = React.useCallback((query: string, options: SearchOptions) => {
+        const container = codeViewRef.current;
+        if (!container) return;
+
+        // Unhighlight previous results
+        container.querySelectorAll('mark.search-highlight, mark.search-highlight-active').forEach(mark => {
+            const parent = mark.parentNode;
+            if (parent) {
+                parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+                parent.normalize();
+            }
+        });
+
+        if (!query.trim()) {
+            setSearchResults([]);
+            setCurrentResultIndex(null);
+            return;
+        }
+
+        const flags = options.caseSensitive ? 'g' : 'gi';
+        let pattern = options.useRegex ? query : query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        if (options.wholeWord && !options.useRegex) {
+            pattern = `\\b${pattern}\\b`;
+        }
+        
+        let regex: RegExp;
+        try {
+            regex = new RegExp(pattern, flags);
+        } catch (e) {
+            setSearchResults([]);
+            setCurrentResultIndex(null);
+            return; // Invalid regex
+        }
+
+        const newResults: HTMLElement[] = [];
+        const codeBlocks = container.querySelectorAll('pre code');
+        
+        codeBlocks.forEach(block => {
+            const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+            const textNodes: Text[] = [];
+            while(walker.nextNode()) textNodes.push(walker.currentNode as Text);
+
+            textNodes.forEach(textNode => {
+                if (!textNode.textContent) return;
+                const matches = [...textNode.textContent.matchAll(regex)];
+                if (matches.length > 0) {
+                    const parent = textNode.parentNode;
+                    if (!parent) return;
+
+                    let lastIndex = 0;
+                    matches.forEach(match => {
+                        if (match.index === undefined) return;
+                        
+                        // Add text before the match
+                        const before = textNode.textContent!.substring(lastIndex, match.index);
+                        if (before) parent.insertBefore(document.createTextNode(before), textNode);
+
+                        // Add the highlighted match
+                        const markedText = document.createElement('mark');
+                        markedText.className = 'search-highlight';
+                        markedText.textContent = match[0];
+                        parent.insertBefore(markedText, textNode);
+                        newResults.push(markedText);
+
+                        lastIndex = match.index + match[0].length;
+                    });
+                    
+                    // Add text after the last match
+                    const after = textNode.textContent!.substring(lastIndex);
+                    if (after) parent.insertBefore(document.createTextNode(after), textNode);
+                    
+                    parent.removeChild(textNode);
+                }
+            });
+        });
+
+        setSearchResults(newResults);
+        setCurrentResultIndex(newResults.length > 0 ? 0 : null);
+    }, [codeViewRef]);
+
+    const handleNavigate = (direction: 'next' | 'prev') => {
+        if (searchResults.length === 0 || currentResultIndex === null) return;
+        const newIndex = direction === 'next'
+            ? (currentResultIndex + 1) % searchResults.length
+            : (currentResultIndex - 1 + searchResults.length) % searchResults.length;
+        setCurrentResultIndex(newIndex);
+    };
+
+    React.useEffect(() => {
+        searchResults.forEach((el, index) => {
+            if (index === currentResultIndex) {
+                el.classList.add('search-highlight-active');
+                el.classList.remove('search-highlight');
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                el.classList.remove('search-highlight-active');
+                el.classList.add('search-highlight');
+            }
+        });
+    }, [currentResultIndex, searchResults]);
+    
 
     // --- PWA Action Handlers ---
     const handleInstallPWA = () => {
@@ -138,8 +242,8 @@ export const useAppLogic = (
     };
 
     // --- General Action Handlers ---
-    const handleClearCache = () => { localStorage.clear(); handleReset(false); handleShowToast(t("cache_cleared_message")); };
-    const handleCopyAll = () => { if (processedData) navigator.clipboard.writeText(generateFullOutput(processedData.structureString, processedData.fileContents)).then(() => handleShowToast(t('copy_all_message'))); };
+    const handleClearCache = () => { localStorage.clear(); handleReset(false); handleShowToast("缓存已清除。应用已重置。"); };
+    const handleCopyAll = () => { if (processedData) navigator.clipboard.writeText(generateFullOutput(processedData.structureString, processedData.fileContents)).then(() => handleShowToast('已将所有内容复制到剪贴板！')); };
     const handleSave = () => {
         if (!processedData) return;
         const blob = new Blob([generateFullOutput(processedData.structureString, processedData.fileContents)], { type: 'text/plain;charset=utf-8' });
@@ -173,8 +277,8 @@ export const useAppLogic = (
     React.useEffect(() => {
         const handleGlobalKeys = (e: KeyboardEvent) => {
             if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'f') { e.preventDefault(); if (processedData) setIsSearchOpen(true); }
                 if (e.key === 'i') { e.preventDefault(); if (processedData) setIsAiChatOpen(p => !p); }
+                if (e.key === 'f') { e.preventDefault(); if (processedData) setIsSearchOpen(p => !p); }
                 if (e.key === 's') { e.preventDefault(); if (processedData) handleSave(); }
                 if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
             }
@@ -202,18 +306,20 @@ export const useAppLogic = (
     // --- Assemble Final Return Object ---
     return {
         state: {
-            processedData, isLoading, isDragging, progressMessage, isSearchOpen, isSettingsOpen, toastMessage, isOnline,
-            isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths, searchResults, currentSearchResultIndex,
+            processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, isOnline,
+            isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths,
             isAiChatOpen, chatHistory, isAiLoading, isApiKeyMissing, isDark, panelWidth, extractContent, fontSize,
-            lastProcessedFiles, mobileView, stats
+            lastProcessedFiles, mobileView, stats,
+            isSearchOpen, searchResults, currentResultIndex
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
             handleFileSelect, handleCopyAll, handleSave, handleReset, handleRefresh: () => handleRefresh(handleProcessing), handleCancel,
-            setIsSearchOpen, setIsSettingsOpen, handleToggleAIChat: () => setIsAiChatOpen(!isAiChatOpen), setToastMessage,
+            setIsSettingsOpen, handleToggleAIChat: () => setIsAiChatOpen(!isAiChatOpen), setToastMessage,
             handleUpdate, handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
-            handleSearch, handleSearchNavigate, handleSendMessage, handleMouseDownResize, 
-            handleMobileViewToggle: () => { if (processedData) setMobileView(v => v === 'editor' ? 'tree' : (v === 'tree' ? 'chat' : 'editor')) }
+            handleSendMessage, handleMouseDownResize, 
+            handleMobileViewToggle: () => { if (processedData) setMobileView(v => v === 'editor' ? 'tree' : (v === 'tree' ? 'chat' : 'editor')) },
+            setIsSearchOpen, handleSearch, handleNavigate
         },
         settings: {
             setIsDark, setExtractContent, setFontSize, handleClearCache, handleInstallPWA

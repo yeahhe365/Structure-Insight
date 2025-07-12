@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChatMessage } from '../types';
-import { useLocalization } from '../hooks/useLocalization';
 
 declare const marked: any;
 declare const DOMPurify: any;
@@ -57,7 +56,6 @@ const Message: React.FC<{ message: ChatMessage }> = React.memo(({ message }) => 
 const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLoading, onClose, isApiKeyMissing, isMobile = false }) => {
     const [input, setInput] = React.useState('');
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
-    const { t } = useLocalization();
 
     React.useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,7 +74,7 @@ const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLo
             <div className="flex items-center justify-between p-3 border-b border-light-border dark:border-dark-border shrink-0">
                 <h3 className="font-semibold text-sm flex items-center space-x-2">
                     <i className="fa-solid fa-wand-magic-sparkles text-primary"></i>
-                    <span>{t('ai_chat_title')}</span>
+                    <span>AI 聊天</span>
                 </h3>
                 {!isMobile && (
                     <button onClick={onClose} className="w-6 h-6 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
@@ -89,8 +87,8 @@ const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLo
                 {messages.length === 0 && !isApiKeyMissing && (
                     <div className="text-center text-sm text-light-subtle-text dark:text-dark-subtle-text h-full flex flex-col justify-center items-center">
                         <i className="fa-solid fa-robot text-3xl mb-3"></i>
-                        <p className="font-semibold">{t('ai_chat_ready_assist')}</p>
-                        <p>{t('ai_chat_ready_assist_prompt')}</p>
+                        <p className="font-semibold">准备就绪</p>
+                        <p>向我询问关于代码的任何问题！</p>
                     </div>
                 )}
                 {messages.map((msg) => (
@@ -102,8 +100,8 @@ const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLo
             <div className="p-3 border-t border-light-border dark:border-dark-border shrink-0">
                 {isApiKeyMissing ? (
                      <div className="text-center text-xs text-red-500 bg-red-500/10 p-2 rounded-md">
-                        <strong>{t('api_key_not_found')}</strong>
-                        <p dangerouslySetInnerHTML={{ __html: t('api_key_not_found_prompt')}} />
+                        <strong>未找到 API 密钥</strong>
+                        <p>AI 聊天功能已禁用。请设置 <code>API_KEY</code> 环境变量。</p>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit}>
@@ -117,7 +115,7 @@ const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLo
                                         handleSubmit(e);
                                     }
                                 }}
-                                placeholder={t('ai_chat_placeholder')}
+                                placeholder="询问代码相关问题..."
                                 className="flex-1 px-3 py-2 text-sm bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                                 rows={1}
                                 disabled={isLoading}
@@ -126,7 +124,7 @@ const AiChatPanel: React.FC<AiChatPanelProps> = ({ messages, onSendMessage, isLo
                                 type="submit" 
                                 disabled={isLoading || !input.trim()}
                                 className="w-10 h-10 rounded-md bg-primary text-white disabled:bg-primary-disabled flex items-center justify-center shrink-0"
-                                aria-label={t('send_message_label')}
+                                aria-label="发送消息"
                             >
                                 <i className="fa-solid fa-paper-plane"></i>
                             </button>

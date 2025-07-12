@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Chat, GenerateContentResponse, Part } from "@google/genai";
 import { ProcessedFiles } from '../types';
 
@@ -8,7 +7,7 @@ const API_KEY = process.env.API_KEY;
 function getAI() {
     if (!ai) {
         if (!API_KEY) {
-            throw new Error("API key not found. Please ensure the API_KEY environment variable is set.");
+            throw new Error("未找到 API 密钥。请确保已设置 API_KEY 环境变量。");
         }
         ai = new GoogleGenAI({ apiKey: API_KEY });
     }

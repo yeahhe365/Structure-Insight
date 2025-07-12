@@ -3,14 +3,12 @@ import { createChatSession, sendMessage } from '../services/aiService';
 import { ChatMessage, ProcessedFiles } from '../types';
 import { usePersistentState } from './usePersistentState';
 import { Chat } from '@google/genai';
-import { TranslationKey } from './useLocalization';
 
 interface AIChatProps {
     processedData: ProcessedFiles | null;
     isAiLoading: boolean;
     setIsAiLoading: React.Dispatch<React.SetStateAction<boolean>>;
     handleShowToast: (message: string) => void;
-    t: (key: TranslationKey, options?: { [key: string]: string | number }) => string;
 }
 
 export const useAIChat = ({
@@ -18,7 +16,6 @@ export const useAIChat = ({
     isAiLoading,
     setIsAiLoading,
     handleShowToast,
-    t
 }: AIChatProps) => {
     const [chatSession, setChatSession] = React.useState<Chat | null>(null);
     const [chatHistory, setChatHistory] = usePersistentState<ChatMessage[]>('chatHistory', []);
@@ -78,7 +75,7 @@ export const useAIChat = ({
     
         } catch (error: any) {
             console.error("AI chat error:", error);
-            const errorMessage: ChatMessage = { id: 'error-' + Date.now(), role: 'model', content: t('ai_chat_error', { error: error.message }) };
+            const errorMessage: ChatMessage = { id: 'error-' + Date.now(), role: 'model', content: `抱歉，我遇到了一个错误。请检查您的 API 密钥和网络连接。(错误: ${error.message})` };
             setChatHistory(prev => prev.filter(m => m.role !== 'loading').concat(errorMessage));
         } finally {
             setIsAiLoading(false);

@@ -1,7 +1,6 @@
 import React from 'react';
 import { SearchOptions } from '../types';
 import { usePersistentState } from '../hooks/usePersistentState';
-import { useLocalization } from '../hooks/useLocalization';
 
 interface SearchDialogProps {
     onClose: () => void;
@@ -16,7 +15,6 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     const [options, setOptions] = React.useState<SearchOptions>({ caseSensitive: false, useRegex: false, wholeWord: false, fuzzySearch: false });
     const [history, setHistory] = usePersistentState<string[]>('searchHistory', []);
     const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
-    const { t } = useLocalization();
     
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -94,9 +92,9 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
         setIsHistoryOpen(false);
     };
 
-    const runSearch = (newQuery: string, newOptions: SearchOptions) => {
+    const runSearch = React.useCallback((newQuery: string, newOptions: SearchOptions) => {
          onSearch(newQuery, newOptions);
-    }
+    }, [onSearch]);
     
     React.useEffect(() => {
         const debounceTimer = setTimeout(() => {
@@ -132,7 +130,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                 className="flex items-center justify-between p-2 border-b border-light-border dark:border-dark-border cursor-move"
                 onMouseDown={handleMouseDown}
             >
-                <h3 className="font-semibold text-sm">{t('find_in_files')}</h3>
+                <h3 className="font-semibold text-sm">在文件中查找</h3>
                 <button onClick={onClose} className="w-6 h-6 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
                     <i className="fa-solid fa-times text-xs"></i>
                 </button>
@@ -148,16 +146,13 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                                 onChange={handleQueryChange}
                                 onFocus={() => setIsHistoryOpen(true)}
                                 onBlur={() => setTimeout(() => setIsHistoryOpen(false), 150)}
-                                placeholder={t('search_placeholder')}
+                                placeholder="搜索..."
                                 className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                                 autoComplete="off"
                             />
                              {query && (
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-light-subtle-text dark:text-dark-subtle-text">
-                                    {currentIndex !== null 
-                                        ? t('search_results_current', { current: currentIndex + 1, total: resultsCount }) 
-                                        : t('search_results_count', { count: resultsCount })
-                                    }
+                                    {currentIndex !== null ? `${currentIndex + 1} / ${resultsCount}` : `${resultsCount} 个结果`}
                                 </span>
                              )}
                               {isHistoryOpen && history.length > 0 && (
@@ -176,16 +171,16 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                         <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center"><i className="fa-solid fa-arrow-down"></i></button>
                     </div>
                     <div className="flex items-center space-x-2 mt-3">
-                        <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title={t('match_case')}>
+                        <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title="区分大小写">
                            <span>Aa</span>
                         </button>
-                         <button type="button" onClick={() => toggleOption('wholeWord')} className={optionButtonClass(options.wholeWord)} title={t('match_whole_word')}>
+                         <button type="button" onClick={() => toggleOption('wholeWord')} className={optionButtonClass(options.wholeWord)} title="全词匹配">
                            <i className="fa-solid fa-quote-right text-xs"></i>
                         </button>
-                        <button type="button" onClick={() => toggleOption('useRegex')} className={optionButtonClass(options.useRegex)} title={t('use_regex')}>
+                        <button type="button" onClick={() => toggleOption('useRegex')} className={optionButtonClass(options.useRegex)} title="使用正则表达式">
                            <span>.*</span>
                         </button>
-                        <button type="button" onClick={() => toggleOption('fuzzySearch')} className={optionButtonClass(options.fuzzySearch)} title={t('fuzzy_search')}>
+                        <button type="button" onClick={() => toggleOption('fuzzySearch')} className={optionButtonClass(options.fuzzySearch)} title="模糊搜索">
                            <i className="fa-solid fa-wand-magic-sparkles text-xs"></i>
                         </button>
                     </div>

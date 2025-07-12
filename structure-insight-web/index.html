@@ -91,15 +91,22 @@
         user-select: none;
       }
       
-      /* Search result blink animation */
-      @keyframes blink-highlight {
-        50% { background-color: #fcd34d; /* amber-300 */ }
+      /* Search highlight styles */
+      mark.search-highlight {
+          background-color: #fde047; /* yellow-300 */
+          color: inherit;
+          padding: 0;
+          border-radius: 2px;
       }
-      html.dark @keyframes blink-highlight {
-        50% { background-color: #fbbf24; /* amber-400 */ }
+      html.dark mark.search-highlight {
+          background-color: #ca8a04; /* yellow-600 */
       }
-      .blink-me {
-        animation: blink-highlight 0.6s ease-in-out;
+      mark.search-highlight-active {
+          background-color: #fb923c; /* orange-400 */
+          color: inherit;
+          padding: 0;
+          border-radius: 2px;
+          outline: 1px solid #f97316; /* orange-500 */
       }
     </style>
     <script type="importmap">

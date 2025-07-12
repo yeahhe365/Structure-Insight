@@ -1,7 +1,6 @@
 import React from 'react';
 import { processDroppedItems, processFiles } from '../services/fileProcessor';
 import { ProcessedFiles } from '../types';
-import { TranslationKey } from './useLocalization';
 
 interface FileProcessingProps {
     extractContent: boolean;
@@ -10,7 +9,6 @@ interface FileProcessingProps {
     setMobileView: (view: 'tree' | 'editor' | 'chat') => void;
     handleShowToast: (message: string) => void;
     isMobile: boolean;
-    t: (key: TranslationKey, options?: { [key: string]: string | number }) => string;
 }
 
 export const useFileProcessing = ({
@@ -20,15 +18,10 @@ export const useFileProcessing = ({
     setMobileView,
     handleShowToast,
     isMobile,
-    t
 }: FileProcessingProps) => {
     const [processedData, setProcessedData] = React.useState<ProcessedFiles | null>(null);
     const [lastProcessedFiles, setLastProcessedFiles] = React.useState<File[] | null>(null);
     const abortControllerRef = React.useRef<AbortController | null>(null);
-    
-    const onProgress = (key: TranslationKey, options?: { [key: string]: string | number }) => {
-        setProgressMessage(t(key, options));
-    }
 
     const handleProcessing = async (files: File[], isRefresh = false) => {
         if (files.length === 0) return;
@@ -43,16 +36,16 @@ export const useFileProcessing = ({
 
         setIsLoading(true);
         try {
-            const data = await processFiles(files, onProgress, extractContent, signal);
+            const data = await processFiles(files, (msg) => setProgressMessage(msg), extractContent, signal);
             setProcessedData(data);
             setLastProcessedFiles(files);
             if (isMobile) setMobileView('editor');
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                setProgressMessage(t('processing_cancelled'));
+                setProgressMessage("处理已取消。");
             } else {
                 console.error("Error processing files:", error);
-                handleShowToast(t('error_processing_files'));
+                handleShowToast("处理文件时发生错误。");
             }
         } finally {
             setIsLoading(false);
@@ -88,7 +81,7 @@ export const useFileProcessing = ({
         } catch (error: any) {
             if (error.name !== 'AbortError') {
                  console.error("Error processing dropped items:", error);
-                 handleShowToast(t('error_reading_dropped_items'));
+                 handleShowToast("读取拖放项目时出错。");
             }
         } finally {
             setIsLoading(false);

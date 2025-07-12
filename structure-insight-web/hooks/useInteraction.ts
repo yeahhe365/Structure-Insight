@@ -1,7 +1,6 @@
 import React from 'react';
-import { FileNode, SearchOptions, SearchResult, ProcessedFiles } from '../types';
+import { FileNode, ProcessedFiles } from '../types';
 import { buildASCIITree } from '../services/fileProcessor';
-import { TranslationKey } from './useLocalization';
 
 interface InteractionProps {
     processedData: ProcessedFiles | null;
@@ -10,7 +9,6 @@ interface InteractionProps {
     isMobile: boolean;
     setMobileView: (view: 'tree' | 'editor' | 'chat') => void;
     codeViewRef: React.RefObject<HTMLDivElement>;
-    t: (key: TranslationKey, options?: { [key: string]: string | number }) => string;
 }
 
 export const useInteraction = ({
@@ -20,12 +18,9 @@ export const useInteraction = ({
     isMobile,
     setMobileView,
     codeViewRef,
-    t
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
     const [markdownPreviewPaths, setMarkdownPreviewPaths] = React.useState(new Set<string>());
-    const [searchResults, setSearchResults] = React.useState<SearchResult[]>([]);
-    const [currentSearchResultIndex, setCurrentSearchResultIndex] = React.useState<number | null>(null);
 
     const handleDeleteFile = (path: string) => {
         setProcessedData(prevData => {
@@ -42,7 +37,7 @@ export const useInteraction = ({
                     }).filter(node => node.isDirectory ? node.children.length > 0 : true);
             };
             const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
-            const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "Project";
+            const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "项目";
             const newStructureString = buildASCIITree(newTreeData, rootName);
             return { fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
         });
@@ -77,81 +72,13 @@ export const useInteraction = ({
             return newSet;
         });
     };
-
-    const navigateToSearchResult = (index: number | null, results: SearchResult[] = searchResults) => {
-        if (index === null || index < 0 || index >= results.length) {
-            setCurrentSearchResultIndex(null);
-            return;
-        }
-        setCurrentSearchResultIndex(index);
-        const result = results[index];
-        if (isMobile) setMobileView('editor');
-        setTimeout(() => {
-            const fileCard = document.getElementById(`file-path-${result.path}`);
-            const resultElId = `search-result-${result.path}-${results.slice(0, index + 1).filter(r => r.path === result.path).length - 1}`
-            const resultEl = document.getElementById(resultElId);
-            
-            if (fileCard && codeViewRef.current) {
-                let targetScroll = fileCard.offsetTop - codeViewRef.current.offsetTop - 20;
-                if (resultEl) targetScroll += resultEl.offsetTop - (codeViewRef.current.clientHeight / 2);
-                codeViewRef.current.scrollTo({ top: targetScroll, behavior: 'smooth' });
-            }
-        }, isMobile ? 100 : 0);
-    };
-    
-    const handleSearch = (query: string, options: SearchOptions) => {
-        if (!processedData || !query) {
-            setSearchResults([]);
-            setCurrentSearchResultIndex(null);
-            return;
-        }
-        const results: SearchResult[] = [];
-        try {
-            const flags = options.caseSensitive ? 'g' : 'gi';
-            const pattern = options.useRegex ? query : query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-            const regex = new RegExp(options.wholeWord ? `\\b${pattern}\\b` : pattern, flags);
-            
-            processedData.fileContents.forEach(file => {
-                let match;
-                while ((match = regex.exec(file.content)) !== null) {
-                    const lineStart = file.content.lastIndexOf('\n', match.index) + 1;
-                    const lineEnd = file.content.indexOf('\n', match.index);
-                    results.push({
-                        path: file.path,
-                        start: match.index,
-                        end: match.index + match[0].length,
-                        line: file.content.substring(0, match.index).split('\n').length,
-                        preview: file.content.substring(lineStart, lineEnd > -1 ? lineEnd : file.content.length).trim(),
-                        matchText: match[0],
-                    });
-                     if (match[0].length === 0) regex.lastIndex++;
-                }
-            });
-            setSearchResults(results);
-            navigateToSearchResult(results.length > 0 ? 0 : null, results);
-        } catch (e) {
-            handleShowToast(t("invalid_regex"));
-            setSearchResults([]);
-        }
-    };
-    
-    const handleSearchNavigate = (direction: 'next' | 'prev') => {
-        if (searchResults.length === 0 || currentSearchResultIndex === null) return;
-        const nextIndex = direction === 'next' ? (currentSearchResultIndex + 1) % searchResults.length : (currentSearchResultIndex - 1 + searchResults.length) % searchResults.length;
-        navigateToSearchResult(nextIndex);
-    };
     
     return {
         editingPath, setEditingPath,
         markdownPreviewPaths, setMarkdownPreviewPaths,
-        searchResults, setSearchResults,
-        currentSearchResultIndex, setCurrentSearchResultIndex,
         handleDeleteFile,
         handleFileTreeSelect,
         handleSaveEdit,
         handleToggleMarkdownPreview,
-        handleSearch,
-        handleSearchNavigate,
-        navigateToSearchResult
     };
 };

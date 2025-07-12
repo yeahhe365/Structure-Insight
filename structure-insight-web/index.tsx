@@ -1,7 +1,7 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { LocalizationProvider } from './hooks/useLocalization';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -11,8 +11,6 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <LocalizationProvider>
-      <App />
-    </LocalizationProvider>
+    <App />
   </React.StrictMode>
 );

@@ -1,5 +1,4 @@
 import { FileNode, FileContent, ProcessedFiles } from '../types';
-import { TranslationKey } from '../hooks/useLocalization';
 
 const IGNORED_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.ico', '.webp',
@@ -44,10 +43,8 @@ export function buildASCIITree(treeData: FileNode[], rootName: string): string {
             const isLast = index === nodes.length - 1;
             const connector = isLast ? '└── ' : '├── ';
             let displayName = node.name;
-            if (node.status === 'skipped') {
-                displayName += " (skipped)";
-            } else if (node.status === 'error') {
-                displayName += " (error)";
+            if (node.status === 'error') {
+                displayName += " (错误)";
             }
             structure += `${prefix}${connector}${displayName}\n`;
             if (node.isDirectory && node.children.length > 0) {
@@ -161,7 +158,7 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
     for(const file of allFiles) {
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
         if(file.name.toLowerCase().endsWith('.zip')) {
-            onProgress(`Unzipping ${file.name}...`);
+            onProgress(`正在解压 ${file.name}...`);
             const unzipped = await handleZipFile(file);
             finalFiles.push(...unzipped);
         } else {
@@ -172,12 +169,7 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
     return finalFiles;
 }
 
-export async function processFiles(
-    files: File[], 
-    onProgress: (key: TranslationKey, options?: { [key: string]: string | number }) => void, 
-    extractContent: boolean, 
-    signal: AbortSignal
-): Promise<ProcessedFiles> {
+export async function processFiles(files: File[], onProgress: (msg: string) => void, extractContent: boolean, signal: AbortSignal): Promise<ProcessedFiles> {
     const fileContents: FileContent[] = [];
     const nodeMap = new Map<string, FileNode>();
     const roots: FileNode[] = [];
@@ -196,7 +188,7 @@ export async function processFiles(
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
         
         processedCount++;
-        onProgress('processing_file_progress', { current: processedCount, total: totalFiles, fileName: file.name });
+        onProgress(`正在处理文件 ${processedCount}/${totalFiles}: ${file.name}`);
 
         const path = (file as any).webkitRelativePath || file.name;
         const parts = path.split('/').filter(p => p);
@@ -264,9 +256,9 @@ export async function processFiles(
     }
 
     fileContents.sort((a,b) => a.path.localeCompare(b.path));
-    onProgress("finalizing_output");
+    onProgress("正在完成输出...");
     
-    let rootNameForDisplay = "Project";
+    let rootNameForDisplay = "项目";
     if (roots.length === 1 && roots[0].isDirectory) {
         rootNameForDisplay = roots[0].name;
     }
@@ -281,20 +273,20 @@ export async function processFiles(
 
 
 export function generateFullOutput(structureString: string, fileContents: FileContent[]): string {
-    let output = "File Structure:\n";
+    let output = "文件结构:\n";
     output += structureString;
     
     if (fileContents.length > 0) {
-        output += "\n\nFile Contents:\n";
+        output += "\n\n文件内容:\n";
 
         for (const file of fileContents) {
             output += "========================================\n";
-            output += `File: ${file.path}\n`;
+            output += `文件: ${file.path}\n`;
             output += "----------------------------------------\n";
             output += `${file.content}\n\n`;
         }
     } else if (structureString !== `${structureString.split('\n')[0]}\n`) { // check if there is more than just the root
-        output += "\n\n(File content not extracted)";
+        output += "\n\n(未提取文件内容)";
     }
 
     return output;
