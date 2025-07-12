@@ -196,8 +196,14 @@ const App: React.FC = () => {
 
     React.useEffect(() => {
         document.documentElement.classList.toggle('dark', isDark);
-        (document.getElementById('hljs-light-theme') as HTMLLinkElement).disabled = isDark;
-        (document.getElementById('hljs-dark-theme') as HTMLLinkElement).disabled = !isDark;
+        const lightThemeEl = document.getElementById('hljs-light-theme');
+        if (lightThemeEl) {
+            (lightThemeEl as HTMLLinkElement).disabled = isDark;
+        }
+        const darkThemeEl = document.getElementById('hljs-dark-theme');
+        if (darkThemeEl) {
+            (darkThemeEl as HTMLLinkElement).disabled = !isDark;
+        }
     }, [isDark]);
     
     React.useEffect(() => {
@@ -693,7 +699,7 @@ const App: React.FC = () => {
                             {mobileView === 'editor' && (
                                 <motion.div key="editor" initial={{x: mobileView === 'tree' ? '-100%' : '100%'}} animate={{x: '0%'}} exit={{x: mobileView === 'chat' ? '100%' : '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
                                     {processedData ? (
-                                        <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...processedData, searchResults, currentResultIndex: currentSearchResultIndex, editingPath, markdownPreviewPaths, onStartEdit:setEditingPath, onSaveEdit: handleSaveEdit, onCancelEdit:() => setEditingPath(null), onToggleMarkdownPreview: handleToggleMarkdownPreview, onShowToast: handleShowToast, fontSize}} /></div>
+                                        <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...processedData, searchResults, currentResultIndex: currentResultIndex, editingPath, markdownPreviewPaths, onStartEdit:setEditingPath, onSaveEdit: handleSaveEdit, onCancelEdit:() => setEditingPath(null), onToggleMarkdownPreview: handleToggleMarkdownPreview, onShowToast: handleShowToast, fontSize}} /></div>
                                     ) : (
                                         <div className="flex-1"><InitialPrompt onOpenFolder={handleFileSelect}/></div>
                                     )}
@@ -717,7 +723,7 @@ const App: React.FC = () => {
                                 {isLoading ? (
                                     <div className="flex flex-col items-center justify-center h-full text-center p-4"><i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i><p className="text-lg font-semibold">Processing files...</p><p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{progressMessage}</p></div>
                                 ) : processedData ? (
-                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...processedData, searchResults, currentResultIndex: currentSearchResultIndex, editingPath, markdownPreviewPaths, onStartEdit:setEditingPath, onSaveEdit: handleSaveEdit, onCancelEdit:() => setEditingPath(null), onToggleMarkdownPreview: handleToggleMarkdownPreview, onShowToast: handleShowToast, fontSize}} /></div>
+                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView {...{...processedData, searchResults, currentResultIndex: currentResultIndex, editingPath, markdownPreviewPaths, onStartEdit:setEditingPath, onSaveEdit: handleSaveEdit, onCancelEdit:() => setEditingPath(null), onToggleMarkdownPreview: handleToggleMarkdownPreview, onShowToast: handleShowToast, fontSize}} /></div>
                                 ) : (
                                     <InitialPrompt onOpenFolder={handleFileSelect}/>
                                 )}
