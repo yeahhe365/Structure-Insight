@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileContent, SearchResult } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 declare const hljs: any;
 declare const marked: any;
@@ -47,6 +48,7 @@ interface FileCardProps {
 const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSaveEdit, onCancelEdit, isMarkdown, isMarkdownPreview, onToggleMarkdownPreview, searchResults, currentResultIndex, onShowToast, fontSize }) => {
   const [editText, setEditText] = React.useState(file.content);
   const codeRef = React.useRef<HTMLElement>(null);
+  const { t } = useLocalization();
   
   const searchResultsForFile = React.useMemo(() => 
     searchResults.filter(r => r.path === file.path), 
@@ -117,7 +119,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    onShowToast('Copied to clipboard!');
+    onShowToast(t('copied_to_clipboard'));
   };
 
   const lineNumbers = Array.from({ length: file.stats.lines }, (_, i) => i + 1).join('\n');
@@ -139,18 +141,18 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
           <i className="fa-regular fa-file-lines mr-2"></i>{file.path}
         </div>
         <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text">
-          <span>{file.stats.lines} lines</span>
-          <span>{file.stats.chars} chars</span>
+          <span>{file.stats.lines} {t('lines')}</span>
+          <span>{file.stats.chars} {t('characters')}</span>
           {isMarkdown && (
-             <button onClick={() => onToggleMarkdownPreview(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={isMarkdownPreview ? "Show Raw" : "Preview Markdown"} disabled={isEditing}>
-                <i className={`fa-regular ${isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} mr-1`}></i> {isMarkdownPreview ? "Raw" : "Preview"}
+             <button onClick={() => onToggleMarkdownPreview(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={isMarkdownPreview ? t("show_raw") : t("preview_markdown")} disabled={isEditing}>
+                <i className={`fa-regular ${isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} mr-1`}></i> {isMarkdownPreview ? t("raw") : t("preview")}
             </button>
           )}
-          <button onClick={() => onStartEdit(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="Edit content" disabled={isEditing}>
-            <i className="fa-regular fa-pen-to-square mr-1"></i> Edit
+          <button onClick={() => onStartEdit(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={t("edit_content")} disabled={isEditing}>
+            <i className="fa-regular fa-pen-to-square mr-1"></i> {t('edit')}
           </button>
-          <button onClick={() => handleCopy(file.content)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="Copy content" disabled={isEditing}>
-            <i className="fa-regular fa-copy mr-1"></i> Copy
+          <button onClick={() => handleCopy(file.content)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={t("copy_content")} disabled={isEditing}>
+            <i className="fa-regular fa-copy mr-1"></i> {t('copy')}
           </button>
         </div>
       </div>
@@ -163,8 +165,8 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
                 style={codeStyle}
             />
             <div className="flex justify-end space-x-2 mt-2">
-                <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>
-                <button onClick={() => onSaveEdit(file.path, editText)} className="px-3 py-1 rounded-md text-sm bg-primary text-white hover:bg-primary-hover">Save</button>
+                <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">{t('cancel')}</button>
+                <button onClick={() => onSaveEdit(file.path, editText)} className="px-3 py-1 rounded-md text-sm bg-primary text-white hover:bg-primary-hover">{t('save')}</button>
             </div>
         </div>
       ) : isMarkdown && isMarkdownPreview ? (
@@ -208,10 +210,11 @@ interface CodeViewProps {
 
 const CodeView: React.FC<CodeViewProps> = (props) => {
   const { structureString, fileContents, searchResults, currentResultIndex, editingPath, onStartEdit, onSaveEdit, onCancelEdit, markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize } = props;
+  const { t } = useLocalization();
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    onShowToast('Copied to clipboard!');
+    onShowToast(t('copied_to_clipboard'));
   };
   
   return (
@@ -223,13 +226,13 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">File Structure</h2>
+              <h2 className="text-xl font-semibold">{t('file_structure')}</h2>
               <button
                 onClick={() => handleCopy(structureString)}
                 className="text-sm text-primary hover:text-primary-hover"
-                title="Copy structure"
+                title={t('copy_structure')}
               >
-                <i className="fa-regular fa-copy mr-1"></i> Copy
+                <i className="fa-regular fa-copy mr-1"></i> {t('copy')}
               </button>
             </div>
             <pre className="bg-light-panel dark:bg-dark-panel p-4 rounded-lg text-sm overflow-x-auto" style={{fontSize: `${fontSize}px`}}><code>{structureString}</code></pre>
@@ -239,7 +242,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
 
       {fileContents && fileContents.length > 0 && (
         <div>
-          <h2 className="text-xl font-semibold mb-4">File Contents</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('file_contents')}</h2>
           <div className="space-y-6">
             <AnimatePresence>
               {fileContents.map((file) => (
@@ -275,8 +278,8 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
       {structureString && fileContents && fileContents.length === 0 && (
         <div className="text-center p-8 mt-8 text-light-subtle-text dark:text-dark-subtle-text bg-light-panel dark:bg-dark-panel rounded-lg">
             <i className="fa-solid fa-info-circle text-2xl mb-2 text-primary"></i>
-            <p className="font-semibold">File content was not extracted.</p>
-            <p className="text-sm">To view content, enable "Extract Content" in Settings and re-process the folder.</p>
+            <p className="font-semibold">{t('content_not_extracted')}</p>
+            <p className="text-sm">{t('content_not_extracted_prompt')}</p>
         </div>
       )}
     </div>

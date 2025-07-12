@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { FileNode } from '../types';
+import { useLocalization } from '../hooks/useLocalization';
 
 interface FileTreeProps {
   nodes: FileNode[];
@@ -10,6 +10,7 @@ interface FileTreeProps {
 
 const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => void; onDeleteFile: (path: string) => void; level: number }> = ({ node, onFileSelect, onDeleteFile, level }) => {
   const [isOpen, setIsOpen] = React.useState(true);
+  const { t } = useLocalization();
 
   const handleToggle = () => {
     if (node.isDirectory) {
@@ -40,12 +41,12 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
 
   if (node.status === 'skipped') {
       statusClass += ' opacity-50';
-      displayName = `Skipped: ${node.name}`;
-      title = `${node.path} (Skipped: file type or size limit)`;
+      displayName = `${t('skipped_prefix')}: ${node.name}`;
+      title = t('skipped_title');
   } else if (node.status === 'error') {
       statusClass += ' text-red-500/80';
-      displayName = `Error: ${node.name}`;
-      title = `${node.path} (Error: could not read file)`;
+      displayName = `${t('error_prefix')}: ${node.name}`;
+      title = t('error_title');
   }
 
 
@@ -68,7 +69,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
           <button 
             onClick={handleDelete}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-light-subtle-text dark:text-dark-subtle-text hover:text-red-500 dark:hover:text-red-400"
-            title={`Delete ${node.name}`}
+            title={t('delete_file_title', { fileName: node.name })}
             >
               <i className="fa-solid fa-trash-can text-xs"></i>
           </button>
@@ -86,12 +87,13 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
 };
 
 const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }) => {
+  const { t } = useLocalization();
   if (!nodes || nodes.length === 0) {
-    return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">No files loaded.</div>;
+    return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">{t('no_files_loaded')}</div>;
   }
   return (
     <div className="p-2">
-      <h3 className="text-sm font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">Explorer</h3>
+      <h3 className="text-sm font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">{t('explorer')}</h3>
       <ul className="pl-0">
         {nodes.map(node => (
           <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={1} />

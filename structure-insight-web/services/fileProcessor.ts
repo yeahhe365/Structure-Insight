@@ -1,5 +1,5 @@
-
 import { FileNode, FileContent, ProcessedFiles } from '../types';
+import { TranslationKey } from '../hooks/useLocalization';
 
 const IGNORED_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.ico', '.webp',
@@ -172,7 +172,12 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
     return finalFiles;
 }
 
-export async function processFiles(files: File[], onProgress: (msg: string) => void, extractContent: boolean, signal: AbortSignal): Promise<ProcessedFiles> {
+export async function processFiles(
+    files: File[], 
+    onProgress: (key: TranslationKey, options?: { [key: string]: string | number }) => void, 
+    extractContent: boolean, 
+    signal: AbortSignal
+): Promise<ProcessedFiles> {
     const fileContents: FileContent[] = [];
     const nodeMap = new Map<string, FileNode>();
     const roots: FileNode[] = [];
@@ -191,7 +196,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
         
         processedCount++;
-        onProgress(`Processing file ${processedCount} of ${totalFiles}: ${file.name}`);
+        onProgress('processing_file_progress', { current: processedCount, total: totalFiles, fileName: file.name });
 
         const path = (file as any).webkitRelativePath || file.name;
         const parts = path.split('/').filter(p => p);
@@ -259,7 +264,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
     }
 
     fileContents.sort((a,b) => a.path.localeCompare(b.path));
-    onProgress("Finalizing output...");
+    onProgress("finalizing_output");
     
     let rootNameForDisplay = "Project";
     if (roots.length === 1 && roots[0].isDirectory) {
