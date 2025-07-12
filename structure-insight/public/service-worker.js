@@ -2,6 +2,8 @@ const CACHE_NAME = 'structure-insight-v1';
 const urlsToCache = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/favicon.png',
   // Note: Bundled JS/CSS are not listed here as their names are dynamic.
   // The fetch handler will cache them on the fly.
 ];
@@ -19,7 +21,6 @@ const cdnUrlsToCache = [
     'https://esm.sh/react@^19.1.0',
     'https://esm.sh/react-dom@^19.1.0/client',
     'https://esm.sh/framer-motion@^11.0.8',
-    'https://fav.farm/%F0%9F%9A%80' // favicon
 ];
 
 self.addEventListener('install', event => {

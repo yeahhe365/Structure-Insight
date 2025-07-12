@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { SearchOptions } from '../types';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -93,13 +92,17 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
         updateHistory(query);
         setIsHistoryOpen(false);
     };
+
+    const runSearch = (newQuery: string, newOptions: SearchOptions) => {
+         onSearch(newQuery, newOptions);
+    }
     
     React.useEffect(() => {
         const debounceTimer = setTimeout(() => {
-            onSearch(query, options);
+            runSearch(query, options);
         }, 300);
         return () => clearTimeout(debounceTimer);
-    }, [query, options, onSearch]);
+    }, [query, options, runSearch]);
 
     const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setQuery(e.target.value);
