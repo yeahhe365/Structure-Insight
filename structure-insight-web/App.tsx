@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileNode, FileContent, ProcessedFiles, SearchOptions, SearchResult, ChatMessage } from './types';
@@ -105,7 +104,7 @@ const InitialPrompt: React.FC<{ onOpenFolder: () => void; }> = ({ onOpenFolder }
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-4">
             <div className="max-w-md">
-                <img src="/favicon.png" alt="Structure Insight Logo" className="w-16 h-16 mb-6 mx-auto" />
+                <i className="fa-solid fa-rocket text-5xl text-primary mb-6"></i>
                 <h2 className="text-2xl font-bold mb-2">Welcome to Structure Insight</h2>
                 <p className="text-light-subtle-text dark:text-dark-subtle-text mb-6">Drag and drop a folder or click the button below to analyze its structure and content. Ideal for preparing code context for AI models.</p>
                 <button
