@@ -1,0 +1,6 @@
+{
+  "name": "Structure Insight Web",
+  "description": "A powerful browser-based tool for analyzing file structures and viewing code. It's designed to help developers quickly visualize project layouts and generate formatted output, perfect for sharing and discussing code projects with AI language models like Gemini.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
