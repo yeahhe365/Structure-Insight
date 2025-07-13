@@ -1,3 +1,4 @@
+
 import { FileNode, FileContent, ProcessedFiles } from '../types';
 
 const IGNORED_EXTENSIONS = new Set([
