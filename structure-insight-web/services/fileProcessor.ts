@@ -1,4 +1,5 @@
 
+import JSZip from 'jszip';
 import { FileNode, FileContent, ProcessedFiles } from '../types';
 
 const IGNORED_EXTENSIONS = new Set([
@@ -66,12 +67,7 @@ export function buildASCIITree(treeData: FileNode[], rootName: string): string {
 }
 
 async function handleZipFile(zipFile: File): Promise<File[]> {
-    const jszip = (window as any).JSZip;
-    if (!jszip) {
-        console.error("JSZip library not found. Make sure it's loaded before processing zip files.");
-        throw new Error("JSZip is not defined");
-    }
-    const zip = await jszip.loadAsync(zipFile);
+    const zip = await JSZip.loadAsync(zipFile);
     const files: File[] = [];
     const zipRoot = zipFile.name.replace(/\.zip$/i, '');
 

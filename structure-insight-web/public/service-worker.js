@@ -15,12 +15,12 @@ const cdnUrlsToCache = [
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css',
     'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
     'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
     'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js',
     'https://esm.sh/react@^19.1.0',
     'https://esm.sh/react-dom@^19.1.0/client',
     'https://esm.sh/framer-motion@^11.0.8',
+    'https://esm.sh/jszip@3.10.1',
 ];
 
 self.addEventListener('install', event => {
