@@ -5,6 +5,7 @@ export interface FileNode {
   isDirectory: boolean;
   children: FileNode[];
   status?: 'processed' | 'skipped' | 'error';
+  lines?: number;
 }
 
 export interface FileContent {

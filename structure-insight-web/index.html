@@ -81,6 +81,10 @@
       html.dark ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
       html.light ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
+      /* Hide scrollbar for elements with this class */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
       .line-numbers {
         -webkit-touch-callout: none;
         -webkit-user-select: none;

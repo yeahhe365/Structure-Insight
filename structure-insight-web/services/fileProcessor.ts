@@ -238,13 +238,15 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
         } else {
             try {
                 const content = await readFileContent(file);
+                const lineCount = content.split('\n').length;
                 fileContents.push({
                     path: path,
                     content: content,
                     language: getLanguage(file.name),
-                    stats: { lines: content.split('\n').length, chars: content.length }
+                    stats: { lines: lineCount, chars: content.length }
                 });
                 fileNode.status = 'processed';
+                fileNode.lines = lineCount;
             } catch (e) {
                 fileNode.status = 'error';
                 console.warn(`Could not read file as text: ${file.name}`);

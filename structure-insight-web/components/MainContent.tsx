@@ -6,6 +6,7 @@ import AiChatPanel from './AiChatPanel';
 import InitialPrompt from './InitialPrompt';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useAppLogic } from '../hooks/useAppLogic';
+import ScrollSlider from './ScrollSlider';
 
 interface MainContentProps {
     logic: ReturnType<typeof useAppLogic>;
@@ -17,6 +18,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
     const { state, handlers } = logic;
     const windowSize = useWindowSize();
     const isMobile = windowSize.width <= 768;
+    const fileTreeScrollRef = React.useRef<HTMLDivElement>(null);
 
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
@@ -66,8 +68,11 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 </div>
             ) : (
                 <>
-                    <div ref={leftPanelRef} className="h-full bg-light-panel dark:bg-dark-panel overflow-y-auto" style={{ width: `${state.panelWidth}%` }}>
-                       {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile}/>}
+                    <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
+                        <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
+                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile}/>}
+                        </div>
+                        {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
                     </div>
                     <div onMouseDown={handlers.handleMouseDownResize} className="w-1.5 h-full cursor-col-resize bg-light-border dark:bg-dark-border hover:bg-primary transition-colors duration-200 z-10" />
                     <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex">
@@ -75,7 +80,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                             {state.isLoading ? (
                                 <div className="flex flex-col items-center justify-center h-full text-center p-4"><i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i><p className="text-lg font-semibold">正在处理文件...</p><p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{state.progressMessage}</p></div>
                             ) : state.processedData ? (
-                                <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} /></div>
+                                <div className="relative flex-1 min-h-0">
+                                    <div ref={codeViewRef} className="h-full overflow-y-auto no-scrollbar">
+                                        <CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                    </div>
+                                    <ScrollSlider scrollRef={codeViewRef} />
+                                </div>
                             ) : (
                                 <InitialPrompt onOpenFolder={handlers.handleFileSelect}/>
                             )}

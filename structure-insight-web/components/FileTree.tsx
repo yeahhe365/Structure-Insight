@@ -62,6 +62,11 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
         {!node.isDirectory && <span className="w-4"></span>}
         {icon}
         <span className="truncate text-sm flex-1">{displayName}</span>
+        {!node.isDirectory && node.status === 'processed' && typeof node.lines === 'number' && (
+            <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
+                {node.lines}
+            </span>
+        )}
          {!node.isDirectory && (
           <button 
             onClick={handleDelete}
