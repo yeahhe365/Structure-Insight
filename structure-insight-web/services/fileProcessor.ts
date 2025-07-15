@@ -1,3 +1,4 @@
+
 import JSZip from 'jszip';
 import { FileNode, FileContent, ProcessedFiles } from '../types';
 
@@ -265,6 +266,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
                 });
                 fileNode.status = 'processed';
                 fileNode.lines = lineCount;
+                fileNode.chars = content.length;
             } catch (e) {
                 fileNode.status = 'error';
                 console.warn(`Could not read file as text: ${file.name}`);

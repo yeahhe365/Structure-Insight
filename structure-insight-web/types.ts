@@ -6,6 +6,7 @@ export interface FileNode {
   children: FileNode[];
   status?: 'processed' | 'skipped' | 'error';
   lines?: number;
+  chars?: number;
 }
 
 export interface FileContent {

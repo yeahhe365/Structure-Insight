@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileNode } from '../types';
 
@@ -62,10 +63,15 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
         {!node.isDirectory && <span className="w-4"></span>}
         {icon}
         <span className="truncate text-sm flex-1">{displayName}</span>
-        {!node.isDirectory && node.status === 'processed' && typeof node.lines === 'number' && (
-            <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
-                {node.lines}
-            </span>
+        {!node.isDirectory && node.status === 'processed' && (
+            <div className="flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
+                {typeof node.chars === 'number' && (
+                    <span title={`${node.chars} 个字符`}>{node.chars.toLocaleString()}</span>
+                )}
+                {typeof node.lines === 'number' && (
+                    <span className="border-l border-light-border dark:border-dark-border pl-2" title={`${node.lines} 行`}>{node.lines}</span>
+                )}
+            </div>
         )}
          {!node.isDirectory && (
           <button 
