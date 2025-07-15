@@ -10,6 +10,8 @@ interface SettingsDialogProps {
     onToggleExtractContent: () => void;
     fontSize: number;
     onSetFontSize: (size: number) => void;
+    apiKey: string;
+    onSetApiKey: (key: string) => void;
     onClearCache: () => void;
     onInstallPWA: () => void;
     isInstallable: boolean;
@@ -17,10 +19,11 @@ interface SettingsDialogProps {
 }
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({
-    isOpen, onClose, isDarkTheme, onToggleTheme, extractContent, onToggleExtractContent, fontSize, onSetFontSize, onClearCache,
+    isOpen, onClose, isDarkTheme, onToggleTheme, extractContent, onToggleExtractContent, fontSize, onSetFontSize, apiKey, onSetApiKey, onClearCache,
     onInstallPWA, isInstallable, isInstalled
 }) => {
     const dialogRef = React.useRef<HTMLDivElement>(null);
+    const [showKey, setShowKey] = React.useState(false);
 
     React.useEffect(() => {
         if (isOpen) {
@@ -99,6 +102,35 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                 className="w-32 slider"
                             />
                         </div>
+                    </div>
+
+                    {/* API Key */}
+                    <div className="py-3">
+                         <label htmlFor="api-key-input" className={`${labelClass} block mb-2`}>
+                            自定义 API 密钥
+                        </label>
+                        <div className="relative">
+                            <input
+                                id="api-key-input"
+                                type={showKey ? 'text' : 'password'}
+                                value={apiKey}
+                                onChange={(e) => onSetApiKey(e.target.value)}
+                                placeholder="留空则使用环境变量"
+                                className="w-full pr-10 pl-3 py-2 text-sm bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                autoComplete="off"
+                            />
+                            <button 
+                                type="button" 
+                                onClick={() => setShowKey(!showKey)} 
+                                className="absolute inset-y-0 right-0 px-3 flex items-center text-light-subtle-text dark:text-dark-subtle-text hover:text-light-text dark:hover:text-dark-text"
+                                title={showKey ? '隐藏密钥' : '显示密钥'}
+                            >
+                                <i className={`fa-regular ${showKey ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                            </button>
+                        </div>
+                        <p className="text-xs text-light-subtle-text dark:text-dark-subtle-text mt-2">
+                            密钥将安全地存储在您的浏览器中。如果留空，应用将尝试使用构建时设置的环境变量。
+                        </p>
                     </div>
 
                     {/* PWA Install */}

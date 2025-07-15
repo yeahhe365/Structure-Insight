@@ -1,17 +1,23 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Part } from "@google/genai";
 import { ProcessedFiles } from '../types';
 
-let ai: GoogleGenAI | null = null;
-const API_KEY = process.env.API_KEY;
+// Store clients per key to avoid re-initialization
+const aiClients = new Map<string, GoogleGenAI>();
 
-function getAI() {
-    if (!ai) {
-        if (!API_KEY) {
-            throw new Error("未找到 API 密钥。请确保已设置 API_KEY 环境变量。");
-        }
-        ai = new GoogleGenAI({ apiKey: API_KEY });
+function getAI(customApiKey?: string): GoogleGenAI {
+    const keyToUse = customApiKey || process.env.API_KEY;
+
+    if (!keyToUse) {
+        throw new Error("未找到 API 密钥。请在设置中提供密钥或设置 API_KEY 环境变量。");
     }
-    return ai;
+
+    if (aiClients.has(keyToUse)) {
+        return aiClients.get(keyToUse)!;
+    }
+
+    const newAiInstance = new GoogleGenAI({ apiKey: keyToUse });
+    aiClients.set(keyToUse, newAiInstance);
+    return newAiInstance;
 }
 
 function formatProjectContext(processedData: ProcessedFiles): string {
@@ -34,10 +40,10 @@ function formatProjectContext(processedData: ProcessedFiles): string {
     return context;
 }
 
-export function createChatSession(): Chat {
-    const aiInstance = getAI();
+export function createChatSession(customApiKey?: string): Chat {
+    const aiInstance = getAI(customApiKey);
     return aiInstance.chats.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-2.5-pro',
         config: {
             systemInstruction: "You are an expert software engineer and code analysis assistant. The user will provide you with the full context of a software project. Your task is to answer their questions about the code, suggest improvements, explain complex parts, or help them debug.",
         },

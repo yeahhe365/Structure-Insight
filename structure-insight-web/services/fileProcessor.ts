@@ -1,4 +1,3 @@
-
 import JSZip from 'jszip';
 import { FileNode, FileContent, ProcessedFiles } from '../types';
 
@@ -96,6 +95,12 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
             const entry = item.webkitGetAsEntry();
             if (entry) {
                 entries.push(entry);
+            } else {
+                // Fallback for single files (e.g. a zip file) dropped from desktop
+                const file = item.getAsFile();
+                if (file) {
+                    allFiles.push(file);
+                }
             }
         }
     }
@@ -151,19 +156,9 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
     const filesFromEntries = await Promise.all(entries.map(readEntries));
     allFiles.push(...filesFromEntries.flat());
 
-    const finalFiles: File[] = [];
-    for(const file of allFiles) {
-        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        if(file.name.toLowerCase().endsWith('.zip')) {
-            onProgress(`正在解压 ${file.name}...`);
-            const unzipped = await handleZipFile(file);
-            finalFiles.push(...unzipped);
-        } else {
-            finalFiles.push(file);
-        }
-    }
-
-    return finalFiles;
+    // Unzipping logic has been moved to processFiles.
+    // This function now just returns all discovered files, including zips.
+    return allFiles;
 }
 
 export async function processFiles(files: File[], onProgress: (msg: string) => void, extractContent: boolean, signal: AbortSignal): Promise<ProcessedFiles> {
@@ -171,7 +166,30 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
     const nodeMap = new Map<string, FileNode>();
     const roots: FileNode[] = [];
 
-    const validFiles = files.filter(file => {
+    // --- Start Unzipping logic ---
+    const allNonZipFiles: File[] = [];
+    if (files.some(f => f.name.toLowerCase().endsWith('.zip'))) {
+        onProgress("正在检查压缩文件...");
+    }
+    for (const file of files) {
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        if (file.name.toLowerCase().endsWith('.zip')) {
+            onProgress(`正在解压 ${file.name}...`);
+            try {
+                const unzipped = await handleZipFile(file);
+                allNonZipFiles.push(...unzipped);
+            } catch (err) {
+                console.error(`Error unzipping file ${file.name}:`, err);
+                // We could create an error node for the zip file, but for now we'll just log and skip.
+            }
+        } else {
+            allNonZipFiles.push(file);
+        }
+    }
+    // --- End Unzipping logic ---
+
+
+    const validFiles = allNonZipFiles.filter(file => {
         const path = (file as any).webkitRelativePath || file.name;
         return path && !path.split('/').some(part => IGNORED_DIRS.has(part) || part.startsWith('.'));
     });

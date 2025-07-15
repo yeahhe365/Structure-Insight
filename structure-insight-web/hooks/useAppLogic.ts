@@ -35,6 +35,7 @@ export const useAppLogic = (
     const [panelWidth, setPanelWidth] = usePersistentState('panelWidth', 30);
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
+    const [apiKey, setApiKey] = usePersistentState('customApiKey', '');
     
     // --- Layout & Search State ---
     const windowSize = useWindowSize();
@@ -69,7 +70,7 @@ export const useAppLogic = (
     const { 
       chatHistory, setChatHistory, isApiKeyMissing, handleSendMessage, resetChat
     } = useAIChat({
-        processedData, isAiLoading, setIsAiLoading, handleShowToast
+        processedData, isAiLoading, setIsAiLoading, handleShowToast, customApiKey: apiKey
     });
     
     // --- Central Reset Logic ---
@@ -310,7 +311,8 @@ export const useAppLogic = (
             isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths,
             isAiChatOpen, chatHistory, isAiLoading, isApiKeyMissing, isDark, panelWidth, extractContent, fontSize,
             lastProcessedFiles, mobileView, stats,
-            isSearchOpen, searchResults, currentResultIndex
+            isSearchOpen, searchResults, currentResultIndex,
+            apiKey,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
@@ -322,7 +324,7 @@ export const useAppLogic = (
             setIsSearchOpen, handleSearch, handleNavigate
         },
         settings: {
-            setIsDark, setExtractContent, setFontSize, handleClearCache, handleInstallPWA
+            setIsDark, setExtractContent, setFontSize, setApiKey, handleClearCache, handleInstallPWA
         },
     };
 };

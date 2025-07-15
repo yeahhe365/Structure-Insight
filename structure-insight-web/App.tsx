@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppLogic } from './hooks/useAppLogic';
@@ -78,6 +75,8 @@ const App: React.FC = () => {
                         onToggleExtractContent={() => settings.setExtractContent(!state.extractContent)}
                         fontSize={state.fontSize}
                         onSetFontSize={settings.setFontSize}
+                        apiKey={state.apiKey}
+                        onSetApiKey={settings.setApiKey}
                         onClearCache={settings.handleClearCache}
                         onInstallPWA={settings.handleInstallPWA}
                         isInstallable={state.isInstallable}

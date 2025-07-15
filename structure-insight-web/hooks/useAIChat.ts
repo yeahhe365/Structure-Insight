@@ -9,6 +9,7 @@ interface AIChatProps {
     isAiLoading: boolean;
     setIsAiLoading: React.Dispatch<React.SetStateAction<boolean>>;
     handleShowToast: (message: string) => void;
+    customApiKey: string;
 }
 
 export const useAIChat = ({
@@ -16,16 +17,19 @@ export const useAIChat = ({
     isAiLoading,
     setIsAiLoading,
     handleShowToast,
+    customApiKey,
 }: AIChatProps) => {
     const [chatSession, setChatSession] = React.useState<Chat | null>(null);
     const [chatHistory, setChatHistory] = usePersistentState<ChatMessage[]>('chatHistory', []);
     const [isApiKeyMissing, setIsApiKeyMissing] = React.useState(false);
 
     React.useEffect(() => {
-        if (!process.env.API_KEY) {
+        if (!customApiKey && !process.env.API_KEY) {
             setIsApiKeyMissing(true);
+        } else {
+            setIsApiKeyMissing(false);
         }
-    }, []);
+    }, [customApiKey]);
     
     const handleSendMessage = async (message: string) => {
         if (!message.trim() || isAiLoading || !processedData) return;
@@ -33,7 +37,7 @@ export const useAIChat = ({
         let currentChat = chatSession;
         if (!currentChat) {
             try {
-                currentChat = createChatSession();
+                currentChat = createChatSession(customApiKey);
                 setChatSession(currentChat);
             } catch (error: any) {
                 console.error("AI chat error:", error);
