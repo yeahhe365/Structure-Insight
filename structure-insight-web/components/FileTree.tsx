@@ -66,7 +66,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
         {!node.isDirectory && node.status === 'processed' && (
             <div className="flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
                 {typeof node.chars === 'number' && (
-                    <span title={`${node.chars} 个字符`}>{node.chars.toLocaleString()}</span>
+                    <span title={`${node.chars} 个字符`}>{node.chars}</span>
                 )}
                 {typeof node.lines === 'number' && (
                     <span className="border-l border-light-border dark:border-dark-border pl-2" title={`${node.lines} 行`}>{node.lines}</span>
