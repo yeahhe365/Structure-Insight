@@ -25,12 +25,6 @@ export interface ProcessedFiles {
     structureString: string;
 }
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'model' | 'loading';
-  content: string;
-}
-
 export interface SearchOptions {
   caseSensitive: boolean;
   useRegex: boolean;

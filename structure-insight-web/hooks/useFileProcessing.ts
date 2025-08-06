@@ -6,7 +6,7 @@ interface FileProcessingProps {
     extractContent: boolean;
     setIsLoading: (loading: boolean) => void;
     setProgressMessage: (message: string) => void;
-    setMobileView: (view: 'tree' | 'editor' | 'chat') => void;
+    setMobileView: (view: 'tree' | 'editor') => void;
     handleShowToast: (message: string) => void;
     isMobile: boolean;
 }

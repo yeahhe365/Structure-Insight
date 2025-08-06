@@ -7,7 +7,7 @@ interface InteractionProps {
     setProcessedData: React.Dispatch<React.SetStateAction<ProcessedFiles | null>>;
     handleShowToast: (message: string) => void;
     isMobile: boolean;
-    setMobileView: (view: 'tree' | 'editor' | 'chat') => void;
+    setMobileView: (view: 'tree' | 'editor') => void;
     codeViewRef: React.RefObject<HTMLDivElement>;
 }
 

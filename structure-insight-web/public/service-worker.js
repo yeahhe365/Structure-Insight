@@ -3,7 +3,6 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.png',
   // Note: Bundled JS/CSS are not listed here as their names are dynamic.
   // The fetch handler will cache them on the fly.
 ];

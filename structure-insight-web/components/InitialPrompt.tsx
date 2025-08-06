@@ -10,7 +10,7 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder }) => {
             <div className="max-w-md">
                 <i className="fa-solid fa-rocket text-5xl text-primary mb-6"></i>
                 <h2 className="text-2xl font-bold mb-2">欢迎使用 Structure Insight</h2>
-                <p className="text-light-subtle-text dark:text-dark-subtle-text mb-6">拖放文件夹或点击下方按钮以分析其结构和内容。非常适合为 AI 模型准备代码上下文。</p>
+                <p className="text-light-subtle-text dark:text-dark-subtle-text mb-6">拖放文件夹或点击下方按钮以分析其结构和内容。</p>
                 <button
                     onClick={onOpenFolder}
                     className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-hover transition-colors duration-200 active:scale-95"

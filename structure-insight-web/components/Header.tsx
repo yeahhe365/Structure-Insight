@@ -8,18 +8,16 @@ export interface HeaderProps {
   onRefresh: () => void;
   onCancel: () => void;
   onSettings: () => void;
-  onToggleAIChat: () => void;
   onToggleSearch: () => void;
   hasContent: boolean;
   canRefresh: boolean;
   isLoading: boolean;
   isOnline: boolean;
-  isAiChatOpen: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
     onOpenFolder, onCopyAll, onSave, onReset, onRefresh, onCancel,
-    onSettings, onToggleAIChat, onToggleSearch, hasContent, canRefresh, isLoading, isOnline, isAiChatOpen
+    onSettings, onToggleSearch, hasContent, canRefresh, isLoading, isOnline
 }) => {
   const buttonClass = "flex items-center justify-center h-10 w-10 rounded-full bg-light-panel dark:bg-dark-panel text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-border dark:hover:bg-dark-border disabled:opacity-50 disabled:cursor-not-allowed transition-all";
   const iconClass = "text-lg";
@@ -39,9 +37,6 @@ const Header: React.FC<HeaderProps> = ({
         </button>
         <button onClick={onToggleSearch} className={buttonClass} title="在文件中查找 (Ctrl+F)" disabled={!hasContent || isLoading}>
             <i className={`fa-solid fa-search ${iconClass}`}></i>
-        </button>
-        <button onClick={onToggleAIChat} className={`${buttonClass} ${isAiChatOpen ? '!bg-primary/20 !text-primary' : ''}`} title="AI 聊天 (Ctrl+I)" disabled={!hasContent || isLoading}>
-            <i className={`fa-solid fa-wand-magic-sparkles ${iconClass}`}></i>
         </button>
         <button onClick={onCopyAll} className={buttonClass} title="全部复制" disabled={!hasContent || isLoading}>
           <i className={`fa-solid fa-copy ${iconClass}`}></i>

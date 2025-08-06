@@ -2,7 +2,6 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FileTree from './FileTree';
 import CodeView from './CodeView';
-import AiChatPanel from './AiChatPanel';
 import InitialPrompt from './InitialPrompt';
 import { useWindowSize } from '../hooks/useWindowSize';
 import { useAppLogic } from '../hooks/useAppLogic';
@@ -24,8 +23,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
         if (!state.processedData) return 'fa-list-ul';
         switch(state.mobileView) {
             case 'editor': return 'fa-list-ul';
-            case 'tree': return 'fa-wand-magic-sparkles';
-            case 'chat': return 'fa-code';
+            case 'tree': return 'fa-code';
             default: return 'fa-list-ul';
         }
     }
@@ -49,7 +47,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
-                            <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: state.mobileView === 'tree' ? '100%' : '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
+                            <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: '100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
                                 {state.isLoading ? (
                                     <div className="flex flex-col items-center justify-center h-full text-center p-4"><i className="fa-solid fa-spinner fa-spin text-4xl text-primary mb-4"></i><p className="text-lg font-semibold">正在处理文件...</p><p className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-2">{state.progressMessage}</p></div>
                                 ) : state.processedData ? (
@@ -57,11 +55,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 ) : (
                                     <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect}/></div>
                                 )}
-                            </motion.div>
-                        )}
-                        {state.mobileView === 'chat' && state.processedData && (
-                            <motion.div key="chat" initial={{x: '100%'}} animate={{x: '0%'}} exit={{x: '100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
-                                <AiChatPanel messages={state.chatHistory} onSendMessage={handlers.handleSendMessage} isLoading={state.isAiLoading} onClose={() => {}} isApiKeyMissing={state.isApiKeyMissing} isMobile={true}/>
                             </motion.div>
                         )}
                    </AnimatePresence>
@@ -90,20 +83,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 <InitialPrompt onOpenFolder={handlers.handleFileSelect}/>
                             )}
                         </div>
-                         <AnimatePresence>
-                            {state.isAiChatOpen && (
-                                <motion.div
-                                    className="h-full flex flex-col bg-light-panel dark:bg-dark-panel border-l border-light-border dark:border-dark-border"
-                                    style={{ width: '450px' }}
-                                    initial={{ width: 0, opacity: 0 }}
-                                    animate={{ width: '450px', opacity: 1 }}
-                                    exit={{ width: 0, opacity: 0 }}
-                                    transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
-                                >
-                                    <AiChatPanel messages={state.chatHistory} onSendMessage={handlers.handleSendMessage} isLoading={state.isAiLoading} onClose={handlers.handleToggleAIChat} isApiKeyMissing={state.isApiKeyMissing} />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
                     </div>
                 </>
             )}

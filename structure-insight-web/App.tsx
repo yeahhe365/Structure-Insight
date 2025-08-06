@@ -33,13 +33,11 @@ const App: React.FC = () => {
                 onRefresh={handlers.handleRefresh} 
                 onCancel={handlers.handleCancel}
                 onSettings={() => handlers.setIsSettingsOpen(true)}
-                onToggleAIChat={handlers.handleToggleAIChat}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
                 hasContent={!!state.processedData} 
                 canRefresh={!!state.lastProcessedFiles}
                 isLoading={state.isLoading}
                 isOnline={state.isOnline}
-                isAiChatOpen={state.isAiChatOpen}
             />
             
             <MainContent logic={logic} codeViewRef={codeViewRef} leftPanelRef={leftPanelRef} />
@@ -75,8 +73,6 @@ const App: React.FC = () => {
                         onToggleExtractContent={() => settings.setExtractContent(!state.extractContent)}
                         fontSize={state.fontSize}
                         onSetFontSize={settings.setFontSize}
-                        apiKey={state.apiKey}
-                        onSetApiKey={settings.setApiKey}
                         onClearCache={settings.handleClearCache}
                         onInstallPWA={settings.handleInstallPWA}
                         isInstallable={state.isInstallable}

@@ -3,7 +3,6 @@ import { usePersistentState } from './usePersistentState';
 import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
-import { useAIChat } from './useAIChat';
 import { generateFullOutput } from '../services/fileProcessor';
 import { SearchOptions } from '../types';
 
@@ -20,8 +19,6 @@ export const useAppLogic = (
     const [progressMessage, setProgressMessage] = React.useState("");
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
     const [toastMessage, setToastMessage] = React.useState<string | null>(null);
-    const [isAiChatOpen, setIsAiChatOpen] = React.useState(false);
-    const [isAiLoading, setIsAiLoading] = React.useState(false);
     
     // --- PWA State ---
     const [isOnline, setIsOnline] = React.useState(navigator.onLine);
@@ -35,11 +32,10 @@ export const useAppLogic = (
     const [panelWidth, setPanelWidth] = usePersistentState('panelWidth', 30);
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
-    const [apiKey, setApiKey] = usePersistentState('customApiKey', '');
     
     // --- Layout & Search State ---
     const windowSize = useWindowSize();
-    const [mobileView, setMobileView] = React.useState<'tree' | 'editor' | 'chat'>('editor');
+    const [mobileView, setMobileView] = React.useState<'tree' | 'editor'>('editor');
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
     const [isSearchOpen, setIsSearchOpen] = React.useState(false);
     const [searchResults, setSearchResults] = React.useState<HTMLElement[]>([]);
@@ -67,12 +63,6 @@ export const useAppLogic = (
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef
     });
     
-    const { 
-      chatHistory, setChatHistory, isApiKeyMissing, handleSendMessage, resetChat
-    } = useAIChat({
-        processedData, isAiLoading, setIsAiLoading, handleShowToast, customApiKey: apiKey
-    });
-    
     // --- Central Reset Logic ---
     const handleReset = (showToast = true) => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
@@ -83,11 +73,9 @@ export const useAppLogic = (
         setIsSettingsOpen(false);
         setEditingPath(null);
         setMarkdownPreviewPaths(new Set());
-        setIsAiChatOpen(false);
         setIsSearchOpen(false);
         setSearchResults([]);
         setCurrentResultIndex(null);
-        resetChat();
         if(showToast) handleShowToast("内容已重置。");
     };
 
@@ -278,7 +266,6 @@ export const useAppLogic = (
     React.useEffect(() => {
         const handleGlobalKeys = (e: KeyboardEvent) => {
             if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'i') { e.preventDefault(); if (processedData) setIsAiChatOpen(p => !p); }
                 if (e.key === 'f') { e.preventDefault(); if (processedData) setIsSearchOpen(p => !p); }
                 if (e.key === 's') { e.preventDefault(); if (processedData) handleSave(); }
                 if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
@@ -286,13 +273,12 @@ export const useAppLogic = (
             if (e.key === 'Escape') {
                 if (isSearchOpen) { e.preventDefault(); setIsSearchOpen(false); }
                 else if (isSettingsOpen) { e.preventDefault(); setIsSettingsOpen(false); }
-                else if (isAiChatOpen && !isMobile) { e.preventDefault(); setIsAiChatOpen(false); }
                 else if (isLoading) { e.preventDefault(); handleCancel(); }
             }
         };
         window.addEventListener('keydown', handleGlobalKeys);
         return () => window.removeEventListener('keydown', handleGlobalKeys);
-    }, [isSearchOpen, isSettingsOpen, isLoading, processedData, isAiChatOpen, isMobile, handleSave, handleFileSelect, handleCancel]);
+    }, [isSearchOpen, isSettingsOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
 
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
@@ -309,22 +295,21 @@ export const useAppLogic = (
         state: {
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, isOnline,
             isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths,
-            isAiChatOpen, chatHistory, isAiLoading, isApiKeyMissing, isDark, panelWidth, extractContent, fontSize,
+            isDark, panelWidth, extractContent, fontSize,
             lastProcessedFiles, mobileView, stats,
             isSearchOpen, searchResults, currentResultIndex,
-            apiKey,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
             handleFileSelect, handleCopyAll, handleSave, handleReset, handleRefresh: () => handleRefresh(handleProcessing), handleCancel,
-            setIsSettingsOpen, handleToggleAIChat: () => setIsAiChatOpen(!isAiChatOpen), setToastMessage,
+            setIsSettingsOpen, setToastMessage,
             handleUpdate, handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
-            handleSendMessage, handleMouseDownResize, 
-            handleMobileViewToggle: () => { if (processedData) setMobileView(v => v === 'editor' ? 'tree' : (v === 'tree' ? 'chat' : 'editor')) },
+            handleMouseDownResize, 
+            handleMobileViewToggle: () => { if (processedData) setMobileView(v => v === 'editor' ? 'tree' : 'editor') },
             setIsSearchOpen, handleSearch, handleNavigate
         },
         settings: {
-            setIsDark, setExtractContent, setFontSize, setApiKey, handleClearCache, handleInstallPWA
+            setIsDark, setExtractContent, setFontSize, handleClearCache, handleInstallPWA
         },
     };
 };
