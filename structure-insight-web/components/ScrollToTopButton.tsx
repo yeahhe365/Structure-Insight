@@ -10,7 +10,10 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
 
   React.useEffect(() => {
     const target = targetRef.current;
-    if (!target) return;
+    if (!target) {
+      setIsVisible(false);
+      return;
+    }
 
     const toggleVisibility = () => {
       if (target.scrollTop > 300) {
@@ -21,8 +24,11 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
     };
 
     target.addEventListener('scroll', toggleVisibility);
+    toggleVisibility(); // Check on mount/attach
+    
     return () => target.removeEventListener('scroll', toggleVisibility);
-  }, [targetRef]);
+    // This effect needs to re-run if the ref's current value changes from null to an element.
+  }, [targetRef, targetRef.current]);
 
   const scrollToTop = () => {
     targetRef.current?.scrollTo({

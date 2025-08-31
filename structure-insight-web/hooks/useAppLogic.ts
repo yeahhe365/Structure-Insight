@@ -245,8 +245,9 @@ export const useAppLogic = (
 
     // --- Resizing Handlers ---
     const handleResize = React.useCallback((e: MouseEvent) => {
-        if (leftPanelRef.current) {
-            const newWidth = (e.clientX / leftPanelRef.current.parentElement!.offsetWidth) * 100;
+        const panel = leftPanelRef.current;
+        if (panel && panel.parentElement) {
+            const newWidth = (e.clientX / panel.parentElement.offsetWidth) * 100;
             if (newWidth > 15 && newWidth < 85) setPanelWidth(newWidth);
         }
     }, [setPanelWidth, leftPanelRef]);
