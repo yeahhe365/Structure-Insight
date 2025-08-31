@@ -1,4 +1,4 @@
-const CACHE_NAME = 'structure-insight-v1';
+const CACHE_NAME = 'structure-insight-v2'; // Bump version to force update & clear old caches
 const urlsToCache = [
   '/',
   '/index.html',
@@ -43,6 +43,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('SW: Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -52,42 +53,49 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Let the browser handle requests for extensions and other non-http requests.
-  if (!event.request.url.startsWith('http')) {
+  const { request } = event;
+
+  // Ignore non-GET requests and requests from browser extensions
+  if (request.method !== 'GET' || !request.url.startsWith('http')) {
     return;
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
+    caches.match(request)
+      .then(cachedResponse => {
         // Return from cache if found.
-        if (response) {
-          return response;
+        if (cachedResponse) {
+          return cachedResponse;
         }
 
         // Otherwise, fetch from the network.
-        return fetch(event.request.clone()).then(
+        return fetch(request.clone()).then(
           networkResponse => {
-            // If the network request fails or is not a 200, return it directly without caching.
-            if (!networkResponse || networkResponse.status !== 200) {
+            // A response was received from the network.
+            
+            // Do not cache non-ok responses or opaque responses from cross-origin requests
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
               return networkResponse;
             }
 
-            // Clone the response to cache it.
+            // Clone the response to cache it
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
-                // Put the response in the cache.
-                cache.put(event.request, responseToCache).catch(err => {
-                  // This can happen with chrome-extension:// URLs that slip through
-                  // or other unsupported request types. We'll log it but not crash.
-                  console.warn(`SW: Failed to cache ${event.request.url}:`, err);
+                // Put the response in the cache, handling potential errors
+                cache.put(request, responseToCache).catch(err => {
+                  console.warn(`SW: Failed to cache ${request.url}:`, err);
                 });
               });
 
             return networkResponse;
           }
-        );
+        ).catch(error => {
+            // This will catch network errors (e.g., offline) and errors from fetch()
+            // for unsupported schemes. This prevents the service worker from crashing.
+            console.warn(`SW: Fetch failed for ${request.url}:`, error);
+            throw error;
+        });
       })
   );
 });
