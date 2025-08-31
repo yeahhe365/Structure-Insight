@@ -52,7 +52,7 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Prevent caching of non-http/https requests (like chrome-extension://)
+  // Let the browser handle requests for extensions and other non-http requests.
   if (!event.request.url.startsWith('http')) {
     return;
   }
@@ -60,26 +60,32 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
+        // Return from cache if found.
         if (response) {
           return response;
         }
 
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then(
-          response => {
-            // Only cache successful responses from the network.
-            if (!response || response.status !== 200) {
-              return response;
+        // Otherwise, fetch from the network.
+        return fetch(event.request.clone()).then(
+          networkResponse => {
+            // If the network request fails or is not a 200, return it directly without caching.
+            if (!networkResponse || networkResponse.status !== 200) {
+              return networkResponse;
             }
 
-            const responseToCache = response.clone();
+            // Clone the response to cache it.
+            const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(event.request, responseToCache);
+                // Put the response in the cache.
+                cache.put(event.request, responseToCache).catch(err => {
+                  // This can happen with chrome-extension:// URLs that slip through
+                  // or other unsupported request types. We'll log it but not crash.
+                  console.warn(`SW: Failed to cache ${event.request.url}:`, err);
+                });
               });
 
-            return response;
+            return networkResponse;
           }
         );
       })
