@@ -1,4 +1,4 @@
-const CACHE_NAME = 'structure-insight-v2'; // Bump version to force update & clear old caches
+const CACHE_NAME = 'structure-insight-v3'; // Bump version for a clean update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -28,9 +28,11 @@ self.addEventListener('install', event => {
       .then(cache => {
         console.log('Opened cache');
         const allUrlsToCache = [...urlsToCache, ...cdnUrlsToCache];
-        return cache.addAll(allUrlsToCache).catch(err => {
-            console.error('Failed to cache some resources during install:', err);
-        });
+        // Use individual cache.add calls to prevent one failure from stopping the whole cache process
+        const promises = allUrlsToCache.map(url => cache.add(url).catch(err => {
+            console.warn(`SW: Failed to cache ${url} during install:`, err);
+        }));
+        return Promise.all(promises);
       })
       .then(() => self.skipWaiting())
   );
@@ -55,48 +57,41 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
 
-  // Ignore non-GET requests and requests from browser extensions
+  // Only handle http/https GET requests. Let browser handle the rest.
   if (request.method !== 'GET' || !request.url.startsWith('http')) {
     return;
   }
 
   event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        // Return from cache if found.
-        if (cachedResponse) {
-          return cachedResponse;
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 1. Try to get the response from the cache.
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      // 2. If not in cache, fetch from the network.
+      try {
+        const networkResponse = await fetch(request);
+        
+        // 3. Cache the valid network response.
+        // Use .ok to check for status in the range 200-299.
+        if (networkResponse && networkResponse.ok) {
+          const responseToCache = networkResponse.clone();
+          // Use event.waitUntil to avoid blocking the response to the page.
+          event.waitUntil(cache.put(request, responseToCache));
         }
-
-        // Otherwise, fetch from the network.
-        return fetch(request.clone()).then(
-          networkResponse => {
-            // A response was received from the network.
-            
-            // Do not cache non-ok responses or opaque responses from cross-origin requests
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-
-            // Clone the response to cache it
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                // Put the response in the cache, handling potential errors
-                cache.put(request, responseToCache).catch(err => {
-                  console.warn(`SW: Failed to cache ${request.url}:`, err);
-                });
-              });
-
-            return networkResponse;
-          }
-        ).catch(error => {
-            // This will catch network errors (e.g., offline) and errors from fetch()
-            // for unsupported schemes. This prevents the service worker from crashing.
-            console.warn(`SW: Fetch failed for ${request.url}:`, error);
-            throw error;
-        });
-      })
+        
+        return networkResponse;
+      } catch (error) {
+        // This will catch network errors (e.g., offline) and
+        // TypeError for unsupported schemes that might slip through the initial guard.
+        console.warn(`SW: Fetching ${request.url} failed:`, error);
+        // Re-throw the error to propagate the failure, 
+        // which will result in a standard browser network error page.
+        throw error;
+      }
+    })
   );
 });
 
