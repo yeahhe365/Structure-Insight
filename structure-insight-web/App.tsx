@@ -57,7 +57,7 @@ const App: React.FC = () => {
                         onSearch={handlers.handleSearch}
                         onNavigate={handlers.handleNavigate}
                         resultsCount={state.searchResults.length}
-                        currentIndex={state.currentResultIndex}
+                        currentIndex={state.activeResultIndex}
                     />
                  )}
             </AnimatePresence>

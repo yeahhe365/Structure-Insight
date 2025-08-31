@@ -39,7 +39,7 @@ export const useAppLogic = (
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
     const [isSearchOpen, setIsSearchOpen] = React.useState(false);
     const [searchResults, setSearchResults] = React.useState<HTMLElement[]>([]);
-    const [currentResultIndex, setCurrentResultIndex] = React.useState<number | null>(null);
+    const [activeResultIndex, setActiveResultIndex] = React.useState<number | null>(null);
 
     const handleShowToast = (message: string) => {
         setToastMessage(message);
@@ -75,7 +75,7 @@ export const useAppLogic = (
         setMarkdownPreviewPaths(new Set());
         setIsSearchOpen(false);
         setSearchResults([]);
-        setCurrentResultIndex(null);
+        setActiveResultIndex(null);
         if(showToast) handleShowToast("内容已重置。");
     };
 
@@ -132,7 +132,7 @@ export const useAppLogic = (
 
         if (!query.trim()) {
             setSearchResults([]);
-            setCurrentResultIndex(null);
+            setActiveResultIndex(null);
             return;
         }
 
@@ -147,7 +147,7 @@ export const useAppLogic = (
             regex = new RegExp(pattern, flags);
         } catch (e) {
             setSearchResults([]);
-            setCurrentResultIndex(null);
+            setActiveResultIndex(null);
             return; // Invalid regex
         }
 
@@ -194,20 +194,20 @@ export const useAppLogic = (
         });
 
         setSearchResults(newResults);
-        setCurrentResultIndex(newResults.length > 0 ? 0 : null);
+        setActiveResultIndex(newResults.length > 0 ? 0 : null);
     }, [codeViewRef]);
 
     const handleNavigate = (direction: 'next' | 'prev') => {
-        if (searchResults.length === 0 || currentResultIndex === null) return;
+        if (searchResults.length === 0 || activeResultIndex === null) return;
         const newIndex = direction === 'next'
-            ? (currentResultIndex + 1) % searchResults.length
-            : (currentResultIndex - 1 + searchResults.length) % searchResults.length;
-        setCurrentResultIndex(newIndex);
+            ? (activeResultIndex + 1) % searchResults.length
+            : (activeResultIndex - 1 + searchResults.length) % searchResults.length;
+        setActiveResultIndex(newIndex);
     };
 
     React.useEffect(() => {
         searchResults.forEach((el, index) => {
-            if (index === currentResultIndex) {
+            if (index === activeResultIndex) {
                 el.classList.add('search-highlight-active');
                 el.classList.remove('search-highlight');
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -216,7 +216,7 @@ export const useAppLogic = (
                 el.classList.add('search-highlight');
             }
         });
-    }, [currentResultIndex, searchResults]);
+    }, [activeResultIndex, searchResults]);
     
 
     // --- PWA Action Handlers ---
@@ -298,7 +298,7 @@ export const useAppLogic = (
             isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths,
             isDark, panelWidth, extractContent, fontSize,
             lastProcessedFiles, mobileView, stats,
-            isSearchOpen, searchResults, currentResultIndex,
+            isSearchOpen, searchResults, activeResultIndex,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 

@@ -52,6 +52,11 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Prevent caching of non-http/https requests (like chrome-extension://)
+  if (!event.request.url.startsWith('http')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -63,7 +68,8 @@ self.addEventListener('fetch', event => {
 
         return fetch(fetchRequest).then(
           response => {
-            if (!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
+            // Only cache successful responses from the network.
+            if (!response || response.status !== 200) {
               return response;
             }
 
