@@ -1,4 +1,4 @@
-const CACHE_NAME = 'structure-insight-v4'; // Bump version for a clean update
+const CACHE_NAME = 'structure-insight-v3'; // Bump version for a clean update
 const urlsToCache = [
   '/',
   '/index.html',
@@ -57,32 +57,43 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
 
-  // Only handle http/https GET requests.
+  // Only handle http/https GET requests. Let browser handle the rest.
   if (request.method !== 'GET' || !request.url.startsWith('http')) {
     return;
   }
 
-  // Strategy: Stale-while-revalidate.
-  // This strategy allows us to respond with a cached version immediately for speed,
-  // and then checks for an update in the background to be used next time.
   event.respondWith(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.match(request).then(cachedResponse => {
-        // Fetch from network in the background to update the cache
-        const fetchPromise = fetch(request).then(networkResponse => {
-          if (networkResponse && networkResponse.ok) {
-            cache.put(request, networkResponse.clone());
-          }
-          return networkResponse;
-        });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 1. Try to get the response from the cache.
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
 
-        // Return cached response if available, otherwise wait for network
-        return cachedResponse || fetchPromise;
-      });
+      // 2. If not in cache, fetch from the network.
+      try {
+        const networkResponse = await fetch(request);
+        
+        // 3. Cache the valid network response.
+        // Use .ok to check for status in the range 200-299.
+        if (networkResponse && networkResponse.ok) {
+          const responseToCache = networkResponse.clone();
+          // Use event.waitUntil to avoid blocking the response to the page.
+          event.waitUntil(cache.put(request, responseToCache));
+        }
+        
+        return networkResponse;
+      } catch (error) {
+        // This will catch network errors (e.g., offline) and
+        // TypeError for unsupported schemes that might slip through the initial guard.
+        console.warn(`SW: Fetching ${request.url} failed:`, error);
+        // Re-throw the error to propagate the failure, 
+        // which will result in a standard browser network error page.
+        throw error;
+      }
     })
   );
 });
-
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {

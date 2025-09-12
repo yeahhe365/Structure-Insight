@@ -134,4 +134,4 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     );
 };
 
-export default SettingsDialog;
+export default React.memo(SettingsDialog);

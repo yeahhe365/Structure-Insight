@@ -23,4 +23,4 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder }) => {
     );
 };
 
-export default InitialPrompt;
+export default React.memo(InitialPrompt);

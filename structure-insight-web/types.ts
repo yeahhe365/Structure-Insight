@@ -23,6 +23,7 @@ export interface ProcessedFiles {
     treeData: FileNode[];
     fileContents: FileContent[];
     structureString: string;
+    rootName: string;
 }
 
 export interface SearchOptions {

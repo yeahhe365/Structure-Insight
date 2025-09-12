@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileNode } from '../types';
 
@@ -8,7 +7,7 @@ interface FileTreeProps {
   onDeleteFile: (path: string) => void;
 }
 
-const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => void; onDeleteFile: (path: string) => void; level: number }> = ({ node, onFileSelect, onDeleteFile, level }) => {
+const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => void; onDeleteFile: (path: string) => void; level: number }> = React.memo(({ node, onFileSelect, onDeleteFile, level }) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
   const handleToggle = () => {
@@ -92,7 +91,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
       )}
     </li>
   );
-};
+});
 
 const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }) => {
   if (!nodes || nodes.length === 0) {
@@ -110,4 +109,4 @@ const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }
   );
 };
 
-export default FileTree;
+export default React.memo(FileTree);

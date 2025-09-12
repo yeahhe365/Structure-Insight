@@ -287,6 +287,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
         treeData: roots,
         fileContents,
         structureString,
+        rootName: rootNameForDisplay,
     };
 }
 

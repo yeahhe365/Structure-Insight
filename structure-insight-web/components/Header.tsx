@@ -24,11 +24,14 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="flex items-center justify-between p-2 h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border shrink-0 z-20">
-      <div className="flex flex-col">
-        <h1 className="text-xl font-bold hidden sm:block">Structure Insight</h1>
-        <div className={`flex items-center space-x-1.5 text-xs ${isOnline ? 'text-green-500' : 'text-red-500'}`}>
-            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <span>{isOnline ? '在线' : '离线'}</span>
+      <div className="flex items-center gap-3">
+        <img src="https://structure-insight.pages.dev/favicon_io/android-chrome-192x192.png" alt="Structure Insight Logo" className="h-9 w-9" />
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold hidden sm:block">Structure Insight</h1>
+          <div className={`flex items-center space-x-1.5 text-xs ${isOnline ? 'text-green-500' : 'text-red-500'}`}>
+              <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span>{isOnline ? '在线' : '离线'}</span>
+          </div>
         </div>
       </div>
       <div className="flex items-center space-x-2">
@@ -65,4 +68,4 @@ const Header: React.FC<HeaderProps> = ({
   );
 };
 
-export default Header;
+export default React.memo(Header);

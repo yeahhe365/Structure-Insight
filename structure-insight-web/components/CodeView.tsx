@@ -128,6 +128,49 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
     </div>
   );
 };
+const MemoizedFileCard = React.memo(FileCard);
+
+
+interface LazyRenderProps {
+    children: React.ReactNode;
+    placeholder: React.ReactNode;
+}
+
+const LazyRender: React.FC<LazyRenderProps> = React.memo(({ children, placeholder }) => {
+    const [isVisible, setIsVisible] = React.useState(false);
+    const ref = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { rootMargin: '500px 0px' }
+        );
+
+        const currentRef = ref.current;
+        if (currentRef) {
+            observer.observe(currentRef);
+        }
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef);
+            }
+        };
+    }, []);
+
+    // The ref needs to be on a real DOM element.
+    // If children are rendered, we don't need the placeholder or the ref wrapper.
+    if (isVisible) {
+        return <>{children}</>;
+    }
+    
+    return <div ref={ref}>{placeholder}</div>;
+});
 
 
 interface CodeViewProps {
@@ -179,31 +222,39 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
       {fileContents && fileContents.length > 0 && (
         <div>
           <h2 className="text-xl font-semibold mb-4">文件内容</h2>
-          <div className="space-y-6">
+          <div>
             <AnimatePresence>
-              {fileContents.map((file) => (
-                <motion.div
-                  key={file.path}
-                  id={`file-path-${file.path}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  layout
-                >
-                  <FileCard
-                    file={file}
-                    isEditing={editingPath === file.path}
-                    onStartEdit={onStartEdit}
-                    onSaveEdit={onSaveEdit}
-                    onCancelEdit={onCancelEdit}
-                    isMarkdown={file.language === 'markdown'}
-                    isMarkdownPreview={markdownPreviewPaths.has(file.path)}
-                    onToggleMarkdownPreview={onToggleMarkdownPreview}
-                    onShowToast={onShowToast}
-                    fontSize={fontSize}
-                  />
-                </motion.div>
-              ))}
+              {fileContents.map((file) => {
+                  const estimatedHeight = Math.min(300, 58 + file.stats.lines * (Math.round(props.fontSize * 1.5)));
+                  return (
+                      <LazyRender 
+                          key={file.path}
+                          placeholder={<div style={{ height: `${estimatedHeight}px` }} className="w-full bg-light-panel dark:bg-dark-panel rounded-lg mb-6 border border-light-border dark:border-dark-border animate-pulse" />}
+                      >
+                          <motion.div
+                            id={`file-path-${file.path}`}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, x: -50 }}
+                            layout
+                            className="mb-6"
+                          >
+                            <MemoizedFileCard
+                              file={file}
+                              isEditing={editingPath === file.path}
+                              onStartEdit={onStartEdit}
+                              onSaveEdit={onSaveEdit}
+                              onCancelEdit={onCancelEdit}
+                              isMarkdown={file.language === 'markdown'}
+                              isMarkdownPreview={markdownPreviewPaths.has(file.path)}
+                              onToggleMarkdownPreview={onToggleMarkdownPreview}
+                              onShowToast={onShowToast}
+                              fontSize={fontSize}
+                            />
+                          </motion.div>
+                      </LazyRender>
+                  )
+              })}
             </AnimatePresence>
           </div>
         </div>
@@ -220,5 +271,5 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
   );
 };
 
-export default CodeView;
+export default React.memo(CodeView);
 export { Toast };

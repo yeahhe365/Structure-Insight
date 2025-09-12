@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileNode, ProcessedFiles } from '../types';
 import { buildASCIITree } from '../services/fileProcessor';
@@ -39,7 +40,7 @@ export const useInteraction = ({
             const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
             const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "项目";
             const newStructureString = buildASCIITree(newTreeData, rootName);
-            return { fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
+            return { ...prevData, fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
         });
     };
     

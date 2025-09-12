@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { usePersistentState } from './usePersistentState';
 import { useWindowSize } from './useWindowSize';
@@ -41,9 +42,9 @@ export const useAppLogic = (
     const [searchResults, setSearchResults] = React.useState<HTMLElement[]>([]);
     const [activeResultIndex, setActiveResultIndex] = React.useState<number | null>(null);
 
-    const handleShowToast = (message: string) => {
+    const handleShowToast = React.useCallback((message: string) => {
         setToastMessage(message);
-    };
+    }, []);
 
     // --- Child Hooks ---
     
@@ -64,7 +65,7 @@ export const useAppLogic = (
     });
     
     // --- Central Reset Logic ---
-    const handleReset = (showToast = true) => {
+    const handleReset = React.useCallback((showToast = true) => {
         if (abortControllerRef.current) abortControllerRef.current.abort();
         setProcessedData(null);
         setLastProcessedFiles(null);
@@ -77,7 +78,7 @@ export const useAppLogic = (
         setSearchResults([]);
         setActiveResultIndex(null);
         if(showToast) handleShowToast("内容已重置。");
-    };
+    }, [handleShowToast]);
 
     // --- Effects for Theme and Markdown ---
     React.useEffect(() => {
@@ -114,7 +115,7 @@ export const useAppLogic = (
             window.removeEventListener('appinstalled', handleAppInstalled);
             window.removeEventListener('update-available', handleUpdateAvailable);
         };
-    }, []);
+    }, [handleShowToast]);
 
     // --- Search Logic ---
     const handleSearch = React.useCallback((query: string, options: SearchOptions) => {
@@ -197,13 +198,13 @@ export const useAppLogic = (
         setActiveResultIndex(newResults.length > 0 ? 0 : null);
     }, [codeViewRef]);
 
-    const handleNavigate = (direction: 'next' | 'prev') => {
+    const handleNavigate = React.useCallback((direction: 'next' | 'prev') => {
         if (searchResults.length === 0 || activeResultIndex === null) return;
         const newIndex = direction === 'next'
             ? (activeResultIndex + 1) % searchResults.length
             : (activeResultIndex - 1 + searchResults.length) % searchResults.length;
         setActiveResultIndex(newIndex);
-    };
+    }, [searchResults, activeResultIndex]);
 
     React.useEffect(() => {
         searchResults.forEach((el, index) => {
@@ -220,28 +221,35 @@ export const useAppLogic = (
     
 
     // --- PWA Action Handlers ---
-    const handleInstallPWA = () => {
+    const handleInstallPWA = React.useCallback(() => {
         if (!deferredPrompt) return;
         deferredPrompt.prompt();
         deferredPrompt.userChoice.finally(() => { setDeferredPrompt(null); setIsInstallable(false); });
-    };
+    }, [deferredPrompt]);
     
-    const handleUpdate = () => {
+    const handleUpdate = React.useCallback(() => {
         if (updateWorker) { updateWorker.postMessage({ type: 'SKIP_WAITING' }); setUpdateWorker(null); }
-    };
+    }, [updateWorker]);
 
     // --- General Action Handlers ---
-    const handleClearCache = () => { localStorage.clear(); handleReset(false); handleShowToast("缓存已清除。应用已重置。"); };
-    const handleCopyAll = () => { if (processedData) navigator.clipboard.writeText(generateFullOutput(processedData.structureString, processedData.fileContents)).then(() => handleShowToast('已将所有内容复制到剪贴板！')); };
-    const handleSave = () => {
+    const handleClearCache = React.useCallback(() => { localStorage.clear(); handleReset(false); handleShowToast("缓存已清除。应用已重置。"); }, [handleReset, handleShowToast]);
+    const handleCopyAll = React.useCallback(() => { if (processedData) navigator.clipboard.writeText(generateFullOutput(processedData.structureString, processedData.fileContents)).then(() => handleShowToast('已将所有内容复制到剪贴板！')); }, [processedData, handleShowToast]);
+    const handleSave = React.useCallback(() => {
         if (!processedData) return;
         const blob = new Blob([generateFullOutput(processedData.structureString, processedData.fileContents)], { type: 'text/plain;charset=utf-8' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'structure-insight.txt';
+        const filename = (processedData.rootName || 'structure-insight').replace(/[\\/?<>:*|"']/g, '_') + '.txt';
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(a.href);
-    };
+    }, [processedData]);
+
+    const handleMobileViewToggle = React.useCallback(() => {
+        if (processedData) {
+            setMobileView(v => v === 'editor' ? 'tree' : 'editor');
+        }
+    }, [processedData]);
 
     // --- Resizing Handlers ---
     const handleResize = React.useCallback((e: MouseEvent) => {
@@ -257,11 +265,11 @@ export const useAppLogic = (
         window.removeEventListener('mouseup', stopResize);
     }, [handleResize]);
 
-    const handleMouseDownResize = (e: React.MouseEvent) => {
+    const handleMouseDownResize = React.useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         window.addEventListener('mousemove', handleResize);
         window.addEventListener('mouseup', stopResize);
-    };
+    }, [handleResize, stopResize]);
     
     // --- Global Keydown Handler ---
     React.useEffect(() => {
@@ -306,7 +314,7 @@ export const useAppLogic = (
             setIsSettingsOpen, setToastMessage,
             handleUpdate, handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
             handleMouseDownResize, 
-            handleMobileViewToggle: () => { if (processedData) setMobileView(v => v === 'editor' ? 'tree' : 'editor') },
+            handleMobileViewToggle,
             setIsSearchOpen, handleSearch, handleNavigate
         },
         settings: {

@@ -190,4 +190,4 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     );
 };
 
-export default SearchDialog;
+export default React.memo(SearchDialog);

@@ -21,4 +21,4 @@ const UpdateToast: React.FC<UpdateToastProps> = ({ onUpdate }) => {
     );
 };
 
-export default UpdateToast;
+export default React.memo(UpdateToast);

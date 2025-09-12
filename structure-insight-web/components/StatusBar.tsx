@@ -16,4 +16,4 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
     );
 }
 
-export default StatusBar;
+export default React.memo(StatusBar);

@@ -57,4 +57,4 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
   );
 };
 
-export default ScrollToTopButton;
+export default React.memo(ScrollToTopButton);

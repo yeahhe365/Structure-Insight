@@ -160,4 +160,4 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
   );
 };
 
-export default ScrollSlider;
+export default React.memo(ScrollSlider);
