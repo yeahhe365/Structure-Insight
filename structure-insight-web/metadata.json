@@ -1,0 +1,6 @@
+{
+  "name": "Structure Insight Web",
+  "description": "一个强大的基于浏览器的工具，用于分析文件结构和查看代码。旨在帮助开发人员快速可视化项目布局并生成格式化输出，非常适合共享和讨论代码项目。",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
