@@ -46,7 +46,7 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
           exit={{ opacity: 0, scale: 0.8 }}
           transition={{ duration: 0.2 }}
           onClick={scrollToTop}
-          className="fixed bottom-24 right-6 md:bottom-6 md:right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-20"
+          className="fixed bottom-32 right-6 md:bottom-6 md:right-6 w-12 h-12 bg-primary text-white rounded-full shadow-lg flex items-center justify-center z-20"
           aria-label="滚动到顶部"
           title="滚动到顶部"
         >

@@ -1,14 +1,14 @@
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppLogic } from './hooks/useAppLogic';
-import { Toast } from './components/CodeView';
+import Toast from './components/Toast';
 import SettingsDialog from './components/SettingsDialog';
-import ScrollToTopButton from './components/ScrollToTopButton';
 import Header from './components/Header';
 import MainContent from './components/MainContent';
 import StatusBar from './components/StatusBar';
-import UpdateToast from './components/UpdateToast';
 import SearchDialog from './components/SearchDialog';
+import ConfirmationDialog from './components/ConfirmationDialog';
+import AIChat from './components/AIChat';
 
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
@@ -29,15 +29,15 @@ const App: React.FC = () => {
                 onOpenFolder={handlers.handleFileSelect} 
                 onCopyAll={handlers.handleCopyAll} 
                 onSave={handlers.handleSave} 
-                onReset={() => handlers.handleReset(true)} 
+                onReset={handlers.handleReset} 
                 onRefresh={handlers.handleRefresh} 
                 onCancel={handlers.handleCancel}
                 onSettings={() => handlers.setIsSettingsOpen(true)}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
+                onToggleAiChat={() => handlers.setIsAiChatOpen(true)}
                 hasContent={!!state.processedData} 
                 canRefresh={!!state.lastProcessedFiles}
                 isLoading={state.isLoading}
-                isOnline={state.isOnline}
             />
             
             <MainContent logic={logic} codeViewRef={codeViewRef} leftPanelRef={leftPanelRef} />
@@ -50,6 +50,14 @@ const App: React.FC = () => {
                 />
             )}
             
+             <ConfirmationDialog 
+                isOpen={state.confirmation.isOpen}
+                onClose={() => handlers.setConfirmation(c => ({...c, isOpen: false}))}
+                onConfirm={state.confirmation.onConfirm}
+                title={state.confirmation.title}
+                message={state.confirmation.message}
+             />
+
             <AnimatePresence>
                  {state.isSearchOpen && (
                     <SearchDialog 
@@ -61,6 +69,12 @@ const App: React.FC = () => {
                     />
                  )}
             </AnimatePresence>
+            
+            <AIChat 
+                isOpen={state.isAiChatOpen}
+                onClose={() => handlers.setIsAiChatOpen(false)}
+                projectData={state.processedData}
+            />
 
             <AnimatePresence>
                 {state.isSettingsOpen && (
@@ -74,17 +88,12 @@ const App: React.FC = () => {
                         fontSize={state.fontSize}
                         onSetFontSize={settings.setFontSize}
                         onClearCache={settings.handleClearCache}
-                        onInstallPWA={settings.handleInstallPWA}
-                        isInstallable={state.isInstallable}
-                        isInstalled={state.isInstalled}
                     />
                 )}
             </AnimatePresence>
             <AnimatePresence>
                 {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} />}
-                {state.updateWorker && <UpdateToast onUpdate={handlers.handleUpdate} />}
             </AnimatePresence>
-            {state.processedData && <ScrollToTopButton targetRef={codeViewRef} />}
         </div>
     );
 };

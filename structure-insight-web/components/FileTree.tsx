@@ -30,15 +30,15 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
   }
 
   const icon = node.isDirectory
-    ? (isOpen ? <i className="fa-solid fa-folder-open w-5 text-sky-400"></i> : <i className="fa-solid fa-folder w-5 text-sky-400"></i>)
-    : <i className="fa-regular fa-file-lines w-5 text-gray-400"></i>;
+    ? (isOpen ? <i className="fa-solid fa-folder-open w-5 text-sky-500"></i> : <i className="fa-solid fa-folder w-5 text-sky-500"></i>)
+    : <i className="fa-regular fa-file-lines w-5 text-gray-400 dark:text-gray-500"></i>;
   
   let statusClass = node.status === 'processed' || !node.status ? '' : 'cursor-default';
   let title = node.path;
   let displayName = node.name;
 
   if (node.status === 'skipped') {
-      statusClass += ' opacity-50';
+      statusClass += ' opacity-60';
       title = `${node.path} (已跳过)`;
   } else if (node.status === 'error') {
       statusClass += ' text-red-500/80';
@@ -50,20 +50,20 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
   return (
     <li style={{ paddingLeft: `${level > 1 ? 1.25 : 0}rem` }} className="list-none">
       <div
-        className={`group flex items-center space-x-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border transition-colors duration-150 ${statusClass}`}
+        className={`group flex items-center space-x-2 py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass}`}
         onClick={handleSelect}
         title={title}
       >
         {node.isDirectory && (
           <span className="w-4 text-center" onClick={(e) => { e.stopPropagation(); handleToggle(); }}>
-            <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}></i>
+            <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 text-light-subtle-text dark:text-dark-subtle-text ${isOpen ? 'rotate-0' : '-rotate-90'}`}></i>
           </span>
         )}
         {!node.isDirectory && <span className="w-4"></span>}
         {icon}
         <span className="truncate text-sm flex-1">{displayName}</span>
         {!node.isDirectory && node.status === 'processed' && (
-            <div className="flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
+            <div className="flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 {typeof node.chars === 'number' && (
                     <span title={`${node.chars} 个字符`}>{node.chars}</span>
                 )}
@@ -99,7 +99,7 @@ const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }
   }
   return (
     <div className="p-2">
-      <h3 className="text-sm font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
+      <h3 className="text-xs font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
       <ul className="pl-0">
         {nodes.map(node => (
           <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={1} />

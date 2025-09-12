@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { usePersistentState } from './usePersistentState';
 import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { generateFullOutput } from '../services/fileProcessor';
-import { SearchOptions } from '../types';
+import { SearchOptions, ConfirmationState } from '../types';
 
 declare const hljs: any;
 declare const marked: any;
@@ -19,14 +18,12 @@ export const useAppLogic = (
     const [isLoading, setIsLoading] = React.useState(false);
     const [progressMessage, setProgressMessage] = React.useState("");
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+    const [isAiChatOpen, setIsAiChatOpen] = React.useState(false);
     const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+    const [confirmation, setConfirmation] = React.useState<ConfirmationState>({isOpen: false, title: '', message: '', onConfirm: () => {}});
     
-    // --- PWA State ---
+    // --- Network State ---
     const [isOnline, setIsOnline] = React.useState(navigator.onLine);
-    const [deferredPrompt, setDeferredPrompt] = React.useState<any | null>(null);
-    const [isInstallable, setIsInstallable] = React.useState(false);
-    const [isInstalled, setIsInstalled] = React.useState(window.matchMedia('(display-mode: standalone)').matches);
-    const [updateWorker, setUpdateWorker] = React.useState<ServiceWorker | null>(null);
     
     // --- Persistent Settings ---
     const [isDark, setIsDark] = usePersistentState('theme', false);
@@ -61,23 +58,31 @@ export const useAppLogic = (
         handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
         handleToggleMarkdownPreview,
     } = useInteraction({
-        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef
+        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef, setConfirmation
     });
     
     // --- Central Reset Logic ---
-    const handleReset = React.useCallback((showToast = true) => {
-        if (abortControllerRef.current) abortControllerRef.current.abort();
-        setProcessedData(null);
-        setLastProcessedFiles(null);
-        setIsLoading(false);
-        setProgressMessage("");
-        setIsSettingsOpen(false);
-        setEditingPath(null);
-        setMarkdownPreviewPaths(new Set());
-        setIsSearchOpen(false);
-        setSearchResults([]);
-        setActiveResultIndex(null);
-        if(showToast) handleShowToast("内容已重置。");
+    const handleReset = React.useCallback(() => {
+        setConfirmation({
+            isOpen: true,
+            title: '重置应用程序',
+            message: '您确定要重置应用程序吗？所有已加载的数据将被清除。',
+            onConfirm: () => {
+                if (abortControllerRef.current) abortControllerRef.current.abort();
+                setProcessedData(null);
+                setLastProcessedFiles(null);
+                setIsLoading(false);
+                setProgressMessage("");
+                setIsSettingsOpen(false);
+                setEditingPath(null);
+                setMarkdownPreviewPaths(new Set());
+                setIsSearchOpen(false);
+                setIsAiChatOpen(false);
+                setSearchResults([]);
+                setActiveResultIndex(null);
+                handleShowToast("内容已重置。");
+            }
+        });
     }, [handleShowToast]);
 
     // --- Effects for Theme and Markdown ---
@@ -94,28 +99,19 @@ export const useAppLogic = (
         });
     }, []);
 
-    // --- Effects for PWA and Network ---
+    // --- Effects for Network ---
     React.useEffect(() => {
         const handleOnline = () => setIsOnline(true);
         const handleOffline = () => setIsOnline(false);
-        const beforeInstallPrompt = (e: Event) => { e.preventDefault(); setDeferredPrompt(e); setIsInstallable(true); };
-        const handleAppInstalled = () => { setIsInstalled(true); setIsInstallable(false); setDeferredPrompt(null); handleShowToast("应用安装成功！"); };
-        const handleUpdateAvailable = (e: Event) => setUpdateWorker((e as CustomEvent).detail);
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
-        window.addEventListener('beforeinstallprompt', beforeInstallPrompt);
-        window.addEventListener('appinstalled', handleAppInstalled);
-        window.addEventListener('update-available', handleUpdateAvailable);
         
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
-            window.removeEventListener('beforeinstallprompt', beforeInstallPrompt);
-            window.removeEventListener('appinstalled', handleAppInstalled);
-            window.removeEventListener('update-available', handleUpdateAvailable);
         };
-    }, [handleShowToast]);
+    }, []);
 
     // --- Search Logic ---
     const handleSearch = React.useCallback((query: string, options: SearchOptions) => {
@@ -220,19 +216,18 @@ export const useAppLogic = (
     }, [activeResultIndex, searchResults]);
     
 
-    // --- PWA Action Handlers ---
-    const handleInstallPWA = React.useCallback(() => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.finally(() => { setDeferredPrompt(null); setIsInstallable(false); });
-    }, [deferredPrompt]);
-    
-    const handleUpdate = React.useCallback(() => {
-        if (updateWorker) { updateWorker.postMessage({ type: 'SKIP_WAITING' }); setUpdateWorker(null); }
-    }, [updateWorker]);
-
     // --- General Action Handlers ---
-    const handleClearCache = React.useCallback(() => { localStorage.clear(); handleReset(false); handleShowToast("缓存已清除。应用已重置。"); }, [handleReset, handleShowToast]);
+    const handleClearCache = React.useCallback(() => {
+        setConfirmation({
+            isOpen: true,
+            title: '清除缓存',
+            message: '您确定要清除所有缓存的应用数据吗？此操作将重置所有设置。',
+            onConfirm: () => {
+                localStorage.clear();
+                window.location.reload();
+            }
+        });
+    }, []);
     const handleCopyAll = React.useCallback(() => { if (processedData) navigator.clipboard.writeText(generateFullOutput(processedData.structureString, processedData.fileContents)).then(() => handleShowToast('已将所有内容复制到剪贴板！')); }, [processedData, handleShowToast]);
     const handleSave = React.useCallback(() => {
         if (!processedData) return;
@@ -280,14 +275,15 @@ export const useAppLogic = (
                 if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
             }
             if (e.key === 'Escape') {
-                if (isSearchOpen) { e.preventDefault(); setIsSearchOpen(false); }
+                if (isAiChatOpen) { e.preventDefault(); setIsAiChatOpen(false); }
+                else if (isSearchOpen) { e.preventDefault(); setIsSearchOpen(false); }
                 else if (isSettingsOpen) { e.preventDefault(); setIsSettingsOpen(false); }
                 else if (isLoading) { e.preventDefault(); handleCancel(); }
             }
         };
         window.addEventListener('keydown', handleGlobalKeys);
         return () => window.removeEventListener('keydown', handleGlobalKeys);
-    }, [isSearchOpen, isSettingsOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
+    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
 
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
@@ -303,22 +299,22 @@ export const useAppLogic = (
     return {
         state: {
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, isOnline,
-            isInstallable, isInstalled, updateWorker, editingPath, markdownPreviewPaths,
+            editingPath, markdownPreviewPaths, confirmation,
             isDark, panelWidth, extractContent, fontSize,
             lastProcessedFiles, mobileView, stats,
-            isSearchOpen, searchResults, activeResultIndex,
+            isSearchOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
             handleFileSelect, handleCopyAll, handleSave, handleReset, handleRefresh: () => handleRefresh(handleProcessing), handleCancel,
-            setIsSettingsOpen, setToastMessage,
-            handleUpdate, handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
+            setIsSettingsOpen, setToastMessage, setConfirmation,
+            handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
             handleMouseDownResize, 
             handleMobileViewToggle,
-            setIsSearchOpen, handleSearch, handleNavigate
+            setIsSearchOpen, handleSearch, handleNavigate, setIsAiChatOpen,
         },
         settings: {
-            setIsDark, setExtractContent, setFontSize, handleClearCache, handleInstallPWA
+            setIsDark, setExtractContent, setFontSize, handleClearCache
         },
     };
 };

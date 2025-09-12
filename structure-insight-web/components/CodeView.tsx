@@ -6,29 +6,6 @@ declare const hljs: any;
 declare const marked: any;
 declare const DOMPurify: any;
 
-interface ToastProps {
-  message: string;
-  onDone: () => void;
-}
-
-const Toast: React.FC<ToastProps> = ({ message, onDone }) => {
-  React.useEffect(() => {
-    const timer = setTimeout(onDone, 2000);
-    return () => clearTimeout(timer);
-  }, [onDone]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-md shadow-lg z-50"
-    >
-      {message}
-    </motion.div>
-  );
-};
-
 interface FileCardProps {
   file: FileContent;
   isEditing: boolean;
@@ -41,6 +18,14 @@ interface FileCardProps {
   onShowToast: (message: string) => void;
   fontSize: number;
 }
+
+const IconButton: React.FC<{icon: string, title: string, onClick: () => void, disabled?: boolean, text?: string}> = ({icon, title, onClick, disabled, text}) => (
+    <button onClick={onClick} className="flex items-center space-x-1.5 text-sm text-light-subtle-text dark:text-dark-subtle-text hover:text-light-text dark:hover:text-dark-text disabled:opacity-50 transition-colors" title={title} disabled={disabled}>
+        <i className={`fa-regular ${icon}`}></i>
+        {text && <span className="hidden sm:inline">{text}</span>}
+    </button>
+);
+
 
 const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSaveEdit, onCancelEdit, isMarkdown, isMarkdownPreview, onToggleMarkdownPreview, onShowToast, fontSize }) => {
   const [editText, setEditText] = React.useState(file.content);
@@ -79,31 +64,26 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
     <div className="bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300">
       <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
         <div className="font-mono text-sm text-light-text dark:text-dark-text truncate" title={file.path}>
-          <i className="fa-regular fa-file-lines mr-2"></i>{file.path}
+          <i className="fa-regular fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>{file.path}
         </div>
         <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text">
-          <span>{file.stats.lines} 行</span>
-          <span>{file.stats.chars} 字符</span>
+          <span className="hidden sm:inline">{file.stats.lines} 行</span>
+          <span className="hidden sm:inline">{file.stats.chars} 字符</span>
           {isMarkdown && (
-             <button onClick={() => onToggleMarkdownPreview(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title={isMarkdownPreview ? "显示原文" : "预览 Markdown"} disabled={isEditing}>
-                <i className={`fa-regular ${isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} mr-1`}></i> {isMarkdownPreview ? "原文" : "预览"}
-            </button>
+             <IconButton onClick={() => onToggleMarkdownPreview(file.path)} title={isMarkdownPreview ? "显示原文" : "预览 Markdown"} disabled={isEditing} icon={isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} />
           )}
-          <button onClick={() => onStartEdit(file.path)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="编辑内容" disabled={isEditing}>
-            <i className="fa-regular fa-pen-to-square mr-1"></i> 编辑
-          </button>
-          <button onClick={() => handleCopy(file.content)} className="text-sm text-primary hover:text-primary-hover disabled:opacity-50" title="复制内容" disabled={isEditing}>
-            <i className="fa-regular fa-copy mr-1"></i> 复制
-          </button>
+          <IconButton onClick={() => onStartEdit(file.path)} title="编辑内容" disabled={isEditing} icon="fa-pen-to-square" />
+          <IconButton onClick={() => handleCopy(file.content)} title="复制内容" disabled={isEditing} icon="fa-copy" />
         </div>
       </div>
       {isEditing ? (
-        <div className="p-2">
+        <div className="p-4">
             <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="w-full h-64 font-mono text-sm bg-light-bg dark:bg-gray-900 border border-primary rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-64 font-mono text-sm bg-light-bg dark:bg-gray-900 border border-primary/50 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 style={codeStyle}
+                autoFocus
             />
             <div className="flex justify-end space-x-2 mt-2">
                 <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">取消</button>
@@ -113,12 +93,12 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
       ) : isMarkdown && isMarkdownPreview ? (
         <div className="prose dark:prose-invert max-w-none p-4" style={{fontSize: `${fontSize}px`}} dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }} />
       ) : (
-        <div className="flex bg-light-bg dark:bg-dark-bg" style={codeStyle}>
-            <pre className="line-numbers text-right pr-4 pl-2 py-3 select-none text-light-subtle-text/50 dark:text-dark-subtle-text/50 bg-light-panel dark:bg-dark-panel">
+        <div className="flex" style={codeStyle}>
+            <pre className="line-numbers text-right pr-4 pl-2 py-3 select-none text-light-subtle-text/50 dark:text-dark-subtle-text/50 bg-light-bg/50 dark:bg-dark-bg/50">
                 {lineNumbers}
             </pre>
             <div className="relative flex-1">
-                <pre className="py-3 pr-3 whitespace-pre-wrap break-words"><code 
+                <pre className="py-3 pr-3 whitespace-pre-wrap break-words bg-light-bg dark:bg-dark-bg"><code 
                     ref={codeRef}
                     className={`language-${file.language} hljs`} 
                 /></pre>
@@ -205,13 +185,14 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8">
             <div className="flex justify-between items-center mb-2">
-              <h2 className="text-xl font-semibold">文件结构</h2>
+              <h2 className="text-lg font-semibold">文件结构</h2>
               <button
                 onClick={() => handleCopy(structureString)}
-                className="text-sm text-primary hover:text-primary-hover"
+                className="flex items-center space-x-1.5 text-sm text-light-subtle-text dark:text-dark-subtle-text hover:text-light-text dark:hover:text-dark-text transition-colors"
                 title="复制结构"
               >
-                <i className="fa-regular fa-copy mr-1"></i> 复制
+                <i className="fa-regular fa-copy"></i>
+                <span>复制</span>
               </button>
             </div>
             <pre className="bg-light-panel dark:bg-dark-panel p-4 rounded-lg text-sm overflow-x-auto" style={{fontSize: `${fontSize}px`}}><code>{structureString}</code></pre>
@@ -221,7 +202,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
 
       {fileContents && fileContents.length > 0 && (
         <div>
-          <h2 className="text-xl font-semibold mb-4">文件内容</h2>
+          <h2 className="text-lg font-semibold mb-4">文件内容</h2>
           <div>
             <AnimatePresence>
               {fileContents.map((file) => {
@@ -237,7 +218,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, x: -50 }}
                             layout
-                            className="mb-6"
+                            className="mb-6 transition-shadow duration-300 rounded-lg focus-within:ring-2 focus-within:ring-primary"
                           >
                             <MemoizedFileCard
                               file={file}
@@ -272,4 +253,3 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
 };
 
 export default React.memo(CodeView);
-export { Toast };

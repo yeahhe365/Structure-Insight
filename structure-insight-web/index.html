@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Structure Insight Web</title>
     
-    <!-- PWA -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1F2937">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png">
 
@@ -50,17 +50,20 @@
         darkMode: 'class',
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
-              'light-bg': '#F3F4F6', // gray-100
+              'light-bg': '#F9FAFB', // gray-50
               'light-panel': '#FFFFFF', // white
-              'light-text': '#1F2937', // gray-800
+              'light-text': '#111827', // gray-900
               'light-subtle-text': '#6B7280', // gray-500
               'light-border': '#E5E7EB', // gray-200
               'light-header': '#FFFFFF', // white
 
               'dark-bg': '#111827', // gray-900
               'dark-panel': '#1F2937', // gray-800
-              'dark-text': '#E5E7EB', // gray-200
+              'dark-text': '#F3F4F6', // gray-100
               'dark-subtle-text': '#9CA3AF', // gray-400
               'dark-border': '#374151', // gray-700
               'dark-header': '#1F2937', // gray-800
@@ -68,6 +71,20 @@
               'primary': '#3B82F6', // blue-500
               'primary-hover': '#2563EB', // blue-600
               'primary-disabled': '#93C5FD', // blue-300
+            },
+            keyframes: {
+                'enter': {
+                    '0%': { opacity: 0, transform: 'translateY(1rem)' },
+                    '100%': { opacity: 1, transform: 'translateY(0)' },
+                },
+                'pulse-bg': {
+                  '0%, 100%': { backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+                  '50%': { backgroundColor: 'rgba(59, 130, 246, 0.4)' },
+                }
+            },
+            animation: {
+                'enter': 'enter 0.3s ease-out forwards',
+                'pulse-bg': 'pulse-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }
           }
         }
@@ -120,7 +137,10 @@
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
     "react/": "https://esm.sh/react@^19.1.0/",
     "framer-motion": "https://esm.sh/framer-motion@^11.0.8",
-    "jszip": "https://esm.sh/jszip@3.10.1"
+    "jszip": "https://esm.sh/jszip@3.10.1",
+    "@google/genai": "https://esm.sh/@google/genai",
+    "marked": "https://aistudiocdn.com/marked@^16.2.1",
+    "dompurify": "https://aistudiocdn.com/dompurify@^3.2.6"
   }
 }
 </script>
@@ -129,40 +149,6 @@
 </head>
 <body class="h-full bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text font-sans antialiased overflow-hidden">
     <div id="root" class="h-full"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
-              
-              // Listen for updates
-              registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
-                if (newWorker) {
-                  newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      // New content is available, notify the user.
-                      const event = new CustomEvent('update-available', { detail: newWorker });
-                      window.dispatchEvent(event);
-                    }
-                  });
-                }
-              });
-            })
-            .catch(err => {
-              console.log('ServiceWorker registration failed: ', err);
-            });
-
-          let refreshing;
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (refreshing) return;
-            window.location.reload();
-            refreshing = true;
-          });
-        });
-      }
-    </script>
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>

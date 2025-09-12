@@ -51,6 +51,12 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
     scrollEl.addEventListener('scroll', handleScroll, { passive: true });
     const resizeObserver = new ResizeObserver(handleScroll);
     resizeObserver.observe(scrollEl);
+    
+    // Also observe children of the scrollable element
+    const mutationObserver = new MutationObserver(handleScroll);
+    mutationObserver.observe(scrollEl, { childList: true, subtree: true });
+
+
     if(trackRef.current) {
         resizeObserver.observe(trackRef.current);
     }
@@ -61,6 +67,7 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
       }
       scrollEl.removeEventListener('scroll', handleScroll);
       resizeObserver.disconnect();
+      mutationObserver.disconnect();
     };
   }, [scrollRef, updateSlider]);
   
@@ -138,7 +145,7 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
     {isVisible && (
         <motion.div
             ref={trackRef}
-            className="absolute top-0 right-0 h-full w-5 bg-transparent z-20 group"
+            className="absolute top-0 right-0 h-full w-4 z-20 group"
             onMouseDown={handleTrackMouseDown}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -146,7 +153,7 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
             transition={{ duration: 0.2 }}
         >
             <div
-                className="absolute w-2.5 left-1/2 -translate-x-1/2 bg-light-subtle-text/30 dark:bg-dark-subtle-text/30 rounded-full transition-colors duration-200 group-hover:bg-light-subtle-text/50 dark:group-hover:bg-dark-subtle-text/50"
+                className="absolute w-2 left-1/2 -translate-x-1/2 bg-light-subtle-text/30 dark:bg-dark-subtle-text/30 rounded-full transition-all duration-200 group-hover:w-2.5 group-hover:bg-light-subtle-text/50 dark:group-hover:bg-dark-subtle-text/50"
                 style={{
                     height: `${thumbHeight}px`,
                     top: `${thumbPosition}px`,

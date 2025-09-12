@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FileNode, ProcessedFiles } from '../types';
+import { FileNode, ProcessedFiles, ConfirmationState } from '../types';
 import { buildASCIITree } from '../services/fileProcessor';
 
 interface InteractionProps {
@@ -10,6 +10,7 @@ interface InteractionProps {
     isMobile: boolean;
     setMobileView: (view: 'tree' | 'editor') => void;
     codeViewRef: React.RefObject<HTMLDivElement>;
+    setConfirmation: React.Dispatch<React.SetStateAction<ConfirmationState>>;
 }
 
 export const useInteraction = ({
@@ -19,28 +20,37 @@ export const useInteraction = ({
     isMobile,
     setMobileView,
     codeViewRef,
+    setConfirmation,
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
     const [markdownPreviewPaths, setMarkdownPreviewPaths] = React.useState(new Set<string>());
 
     const handleDeleteFile = (path: string) => {
-        setProcessedData(prevData => {
-            if (!prevData) return null;
-            const newFileContents = prevData.fileContents.filter(f => f.path !== path);
-            const filterTreeRecursive = (nodes: FileNode[]): FileNode[] => {
-                return nodes
-                    .filter(node => node.path !== path)
-                    .map(node => {
-                        if (node.isDirectory) {
-                            return { ...node, children: filterTreeRecursive(node.children) };
-                        }
-                        return node;
-                    }).filter(node => node.isDirectory ? node.children.length > 0 : true);
-            };
-            const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
-            const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "项目";
-            const newStructureString = buildASCIITree(newTreeData, rootName);
-            return { ...prevData, fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
+        setConfirmation({
+            isOpen: true,
+            title: '删除文件',
+            message: `您确定要从视图中删除 ${path} 吗？此操作无法撤销。`,
+            onConfirm: () => {
+                 setProcessedData(prevData => {
+                    if (!prevData) return null;
+                    const newFileContents = prevData.fileContents.filter(f => f.path !== path);
+                    const filterTreeRecursive = (nodes: FileNode[]): FileNode[] => {
+                        return nodes
+                            .filter(node => node.path !== path)
+                            .map(node => {
+                                if (node.isDirectory) {
+                                    return { ...node, children: filterTreeRecursive(node.children) };
+                                }
+                                return node;
+                            }).filter(node => !node.isDirectory || node.children.length > 0);
+                    };
+                    const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
+                    const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "项目";
+                    const newStructureString = buildASCIITree(newTreeData, rootName);
+                    return { ...prevData, fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
+                });
+                handleShowToast(`${path} 已删除。`);
+            }
         });
     };
     
@@ -51,8 +61,8 @@ export const useInteraction = ({
             if (el && codeViewRef.current) {
                 const targetScroll = el.offsetTop - codeViewRef.current.offsetTop - 20;
                 codeViewRef.current.scrollTo({ top: targetScroll, behavior: 'smooth' });
-                el.classList.add('bg-primary/10', 'dark:bg-primary/20');
-                setTimeout(() => el.classList.remove('bg-primary/10', 'dark:bg-primary/20'), 2000);
+                el.classList.add('animate-pulse-bg');
+                setTimeout(() => el.classList.remove('animate-pulse-bg'), 2000);
             }
         }, isMobile ? 100 : 0);
     };

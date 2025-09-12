@@ -117,21 +117,21 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     }
 
     const optionButtonClass = (isActive: boolean) => 
-        `flex items-center justify-center w-8 h-8 rounded-md text-sm ${isActive ? 'bg-primary/20 text-primary' : 'hover:bg-light-border dark:hover:bg-dark-border'}`;
+        `flex items-center justify-center w-8 h-8 rounded-md text-sm transition-colors ${isActive ? 'bg-primary/20 text-primary' : 'hover:bg-light-border dark:hover:bg-dark-border'}`;
 
 
     return (
         <div
             ref={dialogRef}
-            className="fixed z-10 bg-light-panel dark:bg-dark-panel rounded-lg shadow-2xl border border-light-border dark:border-dark-border w-[400px]"
+            className="fixed z-30 bg-light-panel dark:bg-dark-panel rounded-lg shadow-2xl border border-light-border dark:border-dark-border w-[400px]"
             style={{ top: `${position.y}px`, left: `${position.x}px` }}
         >
             <div
                 className="flex items-center justify-between p-2 border-b border-light-border dark:border-dark-border cursor-move"
                 onMouseDown={handleMouseDown}
             >
-                <h3 className="font-semibold text-sm">在文件中查找</h3>
-                <button onClick={onClose} className="w-6 h-6 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
+                <h3 className="font-semibold text-sm pl-2">在文件中查找</h3>
+                <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
                     <i className="fa-solid fa-times text-xs"></i>
                 </button>
             </div>
@@ -167,8 +167,8 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                                 </div>
                             )}
                         </div>
-                        <button type="button" onClick={() => onNavigate('prev')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center"><i className="fa-solid fa-arrow-up"></i></button>
-                        <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center"><i className="fa-solid fa-arrow-down"></i></button>
+                        <button type="button" onClick={() => onNavigate('prev')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-down"></i></button>
                     </div>
                     <div className="flex items-center space-x-2 mt-3">
                         <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title="区分大小写">

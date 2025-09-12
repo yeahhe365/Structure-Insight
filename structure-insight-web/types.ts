@@ -32,3 +32,10 @@ export interface SearchOptions {
   wholeWord: boolean;
   fuzzySearch: boolean;
 }
+
+export interface ConfirmationState {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+}

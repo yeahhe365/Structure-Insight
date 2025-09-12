@@ -12,7 +12,10 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "framer-motion": "^11.0.8",
-    "jszip": "3.10.1"
+    "jszip": "3.10.1",
+    "@google/genai": "latest",
+    "marked": "^16.2.1",
+    "dompurify": "^3.2.6"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
