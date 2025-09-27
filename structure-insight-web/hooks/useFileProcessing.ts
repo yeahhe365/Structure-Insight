@@ -1,6 +1,7 @@
 import React from 'react';
 import { processDroppedItems, processFiles } from '../services/fileProcessor';
 import { ProcessedFiles } from '../types';
+import { usePersistentState } from './usePersistentState';
 
 interface FileProcessingProps {
     extractContent: boolean;
@@ -19,7 +20,7 @@ export const useFileProcessing = ({
     handleShowToast,
     isMobile,
 }: FileProcessingProps) => {
-    const [processedData, setProcessedData] = React.useState<ProcessedFiles | null>(null);
+    const [processedData, setProcessedData] = usePersistentState<ProcessedFiles | null>('processedData', null);
     const [lastProcessedFiles, setLastProcessedFiles] = React.useState<File[] | null>(null);
     const abortControllerRef = React.useRef<AbortController | null>(null);
 
