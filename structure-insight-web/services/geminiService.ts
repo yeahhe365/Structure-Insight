@@ -2,18 +2,19 @@ import { GoogleGenAI } from "@google/genai";
 import { ProcessedFiles } from '../types';
 import { generateFullOutput } from "./fileProcessor";
 
-// Ensure process.env.API_KEY is available
-if (!process.env.API_KEY) {
-    console.error("API_KEY environment variable not set.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 export async function* streamAiChat(
     projectData: ProcessedFiles, 
     history: { role: 'user' | 'model', parts: { text: string }[] }[],
     question: string
 ): AsyncGenerator<string> {
+
+    // Delay initialization until the function is called to avoid crashing the app on load
+    // in browser environments where `process.env` is not defined.
+    if (!process.env.API_KEY) {
+        throw new Error("API_KEY environment variable not set. Cannot initialize AI Chat.");
+    }
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const model = ai.chats.create({
         model: 'gemini-2.5-flash',
