@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppLogic } from './hooks/useAppLogic';
@@ -35,9 +36,11 @@ const App: React.FC = () => {
                 onSettings={() => handlers.setIsSettingsOpen(true)}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
                 onToggleAiChat={() => handlers.setIsAiChatOpen(true)}
+                onShowStructure={() => handlers.setActiveView('structure')}
                 hasContent={!!state.processedData} 
                 canRefresh={!!state.lastProcessedFiles}
                 isLoading={state.isLoading}
+                activeView={state.activeView}
             />
             
             <MainContent logic={logic} codeViewRef={codeViewRef} leftPanelRef={leftPanelRef} />

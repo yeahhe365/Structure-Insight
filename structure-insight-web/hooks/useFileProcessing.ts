@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { processDroppedItems, processFiles } from '../services/fileProcessor';
 import { ProcessedFiles } from '../types';
@@ -10,6 +11,8 @@ interface FileProcessingProps {
     setMobileView: (view: 'tree' | 'editor') => void;
     handleShowToast: (message: string) => void;
     isMobile: boolean;
+    setSelectedFilePath: (path: string | null) => void;
+    setActiveView: (view: 'structure' | 'code') => void;
 }
 
 export const useFileProcessing = ({
@@ -19,6 +22,8 @@ export const useFileProcessing = ({
     setMobileView,
     handleShowToast,
     isMobile,
+    setSelectedFilePath,
+    setActiveView,
 }: FileProcessingProps) => {
     const [processedData, setProcessedData] = usePersistentState<ProcessedFiles | null>('processedData', null);
     const [lastProcessedFiles, setLastProcessedFiles] = React.useState<File[] | null>(null);
@@ -30,6 +35,7 @@ export const useFileProcessing = ({
         if (!isRefresh) {
             setProcessedData(null);
             setLastProcessedFiles(null);
+            setSelectedFilePath(null);
         }
 
         abortControllerRef.current = new AbortController();
@@ -41,6 +47,7 @@ export const useFileProcessing = ({
             setProcessedData(data);
             setLastProcessedFiles(files);
             if (isMobile) setMobileView('editor');
+            setActiveView('structure');
         } catch (error: any) {
             if (error.name === 'AbortError') {
                 setProgressMessage("处理已取消。");

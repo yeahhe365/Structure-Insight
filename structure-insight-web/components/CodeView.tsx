@@ -1,10 +1,12 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FileContent } from '../types';
 
+import React from 'react';
+import { motion } from 'framer-motion';
+import { FileContent } from '../types';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+
+// hljs is loaded globally via index.html script tag
 declare const hljs: any;
-declare const marked: any;
-declare const DOMPurify: any;
 
 interface FileCardProps {
   file: FileContent;
@@ -40,7 +42,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
       codeRef.current.textContent = file.content;
       hljs.highlightElement(codeRef.current);
     }
-  }, [file.content, isEditing, isMarkdownPreview]);
+  }, [file, isEditing, isMarkdownPreview]);
 
 
   const handleCopy = (text: string) => {
@@ -61,7 +63,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
 
 
   return (
-    <div className="bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300">
+    <div className="bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary">
       <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
         <div className="font-mono text-sm text-light-text dark:text-dark-text truncate" title={file.path}>
           <i className="fa-regular fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>{file.path}
@@ -110,58 +112,12 @@ const FileCard: React.FC<FileCardProps> = ({ file, isEditing, onStartEdit, onSav
 };
 const MemoizedFileCard = React.memo(FileCard);
 
-
-interface LazyRenderProps {
-    children: React.ReactNode;
-    placeholder: React.ReactNode;
-}
-
-const LazyRender: React.FC<LazyRenderProps> = React.memo(({ children, placeholder }) => {
-    const [isVisible, setIsVisible] = React.useState(false);
-    const ref = React.useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { rootMargin: '500px 0px' }
-        );
-
-        const currentRef = ref.current;
-        if (currentRef) {
-            observer.observe(currentRef);
-        }
-
-        return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
-            }
-        };
-    }, []);
-
-    // The ref needs to be on a real DOM element.
-    // If children are rendered, we don't need the placeholder or the ref wrapper.
-    if (isVisible) {
-        return <>{children}</>;
-    }
-    
-    return <div ref={ref}>{placeholder}</div>;
-});
-
-
 interface CodeViewProps {
-  structureString: string | null;
-  fileContents: FileContent[] | null;
-  // Edit
+  selectedFile: FileContent | null;
   editingPath: string | null;
   onStartEdit: (path: string) => void;
   onSaveEdit: (path: string, newContent: string) => void;
   onCancelEdit: () => void;
-  // Markdown
   markdownPreviewPaths: Set<string>;
   onToggleMarkdownPreview: (path: string) => void;
   onShowToast: (message: string) => void;
@@ -169,85 +125,38 @@ interface CodeViewProps {
 }
 
 const CodeView: React.FC<CodeViewProps> = (props) => {
-  const { structureString, fileContents, editingPath, onStartEdit, onSaveEdit, onCancelEdit, markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize } = props;
+  const { selectedFile, editingPath, onStartEdit, onSaveEdit, onCancelEdit, markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize } = props;
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    onShowToast('已复制到剪贴板！');
-  };
+  if (!selectedFile) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-4 text-light-subtle-text dark:text-dark-subtle-text">
+            <i className="fa-regular fa-file-code text-5xl mb-4"></i>
+            <p className="font-semibold">选择一个文件</p>
+            <p className="text-sm">从左侧资源管理器中选择一个文件以查看其内容。</p>
+        </div>
+    );
+  }
   
   return (
     <div className="h-full p-4 md:p-6 bg-light-bg dark:bg-dark-bg">
-      <AnimatePresence>
-        {structureString && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+        <motion.div
+            key={selectedFile.path}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-lg font-semibold">文件结构</h2>
-              <button
-                onClick={() => handleCopy(structureString)}
-                className="flex items-center space-x-1.5 text-sm text-light-subtle-text dark:text-dark-subtle-text hover:text-light-text dark:hover:text-dark-text transition-colors"
-                title="复制结构"
-              >
-                <i className="fa-regular fa-copy"></i>
-                <span>复制</span>
-              </button>
-            </div>
-            <pre className="bg-light-panel dark:bg-dark-panel p-4 rounded-lg text-sm overflow-x-auto" style={{fontSize: `${fontSize}px`}}><code>{structureString}</code></pre>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {fileContents && fileContents.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">文件内容</h2>
-          <div>
-            <AnimatePresence>
-              {fileContents.map((file) => {
-                  const estimatedHeight = Math.min(300, 58 + file.stats.lines * (Math.round(props.fontSize * 1.5)));
-                  return (
-                      <LazyRender 
-                          key={file.path}
-                          placeholder={<div style={{ height: `${estimatedHeight}px` }} className="w-full bg-light-panel dark:bg-dark-panel rounded-lg mb-6 border border-light-border dark:border-dark-border animate-pulse" />}
-                      >
-                          <motion.div
-                            id={`file-path-${file.path}`}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -50 }}
-                            layout
-                            className="mb-6 transition-shadow duration-300 rounded-lg focus-within:ring-2 focus-within:ring-primary"
-                          >
-                            <MemoizedFileCard
-                              file={file}
-                              isEditing={editingPath === file.path}
-                              onStartEdit={onStartEdit}
-                              onSaveEdit={onSaveEdit}
-                              onCancelEdit={onCancelEdit}
-                              isMarkdown={file.language === 'markdown'}
-                              isMarkdownPreview={markdownPreviewPaths.has(file.path)}
-                              onToggleMarkdownPreview={onToggleMarkdownPreview}
-                              onShowToast={onShowToast}
-                              fontSize={fontSize}
-                            />
-                          </motion.div>
-                      </LazyRender>
-                  )
-              })}
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
-      
-      {structureString && fileContents && fileContents.length === 0 && (
-        <div className="text-center p-8 mt-8 text-light-subtle-text dark:text-dark-subtle-text bg-light-panel dark:bg-dark-panel rounded-lg">
-            <i className="fa-solid fa-info-circle text-2xl mb-2 text-primary"></i>
-            <p className="font-semibold">未提取文件内容。</p>
-            <p className="text-sm">要查看内容，请在“设置”中启用“提取内容”并重新处理文件夹。</p>
-        </div>
-      )}
+        >
+            <MemoizedFileCard
+              file={selectedFile}
+              isEditing={editingPath === selectedFile.path}
+              onStartEdit={onStartEdit}
+              onSaveEdit={onSaveEdit}
+              onCancelEdit={onCancelEdit}
+              isMarkdown={selectedFile.language === 'markdown'}
+              isMarkdownPreview={markdownPreviewPaths.has(selectedFile.path)}
+              onToggleMarkdownPreview={onToggleMarkdownPreview}
+              onShowToast={onShowToast}
+              fontSize={fontSize}
+            />
+        </motion.div>
     </div>
   );
 };

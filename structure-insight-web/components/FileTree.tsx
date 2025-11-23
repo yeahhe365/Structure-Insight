@@ -5,9 +5,10 @@ interface FileTreeProps {
   nodes: FileNode[];
   onFileSelect: (path: string) => void;
   onDeleteFile: (path: string) => void;
+  selectedFilePath: string | null;
 }
 
-const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => void; onDeleteFile: (path: string) => void; level: number }> = React.memo(({ node, onFileSelect, onDeleteFile, level }) => {
+const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => void; onDeleteFile: (path: string) => void; level: number; selectedFilePath: string | null; }> = React.memo(({ node, onFileSelect, onDeleteFile, level, selectedFilePath }) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
   const handleToggle = () => {
@@ -36,6 +37,8 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
   let statusClass = node.status === 'processed' || !node.status ? '' : 'cursor-default';
   let title = node.path;
   let displayName = node.name;
+  const isSelected = !node.isDirectory && node.path === selectedFilePath;
+
 
   if (node.status === 'skipped') {
       statusClass += ' opacity-60';
@@ -50,7 +53,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
   return (
     <li style={{ paddingLeft: `${level > 1 ? 1.25 : 0}rem` }} className="list-none">
       <div
-        className={`group flex items-center space-x-2 py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass}`}
+        className={`group flex items-center space-x-2 py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass} ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''}`}
         onClick={handleSelect}
         title={title}
       >
@@ -85,7 +88,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
       {node.isDirectory && isOpen && (
         <ul className="pl-0">
           {node.children.map(child => (
-            <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={level + 1} />
+            <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={level + 1} selectedFilePath={selectedFilePath} />
           ))}
         </ul>
       )}
@@ -93,7 +96,7 @@ const FileTreeNode: React.FC<{ node: FileNode; onFileSelect: (path: string) => v
   );
 });
 
-const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }) => {
+const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, selectedFilePath }) => {
   if (!nodes || nodes.length === 0) {
     return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">未加载文件。</div>;
   }
@@ -102,7 +105,7 @@ const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile }
       <h3 className="text-xs font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
       <ul className="pl-0">
         {nodes.map(node => (
-          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={1} />
+          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} level={1} selectedFilePath={selectedFilePath} />
         ))}
       </ul>
     </div>

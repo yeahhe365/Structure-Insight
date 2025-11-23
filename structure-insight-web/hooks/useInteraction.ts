@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileNode, ProcessedFiles, ConfirmationState } from '../types';
 import { buildASCIITree } from '../services/fileProcessor';
@@ -9,8 +8,10 @@ interface InteractionProps {
     handleShowToast: (message: string) => void;
     isMobile: boolean;
     setMobileView: (view: 'tree' | 'editor') => void;
-    codeViewRef: React.RefObject<HTMLDivElement>;
     setConfirmation: React.Dispatch<React.SetStateAction<ConfirmationState>>;
+    selectedFilePath: string | null;
+    setSelectedFilePath: (path: string | null) => void;
+    setActiveView: (view: 'structure' | 'code') => void;
 }
 
 export const useInteraction = ({
@@ -19,8 +20,10 @@ export const useInteraction = ({
     handleShowToast,
     isMobile,
     setMobileView,
-    codeViewRef,
     setConfirmation,
+    selectedFilePath,
+    setSelectedFilePath,
+    setActiveView,
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
     const [markdownPreviewPaths, setMarkdownPreviewPaths] = React.useState(new Set<string>());
@@ -31,9 +34,13 @@ export const useInteraction = ({
             title: '删除文件',
             message: `您确定要从视图中删除 ${path} 吗？此操作无法撤销。`,
             onConfirm: () => {
+                 if (path === selectedFilePath) {
+                    setSelectedFilePath(null);
+                 }
                  setProcessedData(prevData => {
                     if (!prevData) return null;
                     const newFileContents = prevData.fileContents.filter(f => f.path !== path);
+                    
                     const filterTreeRecursive = (nodes: FileNode[]): FileNode[] => {
                         return nodes
                             .filter(node => node.path !== path)
@@ -42,11 +49,12 @@ export const useInteraction = ({
                                     return { ...node, children: filterTreeRecursive(node.children) };
                                 }
                                 return node;
-                            }).filter(node => !node.isDirectory || node.children.length > 0);
+                            });
                     };
+
                     const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
-                    const rootName = newTreeData.length > 0 && newTreeData[0].isDirectory ? newTreeData[0].name : "项目";
-                    const newStructureString = buildASCIITree(newTreeData, rootName);
+                    const newStructureString = buildASCIITree(newTreeData, prevData.rootName);
+                    
                     return { ...prevData, fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
                 });
                 handleShowToast(`${path} 已删除。`);
@@ -56,15 +64,8 @@ export const useInteraction = ({
     
     const handleFileTreeSelect = (path: string) => {
         if (isMobile) setMobileView('editor');
-        setTimeout(() => {
-            const el = document.getElementById(`file-path-${path}`);
-            if (el && codeViewRef.current) {
-                const targetScroll = el.offsetTop - codeViewRef.current.offsetTop - 20;
-                codeViewRef.current.scrollTo({ top: targetScroll, behavior: 'smooth' });
-                el.classList.add('animate-pulse-bg');
-                setTimeout(() => el.classList.remove('animate-pulse-bg'), 2000);
-            }
-        }, isMobile ? 100 : 0);
+        setSelectedFilePath(path);
+        setActiveView('code');
     };
     
     const handleSaveEdit = (path: string, newContent: string) => {
@@ -84,6 +85,11 @@ export const useInteraction = ({
         });
     };
     
+    const clearInteractionState = () => {
+        setEditingPath(null);
+        setMarkdownPreviewPaths(new Set());
+    };
+    
     return {
         editingPath, setEditingPath,
         markdownPreviewPaths, setMarkdownPreviewPaths,
@@ -91,5 +97,6 @@ export const useInteraction = ({
         handleFileTreeSelect,
         handleSaveEdit,
         handleToggleMarkdownPreview,
+        clearInteractionState,
     };
 };

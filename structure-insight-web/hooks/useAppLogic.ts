@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { usePersistentState } from './usePersistentState';
 import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { generateFullOutput } from '../services/fileProcessor';
-import { SearchOptions, ConfirmationState } from '../types';
+import { SearchOptions, ConfirmationState, FileContent } from '../types';
 
 declare const hljs: any;
 declare const marked: any;
@@ -30,6 +31,10 @@ export const useAppLogic = (
     const [panelWidth, setPanelWidth] = usePersistentState('panelWidth', 30);
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
+
+    // --- Core Data & Selection State ---
+    const [selectedFilePath, setSelectedFilePath] = React.useState<string | null>(null);
+    const [activeView, setActiveView] = React.useState<'structure' | 'code'>('structure');
     
     // --- Layout & Search State ---
     const windowSize = useWindowSize();
@@ -50,17 +55,25 @@ export const useAppLogic = (
       handleFileSelect, handleDrop, handleRefresh, handleCancel, abortControllerRef
     } = useFileProcessing({
         extractContent, setIsLoading, setProgressMessage, 
-        setMobileView, handleShowToast, isMobile
+        setMobileView, handleShowToast, isMobile, setSelectedFilePath, setActiveView
     });
 
     const {
-        editingPath, setEditingPath, markdownPreviewPaths, setMarkdownPreviewPaths,
+        editingPath, setEditingPath, markdownPreviewPaths,
         handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
-        handleToggleMarkdownPreview,
+        handleToggleMarkdownPreview, clearInteractionState
     } = useInteraction({
-        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, codeViewRef, setConfirmation
+        processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
+        selectedFilePath, setSelectedFilePath, setActiveView
     });
     
+    // --- Derived State ---
+    const selectedFile = React.useMemo<FileContent | null>(() => {
+        if (!selectedFilePath || !processedData?.fileContents) return null;
+        return processedData.fileContents.find(f => f.path === selectedFilePath) || null;
+    }, [selectedFilePath, processedData]);
+
+
     // --- Central Reset Logic ---
     const handleReset = React.useCallback(() => {
         setConfirmation({
@@ -74,16 +87,17 @@ export const useAppLogic = (
                 setIsLoading(false);
                 setProgressMessage("");
                 setIsSettingsOpen(false);
-                setEditingPath(null);
-                setMarkdownPreviewPaths(new Set());
+                clearInteractionState();
+                setSelectedFilePath(null);
                 setIsSearchOpen(false);
                 setIsAiChatOpen(false);
                 setSearchResults([]);
                 setActiveResultIndex(null);
+                setActiveView('structure');
                 handleShowToast("内容已重置。");
             }
         });
-    }, [handleShowToast]);
+    }, [handleShowToast, clearInteractionState]);
 
     // --- Effects for Theme and Markdown ---
     React.useEffect(() => {
@@ -303,6 +317,7 @@ export const useAppLogic = (
             isDark, panelWidth, extractContent, fontSize,
             lastProcessedFiles, mobileView, stats,
             isSearchOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
+            selectedFilePath, selectedFile, activeView,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
@@ -312,6 +327,7 @@ export const useAppLogic = (
             handleMouseDownResize, 
             handleMobileViewToggle,
             setIsSearchOpen, handleSearch, handleNavigate, setIsAiChatOpen,
+            setActiveView,
         },
         settings: {
             setIsDark, setExtractContent, setFontSize, handleClearCache

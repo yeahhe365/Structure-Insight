@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FileTree from './FileTree';
@@ -5,6 +6,8 @@ import CodeView from './CodeView';
 import InitialPrompt from './InitialPrompt';
 import { useAppLogic } from '../hooks/useAppLogic';
 import ScrollSlider from './ScrollSlider';
+import StructureView from './StructureView';
+import ScrollToTopButton from './ScrollToTopButton';
 
 interface MainContentProps {
     logic: ReturnType<typeof useAppLogic>;
@@ -49,7 +52,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
                             <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full overflow-y-auto bg-light-panel dark:bg-dark-panel">
-                                <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile}/>
+                                <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} selectedFilePath={state.selectedFilePath} />
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
@@ -57,7 +60,13 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 {state.isLoading ? (
                                     <LoadingIndicator message={state.progressMessage} />
                                 ) : state.processedData ? (
-                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto"><CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} /></div>
+                                    <div ref={codeViewRef} className="flex-1 overflow-y-auto">
+                                         {state.activeView === 'structure' ? (
+                                             <StructureView structureString={state.processedData.structureString} fontSize={state.fontSize} />
+                                         ) : (
+                                             <CodeView selectedFile={state.selectedFile} editingPath={state.editingPath} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} markdownPreviewPaths={state.markdownPreviewPaths} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                         )}
+                                    </div>
                                 ) : (
                                     <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect}/></div>
                                 )}
@@ -69,7 +78,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 <>
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
                         <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
-                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile}/>}
+                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} selectedFilePath={state.selectedFilePath} />}
                         </div>
                         {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
                     </div>
@@ -83,9 +92,15 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                             ) : state.processedData ? (
                                 <div className="relative flex-1 min-h-0">
                                     <div ref={codeViewRef} className="h-full overflow-y-auto no-scrollbar">
-                                        <CodeView structureString={state.processedData.structureString} fileContents={state.processedData.fileContents} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                        <div className={state.activeView === 'code' ? 'block min-h-full' : 'hidden'}>
+                                            <CodeView selectedFile={state.selectedFile} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                        </div>
+                                        <div className={state.activeView === 'structure' ? 'block min-h-full' : 'hidden'}>
+                                            <StructureView structureString={state.processedData.structureString} fontSize={state.fontSize} />
+                                        </div>
                                     </div>
                                     <ScrollSlider scrollRef={codeViewRef} />
+                                    <ScrollToTopButton targetRef={codeViewRef} />
                                 </div>
                             ) : (
                                 <InitialPrompt onOpenFolder={handlers.handleFileSelect}/>

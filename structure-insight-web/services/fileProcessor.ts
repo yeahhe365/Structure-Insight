@@ -15,18 +15,20 @@ const IGNORED_EXTENSIONS = new Set([
 
 const IGNORED_DIRS = new Set(['.git', 'node_modules', '__pycache__', '.vscode', '.idea', 'dist', 'build', 'out', 'target']);
 
+// Move langMap outside to prevent recreation on every function call
+const LANG_MAP: { [key: string]: string } = {
+    'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+    'py': 'python', 'html': 'xml', 'xml': 'xml', 'css': 'css', 'scss': 'css', 'less': 'css',
+    'json': 'json', 'md': 'markdown', 'yml': 'yaml', 'yaml': 'yaml', 'sh': 'bash',
+    'java': 'java', 'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'cs': 'csharp', 'go': 'go', 'php': 'php',
+    'rb': 'ruby', 'rs': 'rust', 'sql': 'sql', 'swift': 'swift', 'kt': 'kotlin', 'kts': 'kotlin',
+    'dockerfile': 'dockerfile', 'gradle': 'groovy', 'vue': 'html', 'svelte': 'html',
+    'log': 'plaintext', 'txt': 'plaintext', 'env': 'properties', 'ini': 'ini',
+};
+
 function getLanguage(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
-    const langMap: { [key: string]: string } = {
-        'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
-        'py': 'python', 'html': 'xml', 'xml': 'xml', 'css': 'css', 'scss': 'css', 'less': 'css',
-        'json': 'json', 'md': 'markdown', 'yml': 'yaml', 'yaml': 'yaml', 'sh': 'bash',
-        'java': 'java', 'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'cs': 'csharp', 'go': 'go', 'php': 'php',
-        'rb': 'ruby', 'rs': 'rust', 'sql': 'sql', 'swift': 'swift', 'kt': 'kotlin', 'kts': 'kotlin',
-        'dockerfile': 'dockerfile', 'gradle': 'groovy', 'vue': 'html', 'svelte': 'html',
-        'log': 'plaintext', 'txt': 'plaintext', 'env': 'properties', 'ini': 'ini',
-    };
-    return langMap[extension] || 'plaintext';
+    return LANG_MAP[extension] || 'plaintext';
 }
 
 async function readFileContent(file: File): Promise<string> {
@@ -300,10 +302,12 @@ export function generateFullOutput(structureString: string, fileContents: FileCo
         output += "\n\n文件内容:\n";
 
         for (const file of fileContents) {
-            output += "========================================\n";
-            output += `文件: ${file.path}\n`;
-            output += "----------------------------------------\n";
-            output += `${file.content}\n\n`;
+            output += `\n--- START OF FILE ${file.path} ---\n`;
+            output += file.content;
+            if (file.content && !file.content.endsWith('\n')) {
+                output += '\n';
+            }
+            output += `--- END OF FILE ${file.path} ---\n`;
         }
     } else if (structureString !== `${structureString.split('\n')[0]}\n`) { // check if there is more than just the root
         output += "\n\n(未提取文件内容)";
