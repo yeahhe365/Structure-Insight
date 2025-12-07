@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FileNode, ProcessedFiles, ConfirmationState } from '../types';
 import { buildASCIITree } from '../services/fileProcessor';
@@ -12,6 +13,7 @@ interface InteractionProps {
     selectedFilePath: string | null;
     setSelectedFilePath: (path: string | null) => void;
     setActiveView: (view: 'structure' | 'code') => void;
+    showCharCount: boolean;
 }
 
 export const useInteraction = ({
@@ -24,6 +26,7 @@ export const useInteraction = ({
     selectedFilePath,
     setSelectedFilePath,
     setActiveView,
+    showCharCount,
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
     const [markdownPreviewPaths, setMarkdownPreviewPaths] = React.useState(new Set<string>());
@@ -53,7 +56,7 @@ export const useInteraction = ({
                     };
 
                     const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
-                    const newStructureString = buildASCIITree(newTreeData, prevData.rootName);
+                    const newStructureString = buildASCIITree(newTreeData, prevData.rootName, showCharCount);
                     
                     return { ...prevData, fileContents: newFileContents, treeData: newTreeData, structureString: newStructureString };
                 });
@@ -89,6 +92,11 @@ export const useInteraction = ({
         setEditingPath(null);
         setMarkdownPreviewPaths(new Set());
     };
+
+    const handleCopyPath = (path: string) => {
+        navigator.clipboard.writeText(path);
+        handleShowToast('路径已复制');
+    };
     
     return {
         editingPath, setEditingPath,
@@ -98,5 +106,6 @@ export const useInteraction = ({
         handleSaveEdit,
         handleToggleMarkdownPreview,
         clearInteractionState,
+        handleCopyPath,
     };
 };

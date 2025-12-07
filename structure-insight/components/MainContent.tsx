@@ -52,7 +52,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
                             <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full overflow-y-auto bg-light-panel dark:bg-dark-panel">
-                                <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} selectedFilePath={state.selectedFilePath} />
+                                <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} onCopyPath={handlers.handleCopyPath} selectedFilePath={state.selectedFilePath} showCharCount={state.showCharCount} />
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
@@ -62,9 +62,27 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 ) : state.processedData ? (
                                     <div ref={codeViewRef} className="flex-1 overflow-y-auto">
                                          {state.activeView === 'structure' ? (
-                                             <StructureView structureString={state.processedData.structureString} fontSize={state.fontSize} />
+                                             <StructureView 
+                                                structureString={state.processedData.structureString} 
+                                                fontSize={state.fontSize} 
+                                                onShowToast={(msg) => handlers.setToastMessage(msg)}
+                                             />
                                          ) : (
-                                             <CodeView selectedFile={state.selectedFile} editingPath={state.editingPath} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} markdownPreviewPaths={state.markdownPreviewPaths} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                             <CodeView 
+                                                selectedFile={state.selectedFile} 
+                                                editingPath={state.editingPath} 
+                                                onStartEdit={handlers.setEditingPath} 
+                                                onSaveEdit={handlers.handleSaveEdit} 
+                                                onCancelEdit={() => handlers.setEditingPath(null)} 
+                                                markdownPreviewPaths={state.markdownPreviewPaths} 
+                                                onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
+                                                onShowToast={(msg) => handlers.setToastMessage(msg)} 
+                                                fontSize={state.fontSize}
+                                                searchQuery={state.searchQuery}
+                                                searchOptions={state.searchOptions}
+                                                activeMatchIndexInFile={state.activeMatchIndexInFile}
+                                                onCopyPath={handlers.handleCopyPath}
+                                             />
                                          )}
                                     </div>
                                 ) : (
@@ -78,7 +96,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 <>
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
                         <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
-                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} selectedFilePath={state.selectedFilePath} />}
+                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} onCopyPath={handlers.handleCopyPath} selectedFilePath={state.selectedFilePath} showCharCount={state.showCharCount} />}
                         </div>
                         {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
                     </div>
@@ -93,10 +111,28 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 <div className="relative flex-1 min-h-0">
                                     <div ref={codeViewRef} className="h-full overflow-y-auto no-scrollbar">
                                         <div className={state.activeView === 'code' ? 'block min-h-full' : 'hidden'}>
-                                            <CodeView selectedFile={state.selectedFile} editingPath={state.editingPath} markdownPreviewPaths={state.markdownPreviewPaths} onStartEdit={handlers.setEditingPath} onSaveEdit={handlers.handleSaveEdit} onCancelEdit={() => handlers.setEditingPath(null)} onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} onShowToast={(msg) => handlers.setToastMessage(msg)} fontSize={state.fontSize} />
+                                            <CodeView 
+                                                selectedFile={state.selectedFile} 
+                                                editingPath={state.editingPath} 
+                                                markdownPreviewPaths={state.markdownPreviewPaths} 
+                                                onStartEdit={handlers.setEditingPath} 
+                                                onSaveEdit={handlers.handleSaveEdit} 
+                                                onCancelEdit={() => handlers.setEditingPath(null)} 
+                                                onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
+                                                onShowToast={(msg) => handlers.setToastMessage(msg)} 
+                                                fontSize={state.fontSize} 
+                                                searchQuery={state.searchQuery} 
+                                                searchOptions={state.searchOptions}
+                                                activeMatchIndexInFile={state.activeMatchIndexInFile}
+                                                onCopyPath={handlers.handleCopyPath}
+                                            />
                                         </div>
                                         <div className={state.activeView === 'structure' ? 'block min-h-full' : 'hidden'}>
-                                            <StructureView structureString={state.processedData.structureString} fontSize={state.fontSize} />
+                                            <StructureView 
+                                                structureString={state.processedData.structureString} 
+                                                fontSize={state.fontSize} 
+                                                onShowToast={(msg) => handlers.setToastMessage(msg)}
+                                            />
                                         </div>
                                     </div>
                                     <ScrollSlider scrollRef={codeViewRef} />

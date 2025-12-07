@@ -10,6 +10,7 @@ import StatusBar from './components/StatusBar';
 import SearchDialog from './components/SearchDialog';
 import ConfirmationDialog from './components/ConfirmationDialog';
 import AIChat from './components/AIChat';
+import FileRankDialog from './components/FileRankDialog';
 
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
@@ -31,14 +32,13 @@ const App: React.FC = () => {
                 onCopyAll={handlers.handleCopyAll} 
                 onSave={handlers.handleSave} 
                 onReset={handlers.handleReset} 
-                onRefresh={handlers.handleRefresh} 
                 onCancel={handlers.handleCancel}
                 onSettings={() => handlers.setIsSettingsOpen(true)}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
                 onToggleAiChat={() => handlers.setIsAiChatOpen(true)}
+                onToggleFileRank={() => handlers.setIsFileRankOpen(true)}
                 onShowStructure={() => handlers.setActiveView('structure')}
                 hasContent={!!state.processedData} 
-                canRefresh={!!state.lastProcessedFiles}
                 isLoading={state.isLoading}
                 activeView={state.activeView}
             />
@@ -73,6 +73,18 @@ const App: React.FC = () => {
                  )}
             </AnimatePresence>
             
+            <AnimatePresence>
+                {state.isFileRankOpen && (
+                    <FileRankDialog
+                        isOpen={state.isFileRankOpen}
+                        onClose={() => handlers.setIsFileRankOpen(false)}
+                        files={state.processedData?.fileContents || []}
+                        onSelectFile={handlers.handleFileTreeSelect}
+                        onCopyPath={handlers.handleCopyPath}
+                    />
+                )}
+            </AnimatePresence>
+
             <AIChat 
                 isOpen={state.isAiChatOpen}
                 onClose={() => handlers.setIsAiChatOpen(false)}
@@ -91,6 +103,8 @@ const App: React.FC = () => {
                         fontSize={state.fontSize}
                         onSetFontSize={settings.setFontSize}
                         onClearCache={settings.handleClearCache}
+                        showCharCount={state.showCharCount}
+                        onToggleShowCharCount={() => settings.setShowCharCount(!state.showCharCount)}
                     />
                 )}
             </AnimatePresence>

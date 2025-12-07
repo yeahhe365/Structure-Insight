@@ -45,8 +45,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/yaml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -132,24 +130,24 @@
           outline: 1px solid #f97316; /* orange-500 */
       }
     </style>
-    <script type="importmap">
+<link rel="stylesheet" href="/index.css">
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "framer-motion": "https://esm.sh/framer-motion@^11.0.8",
-    "jszip": "https://esm.sh/jszip@3.10.1",
-    "@google/genai": "https://esm.sh/@google/genai",
-    "marked": "https://aistudiocdn.com/marked@^16.2.1",
-    "dompurify": "https://aistudiocdn.com/dompurify@^3.2.6",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
     "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
+    "path": "https://aistudiocdn.com/path@^0.12.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "dompurify": "https://aistudiocdn.com/dompurify@^3.3.0",
+    "marked": "https://aistudiocdn.com/marked@^17.0.1"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
 <body class="h-full bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text font-sans antialiased overflow-hidden">
     <div id="root" class="h-full"></div>

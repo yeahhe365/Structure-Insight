@@ -4,11 +4,11 @@ import { usePersistentState } from './usePersistentState';
 import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
-import { generateFullOutput } from '../services/fileProcessor';
-import { SearchOptions, ConfirmationState, FileContent } from '../types';
+import { generateFullOutput, buildASCIITree } from '../services/fileProcessor';
+import { SearchOptions, ConfirmationState, FileContent, SearchResultItem } from '../types';
+import { marked } from 'marked';
 
 declare const hljs: any;
-declare const marked: any;
 
 export const useAppLogic = (
     codeViewRef: React.RefObject<HTMLDivElement>,
@@ -20,6 +20,7 @@ export const useAppLogic = (
     const [progressMessage, setProgressMessage] = React.useState("");
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = React.useState(false);
+    const [isFileRankOpen, setIsFileRankOpen] = React.useState(false);
     const [toastMessage, setToastMessage] = React.useState<string | null>(null);
     const [confirmation, setConfirmation] = React.useState<ConfirmationState>({isOpen: false, title: '', message: '', onConfirm: () => {}});
     
@@ -31,6 +32,7 @@ export const useAppLogic = (
     const [panelWidth, setPanelWidth] = usePersistentState('panelWidth', 30);
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
+    const [showCharCount, setShowCharCount] = usePersistentState('showCharCount', false);
 
     // --- Core Data & Selection State ---
     const [selectedFilePath, setSelectedFilePath] = React.useState<string | null>(null);
@@ -41,8 +43,12 @@ export const useAppLogic = (
     const [mobileView, setMobileView] = React.useState<'tree' | 'editor'>('editor');
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
     const [isSearchOpen, setIsSearchOpen] = React.useState(false);
-    const [searchResults, setSearchResults] = React.useState<HTMLElement[]>([]);
+    
+    // Updated Search State
+    const [searchResults, setSearchResults] = React.useState<SearchResultItem[]>([]);
     const [activeResultIndex, setActiveResultIndex] = React.useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [searchOptions, setSearchOptions] = React.useState<SearchOptions>({ caseSensitive: false, useRegex: false, wholeWord: false, fuzzySearch: false });
 
     const handleShowToast = React.useCallback((message: string) => {
         setToastMessage(message);
@@ -58,13 +64,23 @@ export const useAppLogic = (
         setMobileView, handleShowToast, isMobile, setSelectedFilePath, setActiveView
     });
 
+    // Update structure string when showCharCount changes
+    React.useEffect(() => {
+        if (processedData) {
+            const newStructure = buildASCIITree(processedData.treeData, processedData.rootName, showCharCount);
+            if (newStructure !== processedData.structureString) {
+                setProcessedData(prev => prev ? ({ ...prev, structureString: newStructure }) : null);
+            }
+        }
+    }, [showCharCount, processedData?.treeData, processedData?.rootName]);
+
     const {
         editingPath, setEditingPath, markdownPreviewPaths,
         handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
-        handleToggleMarkdownPreview, clearInteractionState
+        handleToggleMarkdownPreview, clearInteractionState, handleCopyPath
     } = useInteraction({
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
-        selectedFilePath, setSelectedFilePath, setActiveView
+        selectedFilePath, setSelectedFilePath, setActiveView, showCharCount
     });
     
     // --- Derived State ---
@@ -91,8 +107,10 @@ export const useAppLogic = (
                 setSelectedFilePath(null);
                 setIsSearchOpen(false);
                 setIsAiChatOpen(false);
+                setIsFileRankOpen(false);
                 setSearchResults([]);
                 setActiveResultIndex(null);
+                setSearchQuery('');
                 setActiveView('structure');
                 handleShowToast("内容已重置。");
             }
@@ -129,26 +147,17 @@ export const useAppLogic = (
 
     // --- Search Logic ---
     const handleSearch = React.useCallback((query: string, options: SearchOptions) => {
-        const container = codeViewRef.current;
-        if (!container) return;
+        setSearchQuery(query);
+        setSearchOptions(options);
 
-        // Unhighlight previous results
-        container.querySelectorAll('mark.search-highlight, mark.search-highlight-active').forEach(mark => {
-            const parent = mark.parentNode;
-            if (parent) {
-                parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
-                parent.normalize();
-            }
-        });
-
-        if (!query.trim()) {
+        if (!query.trim() || !processedData) {
             setSearchResults([]);
             setActiveResultIndex(null);
             return;
         }
 
         const flags = options.caseSensitive ? 'g' : 'gi';
-        let pattern = options.useRegex ? query : query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        let pattern = options.useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         if (options.wholeWord && !options.useRegex) {
             pattern = `\\b${pattern}\\b`;
         }
@@ -159,76 +168,70 @@ export const useAppLogic = (
         } catch (e) {
             setSearchResults([]);
             setActiveResultIndex(null);
-            return; // Invalid regex
+            return;
         }
 
-        const newResults: HTMLElement[] = [];
-        const codeBlocks = container.querySelectorAll('pre code');
-        
-        codeBlocks.forEach(block => {
-            const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-            const textNodes: Text[] = [];
-            while(walker.nextNode()) textNodes.push(walker.currentNode as Text);
+        const results: SearchResultItem[] = [];
 
-            textNodes.forEach(textNode => {
-                if (!textNode.textContent) return;
-                const matches = [...textNode.textContent.matchAll(regex)];
-                if (matches.length > 0) {
-                    const parent = textNode.parentNode;
-                    if (!parent) return;
+        processedData.fileContents.forEach(file => {
+            const matches = [...file.content.matchAll(regex)];
+            matches.forEach((match, indexInFile) => {
+                if (match.index !== undefined) {
+                    // Calculate line number
+                    const contentUpToMatch = file.content.substring(0, match.index);
+                    const lineNumber = contentUpToMatch.split('\n').length;
 
-                    let lastIndex = 0;
-                    matches.forEach(match => {
-                        if (match.index === undefined) return;
-                        
-                        // Add text before the match
-                        const before = textNode.textContent!.substring(lastIndex, match.index);
-                        if (before) parent.insertBefore(document.createTextNode(before), textNode);
-
-                        // Add the highlighted match
-                        const markedText = document.createElement('mark');
-                        markedText.className = 'search-highlight';
-                        markedText.textContent = match[0];
-                        parent.insertBefore(markedText, textNode);
-                        newResults.push(markedText);
-
-                        lastIndex = match.index + match[0].length;
+                    results.push({
+                        filePath: file.path,
+                        startIndex: match.index,
+                        length: match[0].length,
+                        content: match[0],
+                        line: lineNumber,
+                        indexInFile: indexInFile
                     });
-                    
-                    // Add text after the last match
-                    const after = textNode.textContent!.substring(lastIndex);
-                    if (after) parent.insertBefore(document.createTextNode(after), textNode);
-                    
-                    parent.removeChild(textNode);
                 }
             });
         });
 
-        setSearchResults(newResults);
-        setActiveResultIndex(newResults.length > 0 ? 0 : null);
-    }, [codeViewRef]);
+        setSearchResults(results);
+        if (results.length > 0) {
+            setActiveResultIndex(0);
+            const firstResult = results[0];
+            setSelectedFilePath(firstResult.filePath);
+            setActiveView('code');
+            if(isMobile) setMobileView('editor');
+        } else {
+            setActiveResultIndex(null);
+        }
+    }, [processedData, isMobile, setMobileView, setSelectedFilePath, setActiveView]);
 
     const handleNavigate = React.useCallback((direction: 'next' | 'prev') => {
         if (searchResults.length === 0 || activeResultIndex === null) return;
+        
         const newIndex = direction === 'next'
             ? (activeResultIndex + 1) % searchResults.length
             : (activeResultIndex - 1 + searchResults.length) % searchResults.length;
+        
         setActiveResultIndex(newIndex);
-    }, [searchResults, activeResultIndex]);
-
-    React.useEffect(() => {
-        searchResults.forEach((el, index) => {
-            if (index === activeResultIndex) {
-                el.classList.add('search-highlight-active');
-                el.classList.remove('search-highlight');
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                el.classList.remove('search-highlight-active');
-                el.classList.add('search-highlight');
-            }
-        });
-    }, [activeResultIndex, searchResults]);
+        
+        const result = searchResults[newIndex];
+        if (result) {
+            setSelectedFilePath(result.filePath);
+            setActiveView('code');
+            if(isMobile) setMobileView('editor');
+        }
+    }, [searchResults, activeResultIndex, isMobile, setMobileView, setSelectedFilePath, setActiveView]);
     
+    // Calculate active match index relative to the current file
+    const activeMatchIndexInFile = React.useMemo(() => {
+        if (activeResultIndex === null || !selectedFilePath || searchResults.length === 0) return null;
+        const currentResult = searchResults[activeResultIndex];
+        if (currentResult.filePath === selectedFilePath) {
+            return currentResult.indexInFile;
+        }
+        return null;
+    }, [activeResultIndex, selectedFilePath, searchResults]);
+
 
     // --- General Action Handlers ---
     const handleClearCache = React.useCallback(() => {
@@ -291,13 +294,14 @@ export const useAppLogic = (
             if (e.key === 'Escape') {
                 if (isAiChatOpen) { e.preventDefault(); setIsAiChatOpen(false); }
                 else if (isSearchOpen) { e.preventDefault(); setIsSearchOpen(false); }
+                else if (isFileRankOpen) { e.preventDefault(); setIsFileRankOpen(false); }
                 else if (isSettingsOpen) { e.preventDefault(); setIsSettingsOpen(false); }
                 else if (isLoading) { e.preventDefault(); handleCancel(); }
             }
         };
         window.addEventListener('keydown', handleGlobalKeys);
         return () => window.removeEventListener('keydown', handleGlobalKeys);
-    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
+    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isFileRankOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
 
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
@@ -314,10 +318,11 @@ export const useAppLogic = (
         state: {
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, isOnline,
             editingPath, markdownPreviewPaths, confirmation,
-            isDark, panelWidth, extractContent, fontSize,
+            isDark, panelWidth, extractContent, fontSize, showCharCount,
             lastProcessedFiles, mobileView, stats,
-            isSearchOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
+            isSearchOpen, isFileRankOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
             selectedFilePath, selectedFile, activeView,
+            searchQuery, searchOptions, activeMatchIndexInFile // Export search state for CodeView
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); }, 
@@ -326,11 +331,12 @@ export const useAppLogic = (
             handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
             handleMouseDownResize, 
             handleMobileViewToggle,
-            setIsSearchOpen, handleSearch, handleNavigate, setIsAiChatOpen,
+            setIsSearchOpen, setIsFileRankOpen, handleSearch, handleNavigate, setIsAiChatOpen,
             setActiveView,
+            handleCopyPath,
         },
         settings: {
-            setIsDark, setExtractContent, setFontSize, handleClearCache
+            setIsDark, setExtractContent, setFontSize, handleClearCache, setShowCharCount
         },
     };
 };

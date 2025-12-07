@@ -6,21 +6,20 @@ export interface HeaderProps {
   onCopyAll: () => void;
   onSave: () => void;
   onReset: () => void;
-  onRefresh: () => void;
   onCancel: () => void;
   onSettings: () => void;
   onToggleSearch: () => void;
   onToggleAiChat: () => void;
+  onToggleFileRank: () => void;
   onShowStructure: () => void;
   hasContent: boolean;
-  canRefresh: boolean;
   isLoading: boolean;
   activeView: 'structure' | 'code';
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-    onOpenFolder, onCopyAll, onSave, onReset, onRefresh, onCancel,
-    onSettings, onToggleSearch, onToggleAiChat, onShowStructure, hasContent, canRefresh, isLoading, activeView
+    onOpenFolder, onCopyAll, onSave, onReset, onCancel,
+    onSettings, onToggleSearch, onToggleAiChat, onToggleFileRank, onShowStructure, hasContent, isLoading, activeView
 }) => {
   const buttonClass = "flex items-center justify-center h-9 w-9 rounded-lg text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-border dark:hover:bg-dark-border/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
   const iconClass = "text-lg";
@@ -40,6 +39,9 @@ const Header: React.FC<HeaderProps> = ({
         <button onClick={onToggleSearch} className={buttonClass} title="在文件中查找 (Ctrl+F)" disabled={!hasContent || isLoading}>
             <i className={`fa-solid fa-search ${iconClass}`}></i>
         </button>
+        <button onClick={onToggleFileRank} className={buttonClass} title="文件大小排行" disabled={!hasContent || isLoading}>
+            <i className={`fa-solid fa-arrow-down-short-wide ${iconClass}`}></i>
+        </button>
         <button onClick={onShowStructure} className={`${buttonClass} ${activeView === 'structure' && hasContent ? 'bg-light-border dark:bg-dark-border/50 text-primary' : ''}`} title="查看项目结构" disabled={!hasContent || isLoading}>
             <i className={`fa-solid fa-sitemap ${iconClass}`}></i>
         </button>
@@ -57,9 +59,6 @@ const Header: React.FC<HeaderProps> = ({
         </button>
         <button onClick={onReset} className={buttonClass} title="重置" disabled={!hasContent || isLoading}>
           <i className={`fa-solid fa-trash-can ${iconClass}`}></i>
-        </button>
-        <button onClick={onRefresh} className={buttonClass} title="刷新" disabled={!canRefresh || isLoading}>
-          <i className={`fa-solid fa-arrows-rotate ${iconClass}`}></i>
         </button>
 
         {isLoading ? (

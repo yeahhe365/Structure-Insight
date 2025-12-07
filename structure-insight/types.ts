@@ -33,6 +33,15 @@ export interface SearchOptions {
   fuzzySearch: boolean;
 }
 
+export interface SearchResultItem {
+    filePath: string;
+    startIndex: number;
+    length: number;
+    content: string;
+    line: number;
+    indexInFile: number;
+}
+
 export interface ConfirmationState {
     isOpen: boolean;
     title: string;
