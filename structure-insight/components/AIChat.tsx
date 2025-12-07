@@ -104,7 +104,10 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
                     >
                         <header className="flex items-center justify-between p-3 border-b border-light-border dark:border-dark-border shrink-0">
-                            <h3 className="font-semibold text-sm flex items-center gap-2"><i className="fa-solid fa-wand-magic-sparkles text-primary"></i> AI 助理</h3>
+                            <h3 className="font-semibold text-sm flex items-center gap-2">
+                                <i className="fa-solid fa-wand-magic-sparkles text-primary"></i> 
+                                AI 助理 <span className="text-xs font-normal text-light-subtle-text dark:text-dark-subtle-text border border-primary/30 px-1.5 rounded-md text-primary">Gemini 3.0 Pro Thinking</span>
+                            </h3>
                             <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
                                 <i className="fa-solid fa-times text-xs"></i>
                             </button>

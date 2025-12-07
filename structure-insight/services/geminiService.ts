@@ -17,8 +17,9 @@ export async function* streamAiChat(
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const model = ai.chats.create({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-pro-preview',
         config: {
+            thinkingConfig: { thinkingBudget: 4096 },
             systemInstruction: `You are an expert software engineer acting as a helpful code assistant.
 The user has provided you with the full context of a project, including the file structure and the content of each file.
 Your task is to answer the user's questions about this codebase.

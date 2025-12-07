@@ -45,7 +45,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     
     if (!isOpen) return null;
     
-    const appVersion = "5.0.0"; 
+    const appVersion = "5.1.0"; 
 
     // Helper components for consistency
     const SectionTitle = ({ children }: { children: React.ReactNode }) => (
