@@ -47,7 +47,7 @@ const FileCard: React.FC<FileCardProps> = ({
 
   // Handle syntax highlighting and search highlighting
   React.useEffect(() => {
-    if (codeRef.current && !isEditing && !isMarkdownPreview) {
+    if (codeRef.current && !isEditing && !isMarkdownPreview && !file.excluded) {
       // 1. Set content and syntax highlight
       codeRef.current.textContent = file.content;
       hljs.highlightElement(codeRef.current);
@@ -129,20 +129,20 @@ const FileCard: React.FC<FileCardProps> = ({
   const codeStyle = { fontSize: `${fontSize}px`, lineHeight: `${Math.round(fontSize * 1.5)}px` };
   
   const sanitizedMarkdown = React.useMemo(() => {
-    if (isMarkdown && isMarkdownPreview) {
+    if (isMarkdown && isMarkdownPreview && !file.excluded) {
         const rawHtml = marked.parse(file.content);
         return DOMPurify.sanitize(rawHtml);
     }
     return '';
-  }, [file.content, isMarkdown, isMarkdownPreview]);
+  }, [file.content, isMarkdown, isMarkdownPreview, file.excluded]);
 
 
   return (
-    <div className="bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary">
+    <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
       <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
         <div className="font-mono text-sm text-light-text dark:text-dark-text truncate flex items-center" title={file.path}>
           <i className="fa-regular fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>
-          <span className="truncate">{file.path}</span>
+          <span className={`truncate ${file.excluded ? 'line-through text-light-subtle-text dark:text-dark-subtle-text italic' : ''}`}>{file.path} {file.excluded && "(已排除)"}</span>
            <button onClick={() => onCopyPath(file.path)} className="ml-2 text-light-subtle-text hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-light-border dark:hover:bg-dark-border/50" title="复制路径">
               <i className="fa-regular fa-copy text-xs"></i>
           </button>
@@ -150,14 +150,25 @@ const FileCard: React.FC<FileCardProps> = ({
         <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-2">
           <span className="hidden sm:inline">{file.stats.lines} 行</span>
           <span className="hidden sm:inline">{file.stats.chars} 字符</span>
-          {isMarkdown && (
+          {isMarkdown && !file.excluded && (
              <IconButton onClick={() => onToggleMarkdownPreview(file.path)} title={isMarkdownPreview ? "显示原文" : "预览 Markdown"} disabled={isEditing} icon={isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} />
           )}
-          <IconButton onClick={() => onStartEdit(file.path)} title="编辑内容" disabled={isEditing} icon="fa-pen-to-square" />
-          <IconButton onClick={() => handleCopy(file.content)} title="复制内容" disabled={isEditing} icon="fa-copy" />
+          {!file.excluded && (
+            <>
+                <IconButton onClick={() => onStartEdit(file.path)} title="编辑内容" disabled={isEditing} icon="fa-pen-to-square" />
+                <IconButton onClick={() => handleCopy(file.content)} title="复制内容" disabled={isEditing} icon="fa-copy" />
+            </>
+          )}
         </div>
       </div>
-      {isEditing ? (
+      
+      {file.excluded ? (
+           <div className="flex flex-col items-center justify-center p-12 text-center text-light-subtle-text dark:text-dark-subtle-text">
+                <i className="fa-solid fa-eye-slash text-4xl mb-3 opacity-50"></i>
+                <p>此文件已从分析和导出中排除。</p>
+                <p className="text-xs mt-1">在文件树中点击眼睛图标以恢复包含。</p>
+           </div>
+      ) : isEditing ? (
         <div className="p-4">
             <textarea
                 value={editText}

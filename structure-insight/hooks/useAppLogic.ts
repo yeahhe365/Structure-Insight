@@ -77,7 +77,7 @@ export const useAppLogic = (
     const {
         editingPath, setEditingPath, markdownPreviewPaths,
         handleDeleteFile, handleFileTreeSelect, handleSaveEdit,
-        handleToggleMarkdownPreview, clearInteractionState, handleCopyPath
+        handleToggleMarkdownPreview, clearInteractionState, handleCopyPath, handleToggleExclude
     } = useInteraction({
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
         selectedFilePath, setSelectedFilePath, setActiveView, showCharCount
@@ -173,7 +173,10 @@ export const useAppLogic = (
 
         const results: SearchResultItem[] = [];
 
-        processedData.fileContents.forEach(file => {
+        // Only search in non-excluded files
+        const activeFiles = processedData.fileContents.filter(f => !f.excluded);
+
+        activeFiles.forEach(file => {
             const matches = [...file.content.matchAll(regex)];
             matches.forEach((match, indexInFile) => {
                 if (match.index !== undefined) {
@@ -306,10 +309,12 @@ export const useAppLogic = (
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
         if (!processedData?.fileContents) return { fileCount: 0, totalLines: 0, totalChars: 0 };
+        // Only count files that are not excluded
+        const activeFiles = processedData.fileContents.filter(f => !f.excluded);
         return {
-            fileCount: processedData.fileContents.length,
-            totalLines: processedData.fileContents.reduce((sum, f) => sum + f.stats.lines, 0),
-            totalChars: processedData.fileContents.reduce((sum, f) => sum + f.stats.chars, 0),
+            fileCount: activeFiles.length,
+            totalLines: activeFiles.reduce((sum, f) => sum + f.stats.lines, 0),
+            totalChars: activeFiles.reduce((sum, f) => sum + f.stats.chars, 0),
         };
     }, [processedData]);
 
@@ -334,6 +339,7 @@ export const useAppLogic = (
             setIsSearchOpen, setIsFileRankOpen, handleSearch, handleNavigate, setIsAiChatOpen,
             setActiveView,
             handleCopyPath,
+            handleToggleExclude,
         },
         settings: {
             setIsDark, setExtractContent, setFontSize, handleClearCache, setShowCharCount

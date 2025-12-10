@@ -48,7 +48,9 @@ export function buildASCIITree(treeData: FileNode[], rootName: string, showStats
             const connector = isLast ? '└── ' : '├── ';
             let displayName = node.name;
             
-            if (node.status === 'error') {
+            if (node.excluded) {
+                displayName += " (已排除)";
+            } else if (node.status === 'error') {
                 displayName += " (错误)";
             } else if (showStats && !node.isDirectory && node.status === 'processed' && typeof node.chars === 'number') {
                 displayName += ` (${node.chars} 字符)`;
@@ -302,10 +304,13 @@ export function generateFullOutput(structureString: string, fileContents: FileCo
     let output = "文件结构:\n";
     output += structureString;
     
-    if (fileContents.length > 0) {
+    // Filter out excluded files
+    const activeFiles = fileContents.filter(f => !f.excluded);
+    
+    if (activeFiles.length > 0) {
         output += "\n\n文件内容:\n";
 
-        for (const file of fileContents) {
+        for (const file of activeFiles) {
             output += `\n--- START OF FILE ${file.path} ---\n`;
             output += file.content;
             if (file.content && !file.content.endsWith('\n')) {

@@ -7,6 +7,7 @@ export interface FileNode {
   status?: 'processed' | 'skipped' | 'error';
   lines?: number;
   chars?: number;
+  excluded?: boolean;
 }
 
 export interface FileContent {
@@ -16,7 +17,8 @@ export interface FileContent {
   stats: {
     lines: number;
     chars: number;
-  }
+  };
+  excluded?: boolean;
 }
 
 export interface ProcessedFiles {

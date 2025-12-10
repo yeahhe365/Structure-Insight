@@ -52,7 +52,15 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
                             <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full overflow-y-auto bg-light-panel dark:bg-dark-panel">
-                                <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} onCopyPath={handlers.handleCopyPath} selectedFilePath={state.selectedFilePath} showCharCount={state.showCharCount} />
+                                <FileTree 
+                                    nodes={state.processedData.treeData || []} 
+                                    onFileSelect={handlers.handleFileTreeSelect} 
+                                    onDeleteFile={handlers.handleDeleteFile} 
+                                    onCopyPath={handlers.handleCopyPath} 
+                                    onToggleExclude={handlers.handleToggleExclude}
+                                    selectedFilePath={state.selectedFilePath} 
+                                    showCharCount={state.showCharCount} 
+                                />
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
@@ -96,7 +104,17 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 <>
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
                         <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
-                           {state.processedData && <FileTree nodes={state.processedData.treeData || []} onFileSelect={handlers.handleFileTreeSelect} onDeleteFile={handlers.handleDeleteFile} onCopyPath={handlers.handleCopyPath} selectedFilePath={state.selectedFilePath} showCharCount={state.showCharCount} />}
+                           {state.processedData && (
+                                <FileTree 
+                                    nodes={state.processedData.treeData || []} 
+                                    onFileSelect={handlers.handleFileTreeSelect} 
+                                    onDeleteFile={handlers.handleDeleteFile} 
+                                    onCopyPath={handlers.handleCopyPath} 
+                                    onToggleExclude={handlers.handleToggleExclude}
+                                    selectedFilePath={state.selectedFilePath} 
+                                    showCharCount={state.showCharCount} 
+                                />
+                           )}
                         </div>
                         {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
                     </div>

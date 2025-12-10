@@ -87,6 +87,41 @@ export const useInteraction = ({
             return newSet;
         });
     };
+
+    const handleToggleExclude = (path: string) => {
+        setProcessedData(prevData => {
+            if (!prevData) return null;
+
+            // Update FileContents
+            const newFileContents = prevData.fileContents.map(f => 
+                f.path === path ? { ...f, excluded: !f.excluded } : f
+            );
+
+            // Update TreeData
+            const updateNodeRecursive = (nodes: FileNode[]): FileNode[] => {
+                return nodes.map(node => {
+                    if (node.path === path) {
+                         return { ...node, excluded: !node.excluded };
+                    }
+                    if (node.children) {
+                        return { ...node, children: updateNodeRecursive(node.children) };
+                    }
+                    return node;
+                });
+            };
+            const newTreeData = updateNodeRecursive(prevData.treeData);
+            
+            // Regenerate structure string
+            const newStructureString = buildASCIITree(newTreeData, prevData.rootName, showCharCount);
+
+            return {
+                ...prevData,
+                fileContents: newFileContents,
+                treeData: newTreeData,
+                structureString: newStructureString
+            };
+        });
+    };
     
     const clearInteractionState = () => {
         setEditingPath(null);
@@ -107,5 +142,6 @@ export const useInteraction = ({
         handleToggleMarkdownPreview,
         clearInteractionState,
         handleCopyPath,
+        handleToggleExclude,
     };
 };
