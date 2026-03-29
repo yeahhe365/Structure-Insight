@@ -8,11 +8,51 @@ import { useAppLogic } from '../hooks/useAppLogic';
 import ScrollSlider from './ScrollSlider';
 import StructureView from './StructureView';
 import ScrollToTopButton from './ScrollToTopButton';
+import { FileNode } from '../types';
 
 interface MainContentProps {
     logic: ReturnType<typeof useAppLogic>;
     codeViewRef: React.RefObject<HTMLDivElement>;
     leftPanelRef: React.RefObject<HTMLDivElement>;
+}
+
+/** Recursively collect unique file extensions from a tree */
+function collectExtensions(nodes: FileNode[]): string[] {
+    const exts = new Set<string>();
+    const walk = (items: FileNode[]) => {
+        for (const node of items) {
+            if (node.isDirectory) {
+                walk(node.children);
+            } else {
+                const dot = node.name.lastIndexOf('.');
+                if (dot > 0 && dot < node.name.length - 1) {
+                    exts.add(node.name.slice(dot).toLowerCase());
+                }
+            }
+        }
+    };
+    walk(nodes);
+    return Array.from(exts).sort();
+}
+
+/** Recursively filter tree to files matching `ext`, keeping directories that have matching children */
+function filterTreeByExtension(nodes: FileNode[], ext: string | null): FileNode[] {
+    if (!ext) return nodes;
+    return nodes.reduce<FileNode[]>((acc, node) => {
+        if (node.isDirectory) {
+            const filteredChildren = filterTreeByExtension(node.children, ext);
+            if (filteredChildren.length > 0) {
+                acc.push({ ...node, children: filteredChildren });
+            }
+        } else {
+            const dot = node.name.lastIndexOf('.');
+            const fileExt = dot > 0 && dot < node.name.length - 1 ? node.name.slice(dot).toLowerCase() : '';
+            if (fileExt === ext) {
+                acc.push(node);
+            }
+        }
+        return acc;
+    }, []);
 }
 
 const LoadingIndicator: React.FC<{message: string}> = ({message}) => (
@@ -27,6 +67,11 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
     const { state, handlers } = logic;
     const { isMobile } = state;
     const fileTreeScrollRef = React.useRef<HTMLDivElement>(null);
+    const [filterExt, setFilterExt] = React.useState<string | null>(null);
+
+    const treeData = state.processedData?.treeData || [];
+    const extensions = React.useMemo(() => collectExtensions(treeData), [treeData]);
+    const filteredNodes = React.useMemo(() => filterTreeByExtension(treeData, filterExt), [treeData, filterExt]);
 
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
@@ -41,8 +86,21 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
         <main className="flex-1 flex overflow-hidden relative">
             <AnimatePresence>
                 {state.isDragging && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-primary/50 backdrop-blur-sm flex items-center justify-center z-30 pointer-events-none">
-                        <div className="text-center text-white bg-primary/80 p-8 rounded-lg"><i className="fa-solid fa-upload fa-3x mb-4"></i><p className="text-xl font-bold">拖放文件夹以进行分析</p></div>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-white/70 dark:bg-dark-bg/70 backdrop-blur-sm"
+                    >
+                        <div className="border-4 border-dashed border-primary/60 rounded-2xl p-12 flex flex-col items-center gap-4 max-w-md mx-4">
+                            <motion.i
+                                className="fa-solid fa-cloud-arrow-up text-5xl text-primary"
+                                animate={{ scale: [1, 1.15, 1] }}
+                                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                            />
+                            <p className="text-xl font-bold text-light-text dark:text-dark-text">拖放文件夹或 .zip 文件</p>
+                            <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text">支持任意代码项目</p>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -52,14 +110,31 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
                             <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full overflow-y-auto bg-light-panel dark:bg-dark-panel">
-                                <FileTree 
-                                    nodes={state.processedData.treeData || []} 
-                                    onFileSelect={handlers.handleFileTreeSelect} 
-                                    onDeleteFile={handlers.handleDeleteFile} 
-                                    onCopyPath={handlers.handleCopyPath} 
+                                {extensions.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
+                                        {extensions.map(ext => (
+                                            <button
+                                                key={ext}
+                                                onClick={() => setFilterExt(filterExt === ext ? null : ext)}
+                                                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                                    filterExt === ext
+                                                        ? 'bg-primary text-white'
+                                                        : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
+                                                }`}
+                                            >
+                                                {ext}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                <FileTree
+                                    nodes={filteredNodes}
+                                    onFileSelect={handlers.handleFileTreeSelect}
+                                    onDeleteFile={handlers.handleDeleteFile}
+                                    onCopyPath={handlers.handleCopyPath}
                                     onToggleExclude={handlers.handleToggleExclude}
-                                    selectedFilePath={state.selectedFilePath} 
-                                    showCharCount={state.showCharCount} 
+                                    selectedFilePath={state.selectedFilePath}
+                                    showCharCount={state.showCharCount}
                                 />
                             </motion.div>
                         )}
@@ -105,15 +180,34 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
                         <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
                            {state.processedData && (
-                                <FileTree 
-                                    nodes={state.processedData.treeData || []} 
-                                    onFileSelect={handlers.handleFileTreeSelect} 
-                                    onDeleteFile={handlers.handleDeleteFile} 
-                                    onCopyPath={handlers.handleCopyPath} 
-                                    onToggleExclude={handlers.handleToggleExclude}
-                                    selectedFilePath={state.selectedFilePath} 
-                                    showCharCount={state.showCharCount} 
-                                />
+                                <>
+                                    {extensions.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
+                                            {extensions.map(ext => (
+                                                <button
+                                                    key={ext}
+                                                    onClick={() => setFilterExt(filterExt === ext ? null : ext)}
+                                                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                                        filterExt === ext
+                                                            ? 'bg-primary text-white'
+                                                            : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
+                                                    }`}
+                                                >
+                                                    {ext}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <FileTree
+                                        nodes={filteredNodes}
+                                        onFileSelect={handlers.handleFileTreeSelect}
+                                        onDeleteFile={handlers.handleDeleteFile}
+                                        onCopyPath={handlers.handleCopyPath}
+                                        onToggleExclude={handlers.handleToggleExclude}
+                                        selectedFilePath={state.selectedFilePath}
+                                        showCharCount={state.showCharCount}
+                                    />
+                                </>
                            )}
                         </div>
                         {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
