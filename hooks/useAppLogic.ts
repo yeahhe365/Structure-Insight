@@ -30,6 +30,7 @@ export const useAppLogic = (
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
     const [showCharCount, setShowCharCount] = usePersistentState('showCharCount', false);
+    const [wordWrap, setWordWrap] = usePersistentState('wordWrap', false);
     const [maxCharsThreshold, setMaxCharsThreshold] = usePersistentState('maxCharsThreshold', 1000000);
 
     // --- Core Data & Selection State ---
@@ -81,6 +82,27 @@ export const useAppLogic = (
     }, [handleFileTreeSelect]);
 
     const closeTab = React.useCallback((path: string) => {
+        if (editingPath === path) {
+            setConfirmation({
+                isOpen: true,
+                title: '文件正在编辑中',
+                message: '关闭标签页将丢失未保存的更改。是否继续？',
+                onConfirm: () => {
+                    setEditingPath(null);
+                    setOpenFiles(prev => {
+                        const next = prev.filter(p => p !== path);
+                        if (path === selectedFilePath) {
+                            const closedIdx = prev.indexOf(path);
+                            const newSelected = next[Math.min(closedIdx, next.length - 1)] ?? null;
+                            setSelectedFilePath(newSelected);
+                            if (!newSelected) setActiveView('structure');
+                        }
+                        return next;
+                    });
+                }
+            });
+            return;
+        }
         setOpenFiles(prev => {
             const next = prev.filter(p => p !== path);
             if (path === selectedFilePath) {
@@ -91,7 +113,7 @@ export const useAppLogic = (
             }
             return next;
         });
-    }, [selectedFilePath, setSelectedFilePath, setActiveView]);
+    }, [editingPath, selectedFilePath, setSelectedFilePath, setActiveView, setConfirmation, setEditingPath]);
 
     // --- Search Hook ---
     const {
@@ -258,7 +280,7 @@ export const useAppLogic = (
         state: {
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage,
             editingPath, markdownPreviewPaths, confirmation,
-            isDark, panelWidth, extractContent, fontSize, showCharCount, maxCharsThreshold,
+            isDark, panelWidth, extractContent, fontSize, showCharCount, maxCharsThreshold, wordWrap,
             lastProcessedFiles, mobileView, stats,
             isSearchOpen, isFileRankOpen, isShortcutsOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
             selectedFilePath, selectedFile, activeView,
@@ -279,7 +301,7 @@ export const useAppLogic = (
             handleToggleExclude,
         },
         settings: {
-            setIsDark, setExtractContent, setFontSize, handleClearCache, setShowCharCount, setMaxCharsThreshold
+            setIsDark, setExtractContent, setFontSize, handleClearCache, setShowCharCount, setMaxCharsThreshold, setWordWrap
         },
     };
 };

@@ -23,6 +23,7 @@ const TabBar: React.FC<TabBarProps> = ({ openFiles, selectedFilePath, onTabSelec
                     <div
                         key={path}
                         onClick={() => onTabSelect(path)}
+                        onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onCloseTab(path); } }}
                         className={`group flex items-center gap-1.5 px-3 py-1.5 cursor-pointer border-b-2 transition-colors shrink-0 text-xs ${
                             isActive
                                 ? 'border-primary bg-primary/10 text-light-text dark:text-dark-text'

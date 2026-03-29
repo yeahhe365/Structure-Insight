@@ -14,6 +14,8 @@ interface FileRankDialogProps {
 }
 
 const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files, onSelectFile, onCopyPath, onDeleteFile, onToggleExclude }) => {
+    const [sortBy, setSortBy] = React.useState<'size' | 'name' | 'type'>('size');
+
     // Prevent interaction with background and handle Esc
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -26,8 +28,17 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
     }, [isOpen, onClose]);
 
     const sortedFiles = React.useMemo(() => {
-        return [...files].sort((a, b) => b.stats.chars - a.stats.chars);
-    }, [files]);
+        const sorted = [...files];
+        if (sortBy === 'size') {
+            sorted.sort((a, b) => b.stats.chars - a.stats.chars);
+        } else if (sortBy === 'name') {
+            sorted.sort((a, b) => a.path.localeCompare(b.path));
+        } else {
+            const getExt = (path: string) => { const dot = path.lastIndexOf('.'); return dot >= 0 ? path.slice(dot) : ''; };
+            sorted.sort((a, b) => getExt(a.path).localeCompare(getExt(b.path)) || a.path.localeCompare(b.path));
+        }
+        return sorted;
+    }, [files, sortBy]);
     
     const maxChars = sortedFiles.length > 0 ? sortedFiles[0].stats.chars : 0;
 
@@ -70,6 +81,24 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                     >
                         <i className="fa-solid fa-times"></i>
                     </button>
+                </div>
+
+                {/* Sort Options */}
+                <div className="flex items-center gap-1.5 px-6 py-2 border-b border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-bg/30 shrink-0">
+                    <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text mr-1">排序:</span>
+                    {([['size', '大小'], ['name', '名称'], ['type', '类型']] as const).map(([key, label]) => (
+                        <button
+                            key={key}
+                            onClick={() => setSortBy(key)}
+                            className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
+                                sortBy === key
+                                    ? 'bg-primary text-white'
+                                    : 'bg-light-bg dark:bg-dark-bg text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-border dark:hover:bg-dark-border'
+                            }`}
+                        >
+                            {label}
+                        </button>
+                    ))}
                 </div>
 
                 {/* List */}
