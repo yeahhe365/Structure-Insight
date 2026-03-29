@@ -35,6 +35,7 @@ export const useAppLogic = (
     // --- Core Data & Selection State ---
     const [selectedFilePath, setSelectedFilePath] = React.useState<string | null>(null);
     const [activeView, setActiveView] = React.useState<'structure' | 'code'>('structure');
+    const [openFiles, setOpenFiles] = React.useState<string[]>([]);
 
     // --- Layout State ---
     const windowSize = useWindowSize();
@@ -72,6 +73,25 @@ export const useAppLogic = (
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
         selectedFilePath, setSelectedFilePath, setActiveView, showCharCount
     });
+
+    // --- Tab Management ---
+    const handleTabSelect = React.useCallback((path: string) => {
+        setOpenFiles(prev => prev.includes(path) ? prev : [...prev, path]);
+        handleFileTreeSelect(path);
+    }, [handleFileTreeSelect]);
+
+    const closeTab = React.useCallback((path: string) => {
+        setOpenFiles(prev => {
+            const next = prev.filter(p => p !== path);
+            if (path === selectedFilePath) {
+                const closedIdx = prev.indexOf(path);
+                const newSelected = next[Math.min(closedIdx, next.length - 1)] ?? null;
+                setSelectedFilePath(newSelected);
+                if (!newSelected) setActiveView('structure');
+            }
+            return next;
+        });
+    }, [selectedFilePath, setSelectedFilePath, setActiveView]);
 
     // --- Search Hook ---
     const {
@@ -129,6 +149,7 @@ export const useAppLogic = (
                 setIsSettingsOpen(false);
                 clearInteractionState();
                 setSelectedFilePath(null);
+                setOpenFiles([]);
                 resetSearch();
                 setIsAiChatOpen(false);
                 setIsFileRankOpen(false);
@@ -241,6 +262,7 @@ export const useAppLogic = (
             lastProcessedFiles, mobileView, stats,
             isSearchOpen, isFileRankOpen, isShortcutsOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
             selectedFilePath, selectedFile, activeView,
+            openFiles,
             searchQuery, searchOptions, activeMatchIndexInFile,
             recentProjects,
         },
@@ -248,7 +270,7 @@ export const useAppLogic = (
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); },
             handleFileSelect, handleCopyAll, handleSave, handleReset, handleRefresh: () => handleRefresh(handleProcessing), handleCancel,
             setIsSettingsOpen, setToastMessage, setConfirmation,
-            handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
+            handleDeleteFile, handleFileTreeSelect: handleTabSelect, closeTab, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
             handleMouseDownResize,
             handleMobileViewToggle,
             setIsSearchOpen, setIsFileRankOpen, setIsShortcutsOpen, handleSearch, handleNavigate, setIsAiChatOpen,

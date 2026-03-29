@@ -135,6 +135,9 @@ const getFileIcon = (fileName: string): IconEntry => {
     return extensionMap.get(ext) ?? defaultIcon;
 };
 
+export { getFileIcon };
+export type { IconEntry };
+
 const FileTreeNode: React.FC<{ 
     node: FileNode; 
     onFileSelect: (path: string) => void; 

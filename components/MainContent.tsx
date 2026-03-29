@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FileTree from './FileTree';
 import CodeView from './CodeView';
 import InitialPrompt from './InitialPrompt';
+import TabBar from './TabBar';
 import { useAppLogic } from '../hooks/useAppLogic';
 import ScrollSlider from './ScrollSlider';
 import StructureView from './StructureView';
@@ -140,6 +141,14 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                         )}
                         {state.mobileView === 'editor' && (
                             <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: '100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
+                                {state.activeView === 'code' && state.processedData && (
+                                    <TabBar
+                                        openFiles={state.openFiles}
+                                        selectedFilePath={state.selectedFilePath}
+                                        onTabSelect={handlers.handleFileTreeSelect}
+                                        onCloseTab={handlers.closeTab}
+                                    />
+                                )}
                                 {state.isLoading ? (
                                     <LoadingIndicator message={state.progressMessage} />
                                 ) : state.processedData ? (
@@ -215,7 +224,15 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                     <div onMouseDown={handlers.handleMouseDownResize} className="w-1.5 h-full cursor-col-resize group z-10">
                          <div className="w-full h-full bg-light-border dark:bg-dark-border group-hover:bg-primary transition-colors duration-200" />
                     </div>
-                    <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex">
+                    <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex flex-col">
+                        {state.activeView === 'code' && state.processedData && (
+                            <TabBar
+                                openFiles={state.openFiles}
+                                selectedFilePath={state.selectedFilePath}
+                                onTabSelect={handlers.handleFileTreeSelect}
+                                onCloseTab={handlers.closeTab}
+                            />
+                        )}
                         <div className="flex-1 h-full flex flex-col min-w-0">
                             {state.isLoading ? (
                                 <LoadingIndicator message={state.progressMessage} />
