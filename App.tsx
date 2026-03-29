@@ -3,15 +3,19 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppLogic } from './hooks/useAppLogic';
 import Toast from './components/Toast';
-import SettingsDialog from './components/SettingsDialog';
 import Header from './components/Header';
 import MainContent from './components/MainContent';
 import StatusBar from './components/StatusBar';
-import SearchDialog from './components/SearchDialog';
 import ConfirmationDialog from './components/ConfirmationDialog';
-import AIChat from './components/AIChat';
-import FileRankDialog from './components/FileRankDialog';
-import KeyboardShortcutsDialog from './components/KeyboardShortcutsDialog';
+
+// Lazy-load heavy components
+const SettingsDialog = React.lazy(() => import('./components/SettingsDialog'));
+const SearchDialog = React.lazy(() => import('./components/SearchDialog'));
+const AIChat = React.lazy(() => import('./components/AIChat'));
+const FileRankDialog = React.lazy(() => import('./components/FileRankDialog'));
+const KeyboardShortcutsDialog = React.lazy(() => import('./components/KeyboardShortcutsDialog'));
+
+const SuspenseFallback = () => null;
 
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
@@ -72,18 +76,21 @@ const App: React.FC = () => {
 
             <AnimatePresence>
                  {state.isSearchOpen && (
-                    <SearchDialog 
+                    <React.Suspense fallback={<SuspenseFallback />}>
+                    <SearchDialog
                         onClose={() => handlers.setIsSearchOpen(false)}
                         onSearch={handlers.handleSearch}
                         onNavigate={handlers.handleNavigate}
                         resultsCount={state.searchResults.length}
                         currentIndex={state.activeResultIndex}
                     />
+                    </React.Suspense>
                  )}
             </AnimatePresence>
-            
+
             <AnimatePresence>
                 {state.isFileRankOpen && (
+                    <React.Suspense fallback={<SuspenseFallback />}>
                     <FileRankDialog
                         isOpen={state.isFileRankOpen}
                         onClose={() => handlers.setIsFileRankOpen(false)}
@@ -93,17 +100,21 @@ const App: React.FC = () => {
                         onDeleteFile={handlers.handleDeleteFile}
                         onToggleExclude={handlers.handleToggleExclude}
                     />
+                    </React.Suspense>
                 )}
             </AnimatePresence>
 
-            <AIChat 
+            <React.Suspense fallback={<SuspenseFallback />}>
+            <AIChat
                 isOpen={state.isAiChatOpen}
                 onClose={() => handlers.setIsAiChatOpen(false)}
                 projectData={state.processedData}
             />
+            </React.Suspense>
 
             <AnimatePresence>
                 {state.isSettingsOpen && (
+                    <React.Suspense fallback={<SuspenseFallback />}>
                     <SettingsDialog
                         isOpen={state.isSettingsOpen}
                         onClose={() => handlers.setIsSettingsOpen(false)}
@@ -121,14 +132,17 @@ const App: React.FC = () => {
                         wordWrap={state.wordWrap}
                         onToggleWordWrap={() => settings.setWordWrap(!state.wordWrap)}
                     />
+                    </React.Suspense>
                 )}
             </AnimatePresence>
             <AnimatePresence>
                 {state.isShortcutsOpen && (
+                    <React.Suspense fallback={<SuspenseFallback />}>
                     <KeyboardShortcutsDialog
                         isOpen={state.isShortcutsOpen}
                         onClose={() => handlers.setIsShortcutsOpen(false)}
                     />
+                    </React.Suspense>
                 )}
             </AnimatePresence>
             <AnimatePresence>
