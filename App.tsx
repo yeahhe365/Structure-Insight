@@ -11,6 +11,7 @@ import SearchDialog from './components/SearchDialog';
 import ConfirmationDialog from './components/ConfirmationDialog';
 import AIChat from './components/AIChat';
 import FileRankDialog from './components/FileRankDialog';
+import KeyboardShortcutsDialog from './components/KeyboardShortcutsDialog';
 
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
@@ -109,6 +110,14 @@ const App: React.FC = () => {
                         onToggleShowCharCount={() => settings.setShowCharCount(!state.showCharCount)}
                         maxCharsThreshold={state.maxCharsThreshold}
                         onSetMaxCharsThreshold={settings.setMaxCharsThreshold}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {state.isShortcutsOpen && (
+                    <KeyboardShortcutsDialog
+                        isOpen={state.isShortcutsOpen}
+                        onClose={() => handlers.setIsShortcutsOpen(false)}
                     />
                 )}
             </AnimatePresence>

@@ -20,6 +20,7 @@ export const useAppLogic = (
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
     const [isAiChatOpen, setIsAiChatOpen] = React.useState(false);
     const [isFileRankOpen, setIsFileRankOpen] = React.useState(false);
+    const [isShortcutsOpen, setIsShortcutsOpen] = React.useState(false);
     const [toastMessage, setToastMessage] = React.useState<string | null>(null);
     const [confirmation, setConfirmation] = React.useState<ConfirmationState>({isOpen: false, title: '', message: '', onConfirm: () => {}});
 
@@ -188,9 +189,11 @@ export const useAppLogic = (
                 if (e.key === 'f') { e.preventDefault(); if (processedData) setIsSearchOpen(p => !p); }
                 if (e.key === 's') { e.preventDefault(); if (processedData) handleSave(); }
                 if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
+                if (e.key === '/') { e.preventDefault(); setIsShortcutsOpen(p => !p); }
             }
             if (e.key === 'Escape') {
-                if (isAiChatOpen) { e.preventDefault(); setIsAiChatOpen(false); }
+                if (isShortcutsOpen) { e.preventDefault(); setIsShortcutsOpen(false); }
+                else if (isAiChatOpen) { e.preventDefault(); setIsAiChatOpen(false); }
                 else if (isSearchOpen) { e.preventDefault(); setIsSearchOpen(false); }
                 else if (isFileRankOpen) { e.preventDefault(); setIsFileRankOpen(false); }
                 else if (isSettingsOpen) { e.preventDefault(); setIsSettingsOpen(false); }
@@ -199,7 +202,7 @@ export const useAppLogic = (
         };
         window.addEventListener('keydown', handleGlobalKeys);
         return () => window.removeEventListener('keydown', handleGlobalKeys);
-    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isFileRankOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
+    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isFileRankOpen, isShortcutsOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
 
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
@@ -219,7 +222,7 @@ export const useAppLogic = (
             editingPath, markdownPreviewPaths, confirmation,
             isDark, panelWidth, extractContent, fontSize, showCharCount, maxCharsThreshold,
             lastProcessedFiles, mobileView, stats,
-            isSearchOpen, isFileRankOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
+            isSearchOpen, isFileRankOpen, isShortcutsOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
             selectedFilePath, selectedFile, activeView,
             searchQuery, searchOptions, activeMatchIndexInFile,
         },
@@ -230,7 +233,7 @@ export const useAppLogic = (
             handleDeleteFile, handleFileTreeSelect, setEditingPath, handleSaveEdit, handleToggleMarkdownPreview,
             handleMouseDownResize,
             handleMobileViewToggle,
-            setIsSearchOpen, setIsFileRankOpen, handleSearch, handleNavigate, setIsAiChatOpen,
+            setIsSearchOpen, setIsFileRankOpen, setIsShortcutsOpen, handleSearch, handleNavigate, setIsAiChatOpen,
             setActiveView,
             handleCopyPath,
             handleToggleExclude,
