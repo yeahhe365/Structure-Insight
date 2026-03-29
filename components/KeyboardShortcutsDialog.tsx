@@ -12,6 +12,7 @@ const shortcuts = [
     { keys: ['Ctrl', 'S'], description: 'Save as text' },
     { keys: ['Escape'], description: 'Close dialog' },
     { keys: ['Ctrl', '/'], description: 'Show this help' },
+    { keys: ['Ctrl', 'W'], description: 'Close current tab' },
 ];
 
 const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpen, onClose }) => {

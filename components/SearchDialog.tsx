@@ -171,6 +171,14 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                             )}
                         </div>
                         <button type="button" onClick={() => onNavigate('prev')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-up"></i></button>
+                        {query && resultsCount > 0 && (
+                            <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text whitespace-nowrap">
+                                {currentIndex !== null ? `${currentIndex + 1}/${resultsCount}` : `1/${resultsCount}`} 匹配
+                            </span>
+                        )}
+                        {query && resultsCount === 0 && (
+                            <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text whitespace-nowrap">无匹配</span>
+                        )}
                         <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-down"></i></button>
                     </div>
                     <div className="flex items-center space-x-2 mt-3">

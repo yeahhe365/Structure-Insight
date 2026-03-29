@@ -133,7 +133,9 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                     onFileSelect={handlers.handleFileTreeSelect}
                                     onDeleteFile={handlers.handleDeleteFile}
                                     onCopyPath={handlers.handleCopyPath}
+                                                wordWrap={state.wordWrap}
                                     onToggleExclude={handlers.handleToggleExclude}
+                                    onDirDoubleClick={handlers.handleDirDoubleClick}
                                     selectedFilePath={state.selectedFilePath}
                                     showCharCount={state.showCharCount}
                                 />
@@ -174,6 +176,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                                 searchOptions={state.searchOptions}
                                                 activeMatchIndexInFile={state.activeMatchIndexInFile}
                                                 onCopyPath={handlers.handleCopyPath}
+                                                wordWrap={state.wordWrap}
                                              />
                                          )}
                                     </div>
@@ -212,7 +215,9 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                         onFileSelect={handlers.handleFileTreeSelect}
                                         onDeleteFile={handlers.handleDeleteFile}
                                         onCopyPath={handlers.handleCopyPath}
+                                                wordWrap={state.wordWrap}
                                         onToggleExclude={handlers.handleToggleExclude}
+                                        onDirDoubleClick={handlers.handleDirDoubleClick}
                                         selectedFilePath={state.selectedFilePath}
                                         showCharCount={state.showCharCount}
                                     />
@@ -254,6 +259,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                                 searchOptions={state.searchOptions}
                                                 activeMatchIndexInFile={state.activeMatchIndexInFile}
                                                 onCopyPath={handlers.handleCopyPath}
+                                                wordWrap={state.wordWrap}
                                             />
                                         </div>
                                         <div className={state.activeView === 'structure' ? 'block min-h-full' : 'hidden'}>
@@ -283,4 +289,4 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
     );
 };
 
-export default MainContent;
+export default React.memo(MainContent);

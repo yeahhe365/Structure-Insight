@@ -123,6 +123,11 @@ export const useAppLogic = (
         processedData, isMobile, setMobileView, setSelectedFilePath, setActiveView,
     });
 
+    const handleDirDoubleClick = React.useCallback(() => {
+        setActiveView('code');
+        setMobileView('editor');
+    }, [setActiveView, setMobileView]);
+
     // Update structure string when showCharCount changes
     React.useEffect(() => {
         if (processedData) {
@@ -250,6 +255,7 @@ export const useAppLogic = (
                 if (e.key === 's') { e.preventDefault(); if (processedData) handleSave(); }
                 if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
                 if (e.key === '/') { e.preventDefault(); setIsShortcutsOpen(p => !p); }
+                if (e.key === 'w') { e.preventDefault(); if (selectedFilePath) closeTab(selectedFilePath); }
             }
             if (e.key === 'Escape') {
                 if (isShortcutsOpen) { e.preventDefault(); setIsShortcutsOpen(false); }
@@ -262,7 +268,7 @@ export const useAppLogic = (
         };
         window.addEventListener('keydown', handleGlobalKeys);
         return () => window.removeEventListener('keydown', handleGlobalKeys);
-    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isFileRankOpen, isShortcutsOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel]);
+    }, [isSearchOpen, isSettingsOpen, isAiChatOpen, isFileRankOpen, isShortcutsOpen, isLoading, processedData, handleSave, handleFileSelect, handleCancel, selectedFilePath, closeTab]);
 
     // --- Memoized Stats ---
     const stats = React.useMemo(() => {
@@ -299,6 +305,7 @@ export const useAppLogic = (
             setActiveView,
             handleCopyPath,
             handleToggleExclude,
+            handleDirDoubleClick,
         },
         settings: {
             setIsDark, setExtractContent, setFontSize, handleClearCache, setShowCharCount, setMaxCharsThreshold, setWordWrap

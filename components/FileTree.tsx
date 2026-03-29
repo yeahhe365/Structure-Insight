@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FileNode } from '../types';
 
 interface FileTreeProps {
@@ -8,6 +9,7 @@ interface FileTreeProps {
   onDeleteFile: (path: string) => void;
   onCopyPath: (path: string) => void;
   onToggleExclude: (path: string) => void;
+  onDirDoubleClick?: () => void;
   selectedFilePath: string | null;
   showCharCount: boolean;
 }
@@ -138,16 +140,17 @@ const getFileIcon = (fileName: string): IconEntry => {
 export { getFileIcon };
 export type { IconEntry };
 
-const FileTreeNode: React.FC<{ 
-    node: FileNode; 
-    onFileSelect: (path: string) => void; 
-    onDeleteFile: (path: string) => void; 
-    onCopyPath: (path: string) => void; 
+const FileTreeNode: React.FC<{
+    node: FileNode;
+    onFileSelect: (path: string) => void;
+    onDeleteFile: (path: string) => void;
+    onCopyPath: (path: string) => void;
     onToggleExclude: (path: string) => void;
-    level: number; 
-    selectedFilePath: string | null; 
-    showCharCount: boolean; 
-}> = React.memo(({ node, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, level, selectedFilePath, showCharCount }) => {
+    onDirDoubleClick?: () => void;
+    level: number;
+    selectedFilePath: string | null;
+    showCharCount: boolean;
+}> = React.memo(({ node, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, level, selectedFilePath, showCharCount }) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
   const handleToggle = () => {
@@ -161,6 +164,13 @@ const FileTreeNode: React.FC<{
       onFileSelect(node.path);
     } else if (node.isDirectory) {
       handleToggle();
+    }
+  };
+
+  const handleDoubleClick = () => {
+    if (node.isDirectory && onDirDoubleClick) {
+      setIsOpen(!isOpen);
+      onDirDoubleClick();
     }
   };
   
@@ -190,6 +200,11 @@ const FileTreeNode: React.FC<{
   let displayName = node.name;
   const isSelected = !node.isDirectory && node.path === selectedFilePath;
 
+  // Add stats to tooltip for processed files
+  if (!node.isDirectory && (node.status === 'processed' || !node.status) && node.lines && node.chars) {
+    title = `${node.path}\n${node.lines} 行 · ${node.chars} 字符`;
+  }
+
 
   if (node.status === 'skipped') {
       statusClass += ' opacity-60';
@@ -209,6 +224,7 @@ const FileTreeNode: React.FC<{
       <div
         className={`group flex flex-col py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass} ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''}`}
         onClick={handleSelect}
+        onDoubleClick={handleDoubleClick}
         title={title}
       >
         {/* Top Row: Icon, Name, Stats */}
@@ -270,18 +286,28 @@ const FileTreeNode: React.FC<{
             </div>
         )}
       </div>
-      {node.isDirectory && isOpen && (
-        <ul className="pl-0">
-          {node.children.map(child => (
-            <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} level={level + 1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
-          ))}
-        </ul>
+      {node.isDirectory && (
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.ul
+              className="pl-0 overflow-hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+            >
+              {node.children.map(child => (
+                <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={level + 1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
       )}
     </li>
   );
 });
 
-const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, selectedFilePath, showCharCount }) => {
+const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, selectedFilePath, showCharCount }) => {
   if (!nodes || nodes.length === 0) {
     return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">未加载文件。</div>;
   }
@@ -290,7 +316,7 @@ const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, 
       <h3 className="text-xs font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
       <ul className="pl-0">
         {nodes.map(node => (
-          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} level={1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
+          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
         ))}
       </ul>
     </div>
