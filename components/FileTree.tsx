@@ -151,12 +151,14 @@ const FileTreeNode: React.FC<{
     level: number;
     selectedFilePath: string | null;
     showCharCount: boolean;
-}> = React.memo(({ node, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, level, selectedFilePath, showCharCount }) => {
-  const [isOpen, setIsOpen] = React.useState(true);
+    expandedPaths: Set<string>;
+    onToggleExpand: (path: string) => void;
+}> = React.memo(({ node, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, level, selectedFilePath, showCharCount, expandedPaths, onToggleExpand }) => {
+  const isOpen = expandedPaths.has(node.path);
 
   const handleToggle = () => {
     if (node.isDirectory) {
-      setIsOpen(!isOpen);
+      onToggleExpand(node.path);
     }
   };
 
@@ -170,7 +172,7 @@ const FileTreeNode: React.FC<{
 
   const handleDoubleClick = () => {
     if (node.isDirectory && onDirDoubleClick) {
-      setIsOpen(!isOpen);
+      onToggleExpand(node.path);
       onDirDoubleClick();
     }
   };
@@ -298,7 +300,7 @@ const FileTreeNode: React.FC<{
               transition={{ duration: 0.15, ease: 'easeInOut' }}
             >
               {node.children.map(child => (
-                <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={level + 1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
+                <FileTreeNode key={child.path} node={child} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={level + 1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} expandedPaths={expandedPaths} onToggleExpand={onToggleExpand} />
               ))}
             </motion.ul>
           )}
@@ -309,6 +311,30 @@ const FileTreeNode: React.FC<{
 });
 
 const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, selectedFilePath, showCharCount }) => {
+  const [expandedPaths, setExpandedPaths] = React.useState<Set<string>>(() => {
+    // Default: expand all directories
+    const paths = new Set<string>();
+    const walk = (items: FileNode[]) => {
+      for (const n of items) {
+        if (n.isDirectory) {
+          paths.add(n.path);
+          walk(n.children);
+        }
+      }
+    };
+    walk(nodes);
+    return paths;
+  });
+
+  const handleToggleExpand = React.useCallback((path: string) => {
+    setExpandedPaths(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
   if (!nodes || nodes.length === 0) {
     return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">未加载文件。</div>;
   }
@@ -317,7 +343,7 @@ const FileTree: React.FC<FileTreeProps> = ({ nodes, onFileSelect, onDeleteFile, 
       <h3 className="text-xs font-semibold px-2 mb-2 text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
       <ul className="pl-0">
         {nodes.map(node => (
-          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} />
+          <FileTreeNode key={node.path} node={node} onFileSelect={onFileSelect} onDeleteFile={onDeleteFile} onCopyPath={onCopyPath} onToggleExclude={onToggleExclude} onDirDoubleClick={onDirDoubleClick} level={1} selectedFilePath={selectedFilePath} showCharCount={showCharCount} expandedPaths={expandedPaths} onToggleExpand={handleToggleExpand} />
         ))}
       </ul>
     </div>
