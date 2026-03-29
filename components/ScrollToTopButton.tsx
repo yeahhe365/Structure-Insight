@@ -7,6 +7,18 @@ interface ScrollToTopButtonProps {
 
 const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
   const [isVisible, setIsVisible] = React.useState(false);
+  const [, forceUpdate] = React.useState(0);
+
+  React.useEffect(() => {
+    // Re-attach listener when ref element becomes available
+    const el = targetRef.current;
+    if (!el) {
+      const timer = setInterval(() => {
+        if (targetRef.current) forceUpdate(n => n + 1);
+      }, 100);
+      return () => clearInterval(timer);
+    }
+  }, [targetRef]);
 
   React.useEffect(() => {
     const target = targetRef.current;
@@ -25,9 +37,8 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
 
     target.addEventListener('scroll', toggleVisibility);
     toggleVisibility(); // Check on mount/attach
-    
+
     return () => target.removeEventListener('scroll', toggleVisibility);
-    // This effect needs to re-run if the ref's current value changes from null to an element.
   }, [targetRef, targetRef.current]);
 
   const scrollToTop = () => {
