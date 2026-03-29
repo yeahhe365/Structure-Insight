@@ -81,12 +81,10 @@ export const useFileProcessing = ({
         e.preventDefault();
         e.stopPropagation();
         if (isLoading) return;
-        
-        abortControllerRef.current = new AbortController();
-        const signal = abortControllerRef.current.signal;
+
         setIsLoading(true);
         try {
-            const files = await processDroppedItems(e.dataTransfer.items, (msg) => setProgressMessage(msg), signal);
+            const files = await processDroppedItems(e.dataTransfer.items, (msg) => setProgressMessage(msg), abortControllerRef.current?.signal);
             await handleProcessing(files);
         } catch (error: any) {
             if (error.name !== 'AbortError') {
