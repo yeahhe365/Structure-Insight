@@ -1,0 +1,145 @@
+/* Structure Insight - Custom Styles */
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 5px;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 5px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Hide scrollbar for specific elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Line numbers - not selectable */
+.line-numbers {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Search highlight styles */
+mark.search-highlight {
+  background-color: #fde047; /* yellow-300 */
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
+html.dark mark.search-highlight {
+  background-color: #ca8a04; /* yellow-600 */
+}
+
+mark.search-highlight-active {
+  background-color: #fb923c; /* orange-400 */
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+  outline: 1px solid #f97316; /* orange-500 */
+}
+
+/* Smooth transitions for theme changes */
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Focus visible styles for accessibility */
+*:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Code block styling improvements */
+pre code.hljs {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+html.dark ::selection {
+  background-color: rgba(96, 165, 250, 0.3);
+}
+
+/* Transitions for drag and drop overlay */
+.drag-overlay-enter {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Input range slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3B82F6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3B82F6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Print styles */
+@media print {
+  header, .no-scrollbar, .drag-overlay {
+    display: none !important;
+  }
+}
