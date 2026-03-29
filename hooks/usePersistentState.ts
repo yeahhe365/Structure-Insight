@@ -10,7 +10,8 @@ export function usePersistentState<T>(key: string, defaultValue: T): [T, React.D
             }
             return defaultValue;
         } catch (error) {
-            console.warn(`Error reading localStorage key "${key}":`, error);
+            console.warn(`[usePersistentState] Corrupted value for key "${key}", resetting:`, error);
+            try { window.localStorage.removeItem(key); } catch { /* ignore */ }
             return defaultValue;
         }
     });
@@ -21,8 +22,10 @@ export function usePersistentState<T>(key: string, defaultValue: T): [T, React.D
                 window.localStorage.setItem(key, JSON.stringify(state));
             }
         } catch (error) {
-            if (error instanceof TypeError && error.message.includes('circular structure')) {
-                console.error(`Could not persist state for key "${key}" due to a circular reference. This is likely caused by storing a DOM element or event object.`, {key, state: state});
+            if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                console.warn(`localStorage quota exceeded for key "${key}". Value not persisted.`);
+            } else if (error instanceof TypeError && error.message.includes('circular structure')) {
+                console.error(`Could not persist state for key "${key}" due to a circular reference.`, {key, state});
             } else {
                 console.warn(`Error setting localStorage key "${key}":`, error);
             }

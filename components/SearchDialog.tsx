@@ -12,14 +12,17 @@ interface SearchDialogProps {
 
 const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNavigate, resultsCount, currentIndex }) => {
     const [query, setQuery] = React.useState('');
-    const [options, setOptions] = React.useState<SearchOptions>({ caseSensitive: false, useRegex: false, wholeWord: false, fuzzySearch: false });
+    const [options, setOptions] = React.useState<SearchOptions>({ caseSensitive: false, useRegex: false, wholeWord: false });
     const [history, setHistory] = usePersistentState<string[]>('searchHistory', []);
     const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
     
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const [position, setPosition] = React.useState({ x: window.innerWidth - 420, y: 70 });
+    const [position, setPosition] = React.useState(() => ({
+        x: Math.max(16, window.innerWidth - 420),
+        y: Math.min(70, window.innerHeight - 200),
+    }));
     const [isDragging, setIsDragging] = React.useState(false);
     const dragStartPos = React.useRef({ x: 0, y: 0 });
 
@@ -179,9 +182,6 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                         </button>
                         <button type="button" onClick={() => toggleOption('useRegex')} className={optionButtonClass(options.useRegex)} title="使用正则表达式">
                            <span>.*</span>
-                        </button>
-                        <button type="button" onClick={() => toggleOption('fuzzySearch')} className={optionButtonClass(options.fuzzySearch)} title="模糊搜索">
-                           <i className="fa-solid fa-wand-magic-sparkles text-xs"></i>
                         </button>
                     </div>
                 </form>
