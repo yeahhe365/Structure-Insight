@@ -209,12 +209,18 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
     
     let processedCount = 0;
     const totalFiles = validFiles.length;
+    const BATCH_SIZE = 50;
 
     for (const file of validFiles) {
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        
+
         processedCount++;
         onProgress(`正在处理文件 ${processedCount}/${totalFiles}: ${file.name}`);
+
+        // Yield to UI thread every BATCH_SIZE files
+        if (processedCount % BATCH_SIZE === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
 
         const path = file.webkitRelativePath || file.name;
         const parts = path.split('/').filter(p => p);
