@@ -1,11 +1,26 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface InitialPromptProps {
-    onOpenFolder: () => void;
+interface RecentProject {
+    name: string;
+    openedAt: number;
 }
 
-const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder }) => {
+function timeAgo(timestamp: number): string {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return "刚刚";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}分钟前`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}小时前`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}天前`;
+    return new Date(timestamp).toLocaleDateString();
+}
+
+interface InitialPromptProps {
+    onOpenFolder: () => void;
+    recentProjects?: RecentProject[];
+}
+
+const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProjects = [] }) => {
     return (
         <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden p-6 select-none bg-light-bg dark:bg-dark-bg">
             {/* Background Pattern */}
@@ -60,6 +75,30 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder }) => {
                         </div>
                     </button>
                 </motion.div>
+
+                {/* Recent Projects */}
+                {recentProjects.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                        className="w-full max-w-lg mb-16"
+                    >
+                        <p className="text-xs font-medium text-light-subtle-text dark:text-dark-subtle-text mb-3 uppercase tracking-wider">最近项目</p>
+                        <div className="grid grid-cols-1 gap-2">
+                            {recentProjects.map((project) => (
+                                <div
+                                    key={project.name + project.openedAt}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-light-panel dark:bg-dark-panel border border-light-border dark:border-dark-border cursor-default"
+                                >
+                                    <i className="fa-solid fa-folder text-sm text-primary"></i>
+                                    <span className="text-sm font-medium text-light-text dark:text-dark-text flex-1 truncate">{project.name}</span>
+                                    <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text whitespace-nowrap">{timeAgo(project.openedAt)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
             </div>
             
             {/* Footer Info */}

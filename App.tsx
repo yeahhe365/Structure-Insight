@@ -47,10 +47,12 @@ const App: React.FC = () => {
             <MainContent logic={logic} codeViewRef={codeViewRef} leftPanelRef={leftPanelRef} />
 
             {state.processedData && (
-                <StatusBar 
-                    fileCount={state.stats.fileCount} 
-                    totalLines={state.stats.totalLines} 
-                    totalChars={state.stats.totalChars} 
+                <StatusBar
+                    fileCount={state.stats.fileCount}
+                    totalLines={state.stats.totalLines}
+                    totalChars={state.stats.totalChars}
+                    selectedFileName={state.selectedFile?.name}
+                    isDark={state.isDark}
                 />
             )}
             

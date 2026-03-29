@@ -41,6 +41,16 @@ export const useAppLogic = (
     const [mobileView, setMobileView] = React.useState<'tree' | 'editor'>('editor');
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
 
+    // --- Recent Projects History ---
+    const [recentProjects, setRecentProjects] = usePersistentState<{name: string, openedAt: number}[]>('recentProjects', []);
+
+    const addToHistory = React.useCallback((name: string) => {
+        setRecentProjects(prev => {
+            const filtered = prev.filter(p => p.name !== name);
+            return [{ name, openedAt: Date.now() }, ...filtered].slice(0, 5);
+        });
+    }, [setRecentProjects]);
+
     const handleShowToast = React.useCallback((message: string) => {
         setToastMessage(message);
     }, []);
@@ -80,6 +90,13 @@ export const useAppLogic = (
             }
         }
     }, [showCharCount, processedData?.treeData, processedData?.rootName]);
+
+    // Track recent projects when processedData changes
+    React.useEffect(() => {
+        if (processedData?.rootName) {
+            addToHistory(processedData.rootName);
+        }
+    }, [processedData?.rootName]);
 
     // --- Derived State ---
     const selectedFile = React.useMemo<FileContent | null>(() => {
@@ -225,6 +242,7 @@ export const useAppLogic = (
             isSearchOpen, isFileRankOpen, isShortcutsOpen, searchResults, activeResultIndex, isMobile, isAiChatOpen,
             selectedFilePath, selectedFile, activeView,
             searchQuery, searchOptions, activeMatchIndexInFile,
+            recentProjects,
         },
         handlers: {
             setIsDragging, handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoading); },
