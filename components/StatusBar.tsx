@@ -6,16 +6,30 @@ interface StatusBarProps {
     totalChars: number;
     selectedFileName?: string;
     isDark?: boolean;
+    processedData?: { fileContents: { path: string; stats: { lines: number; chars: number }; excluded?: boolean }[] } | null;
 }
 
-const StatusBarItem: React.FC<{icon: string, value: number, label: string}> = ({icon, value, label}) => (
+const StatusBarItem: React.FC<{icon: string, value: number | string, label: string}> = ({icon, value, label}) => (
     <span className="flex items-center" title={label}>
         <i className={`fa-solid ${icon} w-4 text-center mr-1.5`}></i>
-        {value.toLocaleString()}
+        {typeof value === 'number' ? value.toLocaleString() : value}
     </span>
 );
 
-const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars, selectedFileName, isDark }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars, selectedFileName, isDark, processedData }) => {
+    // Calculate file type breakdown
+    const typeSummary = React.useMemo(() => {
+        if (!processedData?.fileContents) return null;
+        const counts = new Map<string, number>();
+        for (const f of processedData.fileContents) {
+            if (f.excluded) continue;
+            const ext = f.path.split('.').pop()?.toLowerCase() || 'other';
+            counts.set(ext, (counts.get(ext) || 0) + 1);
+        }
+        const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+        return sorted.map(([ext, count]) => `${ext}: ${count}`).join(' · ');
+    }, [processedData]);
+
     return (
         <footer className="h-8 flex items-center px-4 space-x-6 bg-light-header dark:bg-dark-header border-t border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
             {selectedFileName && (
@@ -25,6 +39,12 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
                 </span>
             )}
             {!selectedFileName && <span className="mr-auto" />}
+            {typeSummary && (
+                <span className="flex items-center" title="文件类型分布">
+                    <i className="fa-solid fa-chart-pie w-4 text-center mr-1.5"></i>
+                    {typeSummary}
+                </span>
+            )}
             <span className="flex items-center" title="编码">
                 <i className="fa-solid fa-text-width w-4 text-center mr-1.5"></i>
                 UTF-8

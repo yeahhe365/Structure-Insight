@@ -63,6 +63,7 @@ const App: React.FC = () => {
                     totalChars={state.stats.totalChars}
                     selectedFileName={state.selectedFile?.name}
                     isDark={state.isDark}
+                    processedData={state.processedData}
                 />
             )}
             
