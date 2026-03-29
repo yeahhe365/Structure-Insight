@@ -120,6 +120,8 @@ const extensionMap = new Map<string, IconEntry>([
 
 const defaultIcon: IconEntry = { icon: 'fa-regular fa-file', color: 'text-gray-400 dark:text-gray-500' };
 
+export type { IconEntry };
+
 const getFileIcon = (fileName: string): IconEntry => {
     const lowerName = fileName.toLowerCase();
 
@@ -138,7 +140,6 @@ const getFileIcon = (fileName: string): IconEntry => {
 };
 
 export { getFileIcon };
-export type { IconEntry };
 
 const FileTreeNode: React.FC<{
     node: FileNode;
