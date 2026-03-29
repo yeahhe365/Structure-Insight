@@ -143,3 +143,45 @@ input[type="range"]::-moz-range-thumb {
     display: none !important;
   }
 }
+
+/* Tab bar horizontal scroll */
+.tab-bar-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tab-bar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab close button hover */
+.tab-close-btn {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.tab-item:hover .tab-close-btn {
+  opacity: 1;
+}
+
+/* Smooth panel resize */
+.panel-resize-handle {
+  transition: background-color 0.2s ease;
+}
+
+/* File tree item transition */
+.file-tree-item {
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+/* Tooltip styles */
+[title] {
+  cursor: help;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

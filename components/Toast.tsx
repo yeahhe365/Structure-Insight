@@ -4,9 +4,16 @@ import { motion } from 'framer-motion';
 interface ToastProps {
   message: string;
   onDone: () => void;
+  type?: 'success' | 'error' | 'info';
 }
 
-const Toast: React.FC<ToastProps> = ({ message, onDone }) => {
+const Toast: React.FC<ToastProps> = ({ message, onDone, type = 'success' }) => {
+  const iconMap = {
+    success: 'fa-circle-check text-green-500',
+    error: 'fa-circle-xmark text-red-500',
+    info: 'fa-circle-info text-blue-500',
+  };
+
   React.useEffect(() => {
     const timer = setTimeout(onDone, 2500);
     return () => clearTimeout(timer);
@@ -19,7 +26,7 @@ const Toast: React.FC<ToastProps> = ({ message, onDone }) => {
       exit={{ opacity: 0, y: -20, scale: 0.95 }}
       className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text px-4 py-2 rounded-lg shadow-lg z-50 flex items-center space-x-2 border border-light-border dark:border-dark-border"
     >
-      <i className="fa-solid fa-check-circle text-green-500"></i>
+      <i className={`fa-solid ${iconMap[type]}`}></i>
       <span className="text-sm font-medium">{message}</span>
     </motion.div>
   );

@@ -22,6 +22,7 @@ interface FileCardProps {
   searchOptions: SearchOptions;
   activeMatchIndexInFile: number | null;
   onCopyPath: (path: string) => void;
+  wordWrap?: boolean;
 }
 
 const IconButton: React.FC<{icon: string, title: string, onClick: () => void, disabled?: boolean, text?: string}> = ({icon, title, onClick, disabled, text}) => (
@@ -49,7 +50,7 @@ function buildSearchRegex(query: string, options: SearchOptions): RegExp | null 
 const FileCard: React.FC<FileCardProps> = ({
     file, isEditing, onStartEdit, onSaveEdit, onCancelEdit,
     isMarkdown, isMarkdownPreview, onToggleMarkdownPreview, onShowToast, fontSize,
-    searchQuery, searchOptions, activeMatchIndexInFile, onCopyPath
+    searchQuery, searchOptions, activeMatchIndexInFile, onCopyPath, wordWrap
 }) => {
   const [editText, setEditText] = React.useState(file.content);
   const codeRef = React.useRef<HTMLElement>(null);
@@ -211,7 +212,7 @@ const FileCard: React.FC<FileCardProps> = ({
                 {lineNumbers}
             </pre>
             <div className="relative flex-1">
-                <pre className="py-3 pr-3 whitespace-pre-wrap break-words bg-light-bg dark:bg-dark-bg"><code 
+                <pre className={`py-3 pr-3 bg-light-bg dark:bg-dark-bg ${wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre overflow-x-auto'}`}><code 
                     ref={codeRef}
                     className={`language-${file.language} hljs`} 
                 /></pre>
@@ -237,13 +238,14 @@ interface CodeViewProps {
   searchOptions: SearchOptions;
   activeMatchIndexInFile: number | null;
   onCopyPath: (path: string) => void;
+  wordWrap?: boolean;
 }
 
 const CodeView: React.FC<CodeViewProps> = (props) => {
   const { 
     selectedFile, editingPath, onStartEdit, onSaveEdit, onCancelEdit, 
     markdownPreviewPaths, onToggleMarkdownPreview, onShowToast, fontSize,
-    searchQuery, searchOptions, activeMatchIndexInFile, onCopyPath
+    searchQuery, searchOptions, activeMatchIndexInFile, onCopyPath, wordWrap
   } = props;
 
   if (!selectedFile) {
@@ -278,6 +280,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
               searchOptions={searchOptions}
               activeMatchIndexInFile={activeMatchIndexInFile}
               onCopyPath={onCopyPath}
+              wordWrap={wordWrap}
             />
         </motion.div>
     </div>

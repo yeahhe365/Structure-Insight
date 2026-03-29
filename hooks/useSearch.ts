@@ -103,12 +103,6 @@ export const useSearch = ({
         }
     }, [searchResults, activeResultIndex, isMobile, setMobileView, setSelectedFilePath, setActiveView]);
 
-    const activeMatchIndexInFile = React.useMemo(() => {
-        if (activeResultIndex === null || !searchResults.length) return null;
-        // Need selectedFilePath from outer scope - we'll compute this differently
-        return null; // This will be computed in useAppLogic
-    }, [activeResultIndex, searchResults]);
-
     const resetSearch = React.useCallback(() => {
         setIsSearchOpen(false);
         setSearchResults([]);
@@ -125,7 +119,6 @@ export const useSearch = ({
         searchOptions,
         handleSearch,
         handleNavigate,
-        activeMatchIndexInFile,
         resetSearch,
     };
 };

@@ -67,7 +67,7 @@ export const useFileProcessing = ({
     const handleFileSelect = () => {
         const input = document.createElement('input');
         input.type = 'file';
-        (input as any).webkitdirectory = true;
+        input.webkitdirectory = true;
         input.multiple = true;
         input.onchange = (e: any) => {
             if (e.target.files) {

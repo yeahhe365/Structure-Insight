@@ -16,11 +16,13 @@ interface SettingsDialogProps {
     onToggleShowCharCount: () => void;
     maxCharsThreshold: number;
     onSetMaxCharsThreshold: (val: number) => void;
+    wordWrap: boolean;
+    onToggleWordWrap: () => void;
 }
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({
     isOpen, onClose, isDarkTheme, onToggleTheme, extractContent, onToggleExtractContent, fontSize, onSetFontSize, onClearCache,
-    showCharCount, onToggleShowCharCount, maxCharsThreshold, onSetMaxCharsThreshold
+    showCharCount, onToggleShowCharCount, maxCharsThreshold, onSetMaxCharsThreshold, wordWrap, onToggleWordWrap
 }) => {
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const [stars, setStars] = React.useState<number | null>(null);
@@ -156,6 +158,27 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                     />
                                     <span className="text-lg text-light-text dark:text-dark-text shrink-0">A</span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Code Display Section */}
+                    <div>
+                        <SectionTitle>代码显示</SectionTitle>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg/50 transition-colors -mx-2">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm">
+                                        <i className="fa-solid fa-text-width"></i>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label htmlFor="word-wrap-toggle" className="text-sm font-medium text-light-text dark:text-dark-text cursor-pointer select-none">
+                                            自动换行
+                                        </label>
+                                        <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text">代码超出宽度时自动换行</span>
+                                    </div>
+                                </div>
+                                <Switch id="word-wrap-toggle" checked={wordWrap} onChange={onToggleWordWrap} />
                             </div>
                         </div>
                     </div>

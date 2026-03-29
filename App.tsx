@@ -28,6 +28,12 @@ const App: React.FC = () => {
             onDragLeave={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(false);}} 
             onDrop={handlers.handleDrop}
         >
+            {/* Loading progress bar */}
+            {state.isLoading && (
+                <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-light-border dark:bg-dark-border overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 animate-pulse" style={{ width: '90%' }} />
+                </div>
+            )}
             <Header 
                 onOpenFolder={handlers.handleFileSelect} 
                 onCopyAll={handlers.handleCopyAll} 
@@ -112,6 +118,8 @@ const App: React.FC = () => {
                         onToggleShowCharCount={() => settings.setShowCharCount(!state.showCharCount)}
                         maxCharsThreshold={state.maxCharsThreshold}
                         onSetMaxCharsThreshold={settings.setMaxCharsThreshold}
+                        wordWrap={state.wordWrap}
+                        onToggleWordWrap={() => settings.setWordWrap(!state.wordWrap)}
                     />
                 )}
             </AnimatePresence>

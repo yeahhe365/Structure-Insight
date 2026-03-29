@@ -121,7 +121,7 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
         if (entry.isFile) {
             return new Promise((resolve, reject) => {
                 (entry as FileSystemFileEntry).file(file => {
-                    if(!(file as any).webkitRelativePath){
+                    if(!file.webkitRelativePath){
                          Object.defineProperty(file, 'webkitRelativePath', {
                             value: entry.fullPath.startsWith('/') ? entry.fullPath.substring(1) : entry.fullPath,
                             writable: true,
@@ -201,7 +201,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
 
 
     const validFiles = allNonZipFiles.filter(file => {
-        const path = (file as any).webkitRelativePath || file.name;
+        const path = file.webkitRelativePath || file.name;
         return path && !path.split('/').some(part => IGNORED_DIRS.has(part) || part.startsWith('.'));
     });
 
@@ -216,7 +216,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
         processedCount++;
         onProgress(`正在处理文件 ${processedCount}/${totalFiles}: ${file.name}`);
 
-        const path = (file as any).webkitRelativePath || file.name;
+        const path = file.webkitRelativePath || file.name;
         const parts = path.split('/').filter(p => p);
 
         let parentNode: FileNode | undefined = undefined;
