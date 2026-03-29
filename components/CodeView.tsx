@@ -55,6 +55,7 @@ const FileCard: React.FC<FileCardProps> = ({
   const [editText, setEditText] = React.useState(file.content);
   const codeRef = React.useRef<HTMLElement>(null);
   const highlightTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastHighlightKey = React.useRef('');
 
   React.useEffect(() => {
     setEditText(file.content);
@@ -70,6 +71,11 @@ const FileCard: React.FC<FileCardProps> = ({
   // Handle syntax highlighting and debounced search highlighting
   React.useEffect(() => {
     if (!codeRef.current || isEditing || isMarkdownPreview || file.excluded) return;
+
+    // Skip if the highlight inputs haven't actually changed
+    const highlightKey = `${file.path}:${file.content.length}:${searchQuery}:${searchOptions.caseSensitive}:${searchOptions.useRegex}:${searchOptions.wholeWord}:${activeMatchIndexInFile}`;
+    if (highlightKey === lastHighlightKey.current) return;
+    lastHighlightKey.current = highlightKey;
 
     // 1. Set content and syntax highlight
     codeRef.current.textContent = file.content;
