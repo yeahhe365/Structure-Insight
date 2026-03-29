@@ -241,16 +241,8 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
 
             if (parentNode) {
                 parentNode.children.push(newNode);
-                parentNode.children.sort((a, b) => {
-                    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
-                    return a.name.localeCompare(b.name);
-                });
             } else {
                 roots.push(newNode);
-                roots.sort((a, b) => {
-                    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
-                    return a.name.localeCompare(b.name);
-                });
             }
             parentNode = newNode;
         }
@@ -287,6 +279,20 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
     }
 
     fileContents.sort((a,b) => a.path.localeCompare(b.path));
+
+    // Sort tree once at the end instead of on every insertion
+    const sortNodes = (nodes: FileNode[]): FileNode[] => {
+        nodes.sort((a, b) => {
+            if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+            return a.name.localeCompare(b.name);
+        });
+        for (const node of nodes) {
+            if (node.isDirectory) sortNodes(node.children);
+        }
+        return nodes;
+    };
+    sortNodes(roots);
+
     onProgress("正在完成输出...");
     
     let rootNameForDisplay = "项目";
