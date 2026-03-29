@@ -152,6 +152,14 @@ const FileCard: React.FC<FileCardProps> = ({
 
   return (
     <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
+      <div className="px-3 py-1.5 border-b border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text">
+        {file.path.split('/').map((segment, i, segments) => (
+          <React.Fragment key={i}>
+            {i > 0 && <span className="mx-1 opacity-50">&gt;</span>}
+            <span className={i === segments.length - 1 ? 'font-semibold' : ''}>{segment}</span>
+          </React.Fragment>
+        ))}
+      </div>
       <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
         <div className="font-mono text-sm text-light-text dark:text-dark-text truncate flex items-center" title={file.path}>
           <i className="fa-regular fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>
