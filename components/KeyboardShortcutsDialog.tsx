@@ -7,12 +7,12 @@ interface KeyboardShortcutsDialogProps {
 }
 
 const shortcuts = [
-    { keys: ['Ctrl', 'O'], description: 'Open folder' },
-    { keys: ['Ctrl', 'F'], description: 'Find in files' },
-    { keys: ['Ctrl', 'S'], description: 'Save as text' },
-    { keys: ['Escape'], description: 'Close dialog' },
-    { keys: ['Ctrl', '/'], description: 'Show this help' },
-    { keys: ['Ctrl', 'W'], description: 'Close current tab' },
+    { keys: ['Ctrl', 'O'], description: '打开文件夹' },
+    { keys: ['Ctrl', 'F'], description: '在文件中查找' },
+    { keys: ['Ctrl', 'S'], description: '保存为文本' },
+    { keys: ['Escape'], description: '关闭对话框' },
+    { keys: ['Ctrl', '/'], description: '显示快捷键帮助' },
+    { keys: ['Ctrl', 'W'], description: '关闭当前标签页' },
 ];
 
 const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpen, onClose }) => {
@@ -45,7 +45,7 @@ const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpe
                 transition={{ duration: 0.2, ease: 'easeOut' }}
             >
                 <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50 backdrop-blur-md">
-                    <h3 className="font-bold text-lg text-light-text dark:text-dark-text">Keyboard Shortcuts</h3>
+                    <h3 className="font-bold text-lg text-light-text dark:text-dark-text">键盘快捷键</h3>
                     <button
                         onClick={onClose}
                         className="w-8 h-8 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center text-light-subtle-text dark:text-dark-subtle-text transition-colors"
