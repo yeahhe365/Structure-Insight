@@ -153,6 +153,16 @@ function findNode(nodes: FileNode[], path: string): FileNode | undefined {
   return undefined;
 }
 
+// Helper to count all descendant files in a directory node
+function countFiles(node: FileNode): number {
+  if (!node.isDirectory) return 1;
+  let count = 0;
+  for (const child of node.children) {
+    count += countFiles(child);
+  }
+  return count;
+}
+
 const FileTreeNode: React.FC<{
     node: FileNode;
     onFileSelect: (path: string) => void;
@@ -253,8 +263,12 @@ const FileTreeNode: React.FC<{
             {!node.isDirectory && <span className="w-4 shrink-0"></span>}
             
             <span className="shrink-0">{iconElement}</span>
-            
+
             <span className={`truncate text-sm flex-1 ${node.excluded ? 'line-through' : ''}`}>{displayName}</span>
+
+            {node.isDirectory && (
+                <span className="text-[10px] text-light-subtle-text/60 dark:text-dark-subtle-text/60 shrink-0 ml-1 tabular-nums">{countFiles(node)}</span>
+            )}
             
             {!node.isDirectory && node.status === 'processed' && (
                 <div className={`flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-2 transition-opacity ${showCharCount ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
