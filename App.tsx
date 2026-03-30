@@ -147,7 +147,7 @@ const App: React.FC = () => {
                 )}
             </AnimatePresence>
             <AnimatePresence>
-                {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} />}
+                {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} type={state.toastMessage.includes('错误') ? 'error' : state.toastMessage.includes('已重置') || state.toastMessage.includes('已取消') ? 'info' : 'success'} />}
             </AnimatePresence>
         </div>
     );
