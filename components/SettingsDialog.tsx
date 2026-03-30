@@ -26,10 +26,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 }) => {
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const [stars, setStars] = React.useState<number | null>(null);
+    const [starsLoading, setStarsLoading] = React.useState(false);
 
     React.useEffect(() => {
         if (isOpen) {
             // Fetch GitHub stars when the dialog opens
+            setStarsLoading(true);
             fetch('https://api.github.com/repos/yeahhe365/Structure-Insight')
                 .then(res => res.json())
                 .then(data => {
@@ -37,7 +39,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         setStars(data.stargazers_count);
                     }
                 })
-                .catch(err => console.error("Failed to fetch GitHub stars:", err));
+                .catch(err => console.error("Failed to fetch GitHub stars:", err))
+                .finally(() => setStarsLoading(false));
 
             const handleKeyDown = (e: KeyboardEvent) => {
                 if (e.key === 'Escape') onClose();
@@ -49,7 +52,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     
     if (!isOpen) return null;
     
-    const appVersion = "5.2.1"; 
+    const appVersion = "5.3.0";
 
     // Helper components for consistency
     const SectionTitle = ({ children }: { children: React.ReactNode }) => (
@@ -282,7 +285,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                 >
                                     <i className="fa-brands fa-github text-sm"></i>
                                     <span>GitHub</span>
-                                    {stars !== null && (
+                                    {starsLoading ? (
+                                        <span className="flex items-center pl-2 border-l border-light-border dark:border-dark-border ml-2">
+                                            <i className="fa-solid fa-spinner fa-spin text-light-subtle-text mr-1 text-[10px]"></i>
+                                        </span>
+                                    ) : stars !== null && (
                                         <span className="flex items-center pl-2 border-l border-light-border dark:border-dark-border ml-2 group-hover:border-primary/30">
                                             <i className="fa-solid fa-star text-yellow-500 mr-1 text-[10px]"></i>
                                             {stars.toLocaleString()}
