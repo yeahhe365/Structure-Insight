@@ -1,0 +1,17 @@
+{
+  "name": "Structure Insight",
+  "short_name": "StructureInsight",
+  "description": "浏览器端代码结构分析工具 - 快速分析和可视化代码项目结构",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#3B82F6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIzMCAwIDE0MCAxNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGcgaWQ9Im1vbm9DdWJlIj48cGF0aCBkPSJNMzAgMCBMNjAgMTUgTDMwIDMwIEwwIDE1IFoiIGZpbGw9IiNlZWYyZjMiLz48cGF0aCBkPSJNMCAxNSBMMzAgMzAgVjY1IEwwIDUwIFoiIGZpbGw9IiM5ZmE4YjAiLz48cGF0aCBkPSJNMzAgMzAgTDYwIDE1IFY1MCBMMzAgNjUgWiIgZmlsbD0iIzE5MWMyMCIvPjwvZz48L2RlZnM+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSI0MCIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iNzAiIHk9IjAiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjM2IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMTA0IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMzYiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSIxMDQiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSI3MCIgeT0iNzQiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSIzNCIgLz48L3N2Zz4=",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
