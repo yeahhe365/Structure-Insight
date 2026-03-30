@@ -159,11 +159,12 @@ const FileCard: React.FC<FileCardProps> = ({
 
   return (
     <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
-      <div className="px-3 py-1.5 border-b border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text">
+      <div className="px-3 py-1.5 border-b border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text flex items-center">
+        <i className="fa-solid fa-folder-tree mr-2 opacity-50"></i>
         {file.path.split('/').map((segment, i, segments) => (
           <React.Fragment key={i}>
-            {i > 0 && <span className="mx-1 opacity-50">&gt;</span>}
-            <span className={i === segments.length - 1 ? 'font-semibold' : ''}>{segment}</span>
+            {i > 0 && <i className="fa-solid fa-chevron-right mx-1.5 text-[8px] opacity-40"></i>}
+            <span className={`hover:text-primary cursor-default transition-colors ${i === segments.length - 1 ? 'font-semibold text-light-text dark:text-dark-text' : ''}`}>{segment}</span>
           </React.Fragment>
         ))}
       </div>
