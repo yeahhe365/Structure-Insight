@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { marked } from 'marked';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Configure marked for markdown rendering with syntax highlighting
 marked.setOptions({
@@ -18,6 +19,8 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>
 );
