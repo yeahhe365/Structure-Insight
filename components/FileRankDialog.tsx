@@ -15,6 +15,7 @@ interface FileRankDialogProps {
 
 const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files, onSelectFile, onCopyPath, onDeleteFile, onToggleExclude }) => {
     const [sortBy, setSortBy] = React.useState<'size' | 'name' | 'type'>('size');
+    const [searchQuery, setSearchQuery] = React.useState('');
 
     // Prevent interaction with background and handle Esc
     React.useEffect(() => {
@@ -28,7 +29,12 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
     }, [isOpen, onClose]);
 
     const sortedFiles = React.useMemo(() => {
-        const sorted = [...files];
+        let filtered = files;
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            filtered = files.filter(f => f.path.toLowerCase().includes(q));
+        }
+        const sorted = [...filtered];
         if (sortBy === 'size') {
             sorted.sort((a, b) => b.stats.chars - a.stats.chars);
         } else if (sortBy === 'name') {
@@ -38,7 +44,7 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
             sorted.sort((a, b) => getExt(a.path).localeCompare(getExt(b.path)) || a.path.localeCompare(b.path));
         }
         return sorted;
-    }, [files, sortBy]);
+    }, [files, sortBy, searchQuery]);
     
     const maxChars = sortedFiles.length > 0 ? sortedFiles[0].stats.chars : 0;
 
@@ -85,6 +91,16 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
 
                 {/* Sort Options */}
                 <div className="flex items-center gap-1.5 px-6 py-2 border-b border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-bg/30 shrink-0">
+                    <div className="relative flex-1 mr-2">
+                        <i className="fa-solid fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-light-subtle-text dark:text-dark-subtle-text"></i>
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="搜索文件..."
+                            className="w-full pl-7 pr-3 py-1 text-xs bg-light-panel dark:bg-dark-panel border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                        />
+                    </div>
                     <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text mr-1">排序:</span>
                     {([['size', '大小'], ['name', '名称'], ['type', '类型']] as const).map(([key, label]) => (
                         <button
