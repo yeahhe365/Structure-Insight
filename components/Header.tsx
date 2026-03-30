@@ -25,14 +25,14 @@ const Header: React.FC<HeaderProps> = ({
   const iconClass = "text-lg";
 
   return (
-    <header className="flex items-center justify-between p-2 h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border shrink-0 z-20">
+    <header className="flex items-center justify-between p-2 h-16 bg-light-header dark:bg-dark-header border-b border-light-border dark:border-dark-border shrink-0 z-20" role="banner">
       <div className="flex items-center gap-3">
         <a href="https://structure-insight-website.pages.dev/" target="_blank" rel="noopener noreferrer" title="访问 Structure Insight 主页">
           <img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIzMCAwIDE0MCAxNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGcgaWQ9Im1vbm9DdWJlIj48cGF0aCBkPSJNMzAgMCBMNjAgMTUgTDMwIDMwIEwwIDE1IFoiIGZpbGw9IiNlZWYyZjMiLz48cGF0aCBkPSJNMCAxNSBMMzAgMzAgVjY1IEwwIDUwIFoiIGZpbGw9IiM5ZmE4YjAiLz48cGF0aCBkPSJNMzAgMzAgTDYwIDE1IFY1MCBMMzAgNjUgWiIgZmlsbD0iIzE5MWMyMCIvPjwvZz48L2RlZnM+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSI0MCIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iNzAiIHk9IjAiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjM2IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMTA0IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMzYiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSIxMDQiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSI3MCIgeT0iNzQiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSIzNCIgLz48L3N2Zz4=" alt="Structure Insight Logo" className="h-9 w-9" />
         </a>
         <h1 className="text-xl font-semibold hidden sm:block">Structure Insight</h1>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2" role="toolbar" aria-label="工具栏">
         <button onClick={onOpenFolder} className={buttonClass} title="打开文件夹 (Ctrl+O)" disabled={isLoading}>
           <i className={`fa-regular fa-folder-open ${iconClass}`}></i>
         </button>

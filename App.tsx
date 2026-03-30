@@ -25,12 +25,14 @@ const App: React.FC = () => {
     const { state, handlers, settings } = logic;
     
     return (
-        <div 
+        <div
             className="flex flex-col h-full bg-light-bg dark:bg-dark-bg"
-            onDragEnter={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(true);}} 
-            onDragOver={(e) => {e.preventDefault(); e.stopPropagation();}} 
-            onDragLeave={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(false);}} 
+            onDragEnter={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(true);}}
+            onDragOver={(e) => {e.preventDefault(); e.stopPropagation();}}
+            onDragLeave={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(false);}}
             onDrop={handlers.handleDrop}
+            role="application"
+            aria-label="Structure Insight 代码分析工具"
         >
             {/* Loading progress bar */}
             {state.isLoading && (
