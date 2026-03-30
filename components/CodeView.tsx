@@ -202,9 +202,16 @@ const FileCard: React.FC<FileCardProps> = ({
             <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                className="w-full h-64 font-mono text-sm bg-light-bg dark:bg-gray-900 border border-primary/50 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full font-mono text-sm bg-light-bg dark:bg-gray-900 border border-primary/50 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary resize-none overflow-hidden"
                 style={codeStyle}
                 autoFocus
+                rows={1}
+                ref={(el) => {
+                    if (el) {
+                        el.style.height = 'auto';
+                        el.style.height = el.scrollHeight + 'px';
+                    }
+                }}
             />
             <div className="flex justify-end space-x-2 mt-2">
                 <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">取消</button>
