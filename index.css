@@ -1,5 +1,14 @@
 /* Structure Insight - Custom Styles */
 
+:root {
+  --color-primary: #3B82F6;
+  --color-primary-hover: #2563EB;
+  --color-highlight: #fde047;
+  --color-highlight-dark: #ca8a04;
+  --color-highlight-active: #fb923c;
+  --color-highlight-active-border: #f97316;
+}
+
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
   width: 10px;
