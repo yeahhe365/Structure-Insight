@@ -13,6 +13,7 @@ interface SearchDialogProps {
 const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNavigate, resultsCount, currentIndex }) => {
     const [query, setQuery] = React.useState('');
     const [options, setOptions] = React.useState<SearchOptions>({ caseSensitive: false, useRegex: false, wholeWord: false });
+    const [regexError, setRegexError] = React.useState<string | null>(null);
     const [history, setHistory] = usePersistentState<string[]>('searchHistory', []);
     const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
     
@@ -107,7 +108,18 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     }, [query, options, runSearch]);
 
     const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setQuery(e.target.value);
+        const val = e.target.value;
+        setQuery(val);
+        if (options.useRegex && val) {
+            try {
+                new RegExp(val);
+                setRegexError(null);
+            } catch (err) {
+                setRegexError((err as SyntaxError).message);
+            }
+        } else {
+            setRegexError(null);
+        }
     }
     
     const toggleOption = (key: keyof SearchOptions) => {
@@ -174,15 +186,20 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                         <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-down"></i></button>
                     </div>
                     <div className="flex items-center space-x-2 mt-3">
-                        <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title="区分大小写">
+                        <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title="区分大小写 (Alt+C)">
                            <span>Aa</span>
                         </button>
-                         <button type="button" onClick={() => toggleOption('wholeWord')} className={optionButtonClass(options.wholeWord)} title="全词匹配">
+                         <button type="button" onClick={() => toggleOption('wholeWord')} className={optionButtonClass(options.wholeWord)} title="全词匹配 (Alt+W)">
                            <i className="fa-solid fa-quote-right text-xs"></i>
                         </button>
-                        <button type="button" onClick={() => toggleOption('useRegex')} className={optionButtonClass(options.useRegex)} title="使用正则表达式">
+                        <button type="button" onClick={() => toggleOption('useRegex')} className={optionButtonClass(options.useRegex)} title="使用正则表达式 (Alt+R)">
                            <span>.*</span>
                         </button>
+                        {regexError && (
+                            <span className="text-xs text-red-500 truncate ml-2" title={regexError}>
+                                <i className="fa-solid fa-exclamation-triangle mr-1"></i>无效正则
+                            </span>
+                        )}
                     </div>
                 </form>
             </div>
