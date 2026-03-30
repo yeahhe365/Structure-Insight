@@ -17,6 +17,15 @@ const KeyboardShortcutsDialog = React.lazy(() => import('./components/KeyboardSh
 
 const SuspenseFallback = () => null;
 
+function getProgressWidth(message: string | null): string {
+    if (!message) return '90%';
+    const match = message.match(/(\d+)\/(\d+)/);
+    if (!match) return '90%';
+    const current = parseInt(match[1]);
+    const total = Math.max(1, parseInt(match[2]));
+    return `${Math.min(95, (current / total) * 100)}%`;
+}
+
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
     const leftPanelRef = React.useRef<HTMLDivElement>(null);
@@ -37,7 +46,7 @@ const App: React.FC = () => {
             {/* Loading progress bar */}
             {state.isLoading && (
                 <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-light-border dark:bg-dark-border overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 ease-out" style={{ width: state.progressMessage ? `${Math.min(95, parseInt(state.progressMessage.match(/(\d+)\/(\d+)/)?.[1] || '0') / Math.max(1, parseInt(state.progressMessage.match(/(\d+)\/(\d+)/)?.[2] || '1')) * 100)}%` : '90%' }} />
+                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
                 </div>
             )}
             <Header 
