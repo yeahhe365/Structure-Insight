@@ -1,30 +1,7 @@
 
 import JSZip from 'jszip';
 import { FileNode, FileContent, ProcessedFiles } from '../types';
-
-const IGNORED_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.ico', '.webp',
-  '.mp3', '.wav', '.ogg', '.mp4', '.mov', '.avi', '.webm',
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  '.zip', '.rar', '.7z', '.tar', '.gz',
-  '.exe', '.dll', '.so', '.o', '.a', '.obj',
-  '.class', '.jar', '.pyc', '.pyd',
-  '.DS_Store',
-  '.eot', '.ttf', '.woff', '.woff2',
-]);
-
-const IGNORED_DIRS = new Set(['.git', 'node_modules', '__pycache__', '.vscode', '.idea', 'dist', 'build', 'out', 'target']);
-
-// Move langMap outside to prevent recreation on every function call
-const LANG_MAP: { [key: string]: string } = {
-    'js': 'javascript', 'jsx': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
-    'py': 'python', 'html': 'xml', 'xml': 'xml', 'css': 'css', 'scss': 'css', 'less': 'css',
-    'json': 'json', 'md': 'markdown', 'yml': 'yaml', 'yaml': 'yaml', 'sh': 'bash',
-    'java': 'java', 'c': 'c', 'h': 'c', 'cpp': 'cpp', 'hpp': 'cpp', 'cs': 'csharp', 'go': 'go', 'php': 'php',
-    'rb': 'ruby', 'rs': 'rust', 'sql': 'sql', 'swift': 'swift', 'kt': 'kotlin', 'kts': 'kotlin',
-    'dockerfile': 'dockerfile', 'gradle': 'groovy', 'vue': 'html', 'svelte': 'html',
-    'log': 'plaintext', 'txt': 'plaintext', 'env': 'properties', 'ini': 'ini',
-};
+import { IGNORED_EXTENSIONS, IGNORED_DIRS, LANG_MAP, FILE_PROCESS_BATCH_SIZE } from './constants';
 
 function getLanguage(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase() || '';
@@ -209,7 +186,7 @@ export async function processFiles(files: File[], onProgress: (msg: string) => v
     
     let processedCount = 0;
     const totalFiles = validFiles.length;
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = FILE_PROCESS_BATCH_SIZE;
 
     for (const file of validFiles) {
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
