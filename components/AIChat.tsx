@@ -20,6 +20,7 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
     const [messages, setMessages] = React.useState<Message[]>([]);
     const [input, setInput] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
+    const abortRef = React.useRef<AbortController | null>(null);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -37,11 +38,14 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
 
     const handleSend = async () => {
         if (!input.trim() || !projectData || isLoading) return;
-        
+
         const userMessage: Message = { role: 'user', content: input };
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
+
+        const abortController = new AbortController();
+        abortRef.current = abortController;
 
         const geminiHistory = messages.map(msg => ({
             role: msg.role,
@@ -54,6 +58,7 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
         try {
             const stream = streamAiChat(projectData, geminiHistory, userMessage.content);
             for await (const chunk of stream) {
+                if (abortController.signal.aborted) break;
                 fullResponse += chunk;
                 setMessages(prev => {
                     const newMessages = [...prev];
@@ -62,15 +67,30 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
                 });
             }
         } catch (error) {
-            console.error("Gemini API error:", error);
-            setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1].content = "抱歉，分析时出现错误。请检查控制台了解详情。";
-                return newMessages;
-            });
+            if (!abortController.signal.aborted) {
+                console.error("Gemini API error:", error);
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].content = "抱歉，分析时出现错误。请检查控制台了解详情。";
+                    return newMessages;
+                });
+            }
         } finally {
             setIsLoading(false);
+            abortRef.current = null;
         }
+    };
+
+    const handleStop = () => {
+        abortRef.current?.abort();
+    };
+
+    const handleClear = () => {
+        setMessages([]);
+        if (abortRef.current) {
+            abortRef.current.abort();
+        }
+        setIsLoading(false);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -105,12 +125,19 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
                     >
                         <header className="flex items-center justify-between p-3 border-b border-light-border dark:border-dark-border shrink-0">
                             <h3 className="font-semibold text-sm flex items-center gap-2">
-                                <i className="fa-solid fa-wand-magic-sparkles text-primary"></i> 
+                                <i className="fa-solid fa-wand-magic-sparkles text-primary"></i>
                                 AI 助理 <span className="text-xs font-normal text-light-subtle-text dark:text-dark-subtle-text border border-primary/30 px-1.5 rounded-md text-primary">Gemini 3.0 Pro Thinking</span>
                             </h3>
-                            <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
-                                <i className="fa-solid fa-times text-xs"></i>
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {messages.length > 0 && (
+                                    <button onClick={handleClear} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center" title="清除对话">
+                                        <i className="fa-solid fa-trash-can text-xs text-light-subtle-text dark:text-dark-subtle-text"></i>
+                                    </button>
+                                )}
+                                <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
+                                    <i className="fa-solid fa-times text-xs"></i>
+                                </button>
+                            </div>
                         </header>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -146,13 +173,23 @@ const AIChat: React.FC<AIChatProps> = ({ isOpen, onClose, projectData }) => {
                                     disabled={isLoading}
                                     style={{maxHeight: '100px'}}
                                 />
+                                {isLoading ? (
+                                    <button
+                                        onClick={handleStop}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600"
+                                        title="停止生成"
+                                    >
+                                        <i className="fa-solid fa-stop text-xs"></i>
+                                    </button>
+                                ) : (
                                 <button
                                     onClick={handleSend}
-                                    disabled={isLoading || !input.trim()}
+                                    disabled={!input.trim()}
                                     className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center disabled:bg-primary-disabled"
                                 >
                                     <i className="fa-solid fa-arrow-up"></i>
                                 </button>
+                                )}
                             </div>
                         </div>
                     </motion.div>
