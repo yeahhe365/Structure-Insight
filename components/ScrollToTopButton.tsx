@@ -7,39 +7,43 @@ interface ScrollToTopButtonProps {
 
 const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
   const [isVisible, setIsVisible] = React.useState(false);
-  const [, forceUpdate] = React.useState(0);
 
   React.useEffect(() => {
-    // Re-attach listener when ref element becomes available
-    const el = targetRef.current;
-    if (!el) {
-      const timer = setInterval(() => {
-        if (targetRef.current) forceUpdate(n => n + 1);
-      }, 100);
-      return () => clearInterval(timer);
-    }
-  }, [targetRef]);
+    const checkAndAttach = () => {
+      const target = targetRef.current;
+      if (!target) return false;
 
-  React.useEffect(() => {
-    const target = targetRef.current;
-    if (!target) {
-      setIsVisible(false);
-      return;
-    }
+      const toggleVisibility = () => {
+        setIsVisible(target.scrollTop > 300);
+      };
 
-    const toggleVisibility = () => {
-      if (target.scrollTop > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+      target.addEventListener('scroll', toggleVisibility);
+      toggleVisibility();
+
+      // Return cleanup function stored for later
+      return () => target.removeEventListener('scroll', toggleVisibility);
     };
 
-    target.addEventListener('scroll', toggleVisibility);
-    toggleVisibility(); // Check on mount/attach
+    let cleanup: (() => void) | false | undefined = checkAndAttach();
 
-    return () => target.removeEventListener('scroll', toggleVisibility);
-  }, [targetRef, targetRef.current]);
+    if (!cleanup) {
+      // Use MutationObserver to detect when the element appears in the DOM
+      const observer = new MutationObserver(() => {
+        const result = checkAndAttach();
+        if (result) {
+          cleanup = result;
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      return () => {
+        observer.disconnect();
+        cleanup?.();
+      };
+    }
+
+    return cleanup;
+  }, [targetRef]);
 
   const scrollToTop = () => {
     targetRef.current?.scrollTo({
