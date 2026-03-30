@@ -7,7 +7,6 @@ import { useInteraction } from './useInteraction';
 import { useSearch } from './useSearch';
 import { generateFullOutput, buildASCIITree } from '../services/fileProcessor';
 import { ConfirmationState, FileContent } from '../types';
-import { marked } from 'marked';
 
 export const useAppLogic = (
     codeViewRef: React.RefObject<HTMLDivElement>,
