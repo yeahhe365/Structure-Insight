@@ -227,6 +227,8 @@ export const useAppLogic = (
     }, [processedData]);
 
     // --- Resizing Handlers ---
+    const resizeStateRef = React.useRef<{ isResizing: boolean }>({ isResizing: false });
+
     const handleResize = React.useCallback((e: MouseEvent) => {
         const panel = leftPanelRef.current;
         if (panel && panel.parentElement) {
@@ -236,12 +238,18 @@ export const useAppLogic = (
     }, [setPanelWidth, leftPanelRef]);
 
     const stopResize = React.useCallback(() => {
+        resizeStateRef.current.isResizing = false;
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
         window.removeEventListener('mousemove', handleResize);
         window.removeEventListener('mouseup', stopResize);
     }, [handleResize]);
 
     const handleMouseDownResize = React.useCallback((e: React.MouseEvent) => {
         e.preventDefault();
+        resizeStateRef.current.isResizing = true;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
         window.addEventListener('mousemove', handleResize);
         window.addEventListener('mouseup', stopResize);
     }, [handleResize, stopResize]);

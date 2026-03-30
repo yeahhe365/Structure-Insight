@@ -10,8 +10,10 @@ interface StructureViewProps {
 
 const StructureView: React.FC<StructureViewProps> = ({ structureString, fontSize, onShowToast }) => {
   const handleCopy = () => {
-    navigator.clipboard.writeText(structureString);
-    onShowToast('项目结构已复制');
+    navigator.clipboard.writeText(structureString).then(
+      () => onShowToast('项目结构已复制'),
+      () => onShowToast('复制失败，请检查剪贴板权限')
+    );
   };
 
   return (

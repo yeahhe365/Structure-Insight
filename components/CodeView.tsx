@@ -141,8 +141,10 @@ const FileCard: React.FC<FileCardProps> = ({
 
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
-    onShowToast('已复制到剪贴板！');
+    navigator.clipboard.writeText(text).then(
+      () => onShowToast('已复制到剪贴板！'),
+      () => onShowToast('复制失败，请检查剪贴板权限')
+    );
   };
 
   const lineNumbers = Array.from({ length: file.stats.lines }, (_, i) => i + 1).join('\n');

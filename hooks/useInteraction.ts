@@ -129,8 +129,10 @@ export const useInteraction = ({
     };
 
     const handleCopyPath = (path: string) => {
-        navigator.clipboard.writeText(path);
-        handleShowToast('路径已复制');
+        navigator.clipboard.writeText(path).then(
+            () => handleShowToast('路径已复制'),
+            () => handleShowToast('复制失败，请检查剪贴板权限')
+        );
     };
     
     return {
