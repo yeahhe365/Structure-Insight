@@ -34,8 +34,8 @@ const App: React.FC = () => {
         >
             {/* Loading progress bar */}
             {state.isLoading && (
-                <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-light-border dark:bg-dark-border overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 animate-pulse" style={{ width: '90%' }} />
+                <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-light-border dark:bg-dark-border overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 ease-out" style={{ width: state.progressMessage ? `${Math.min(95, parseInt(state.progressMessage.match(/(\d+)\/(\d+)/)?.[1] || '0') / Math.max(1, parseInt(state.progressMessage.match(/(\d+)\/(\d+)/)?.[2] || '1')) * 100)}%` : '90%' }} />
                 </div>
             )}
             <Header 
