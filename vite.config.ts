@@ -12,6 +12,17 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'react-vendor': ['react', 'react-dom'],
+              'framer-motion': ['framer-motion'],
+              'jszip': ['jszip'],
+            }
+          }
+        }
+      },
       define: {
         'process.env.API_KEY': JSON.stringify(apiKey),
         'process.env.GEMINI_API_KEY': JSON.stringify(apiKey)
