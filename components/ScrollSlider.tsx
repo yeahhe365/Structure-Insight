@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScrollSliderProps {
-  scrollRef: React.RefObject<HTMLElement>;
+  scrollRef: React.RefObject<HTMLElement | null>;
 }
 
 const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
@@ -12,7 +12,7 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   const trackRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number | null>(null);
 
   const updateSlider = useCallback(() => {
     const scrollEl = scrollRef.current;

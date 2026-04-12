@@ -11,9 +11,9 @@ import ConfirmationDialog from './components/ConfirmationDialog';
 // Lazy-load heavy components
 const SettingsDialog = React.lazy(() => import('./components/SettingsDialog'));
 const SearchDialog = React.lazy(() => import('./components/SearchDialog'));
-const AIChat = React.lazy(() => import('./components/AIChat'));
 const FileRankDialog = React.lazy(() => import('./components/FileRankDialog'));
 const KeyboardShortcutsDialog = React.lazy(() => import('./components/KeyboardShortcutsDialog'));
+const SecurityFindingsDialog = React.lazy(() => import('./components/SecurityFindingsDialog'));
 
 const SuspenseFallback = () => null;
 
@@ -57,7 +57,6 @@ const App: React.FC = () => {
                 onCancel={handlers.handleCancel}
                 onSettings={() => handlers.setIsSettingsOpen(true)}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
-                onToggleAiChat={() => handlers.setIsAiChatOpen(true)}
                 onToggleFileRank={() => handlers.setIsFileRankOpen(true)}
                 onShowStructure={() => handlers.setActiveView('structure')}
                 hasContent={!!state.processedData} 
@@ -72,9 +71,10 @@ const App: React.FC = () => {
                     fileCount={state.stats.fileCount}
                     totalLines={state.stats.totalLines}
                     totalChars={state.stats.totalChars}
-                    selectedFileName={state.selectedFile?.name}
+                    selectedFileName={state.selectedFile?.path.split('/').pop()}
                     isDark={state.isDark}
                     processedData={state.processedData}
+                    onShowSecurityFindings={() => handlers.setIsSecurityFindingsOpen(true)}
                 />
             )}
             
@@ -116,14 +116,6 @@ const App: React.FC = () => {
                 )}
             </AnimatePresence>
 
-            <React.Suspense fallback={<SuspenseFallback />}>
-            <AIChat
-                isOpen={state.isAiChatOpen}
-                onClose={() => handlers.setIsAiChatOpen(false)}
-                projectData={state.processedData}
-            />
-            </React.Suspense>
-
             <AnimatePresence>
                 {state.isSettingsOpen && (
                     <React.Suspense fallback={<SuspenseFallback />}>
@@ -143,6 +135,36 @@ const App: React.FC = () => {
                         onSetMaxCharsThreshold={settings.setMaxCharsThreshold}
                         wordWrap={state.wordWrap}
                         onToggleWordWrap={() => settings.setWordWrap(!state.wordWrap)}
+                        includeFileSummary={state.includeFileSummary}
+                        onToggleIncludeFileSummary={() => settings.setIncludeFileSummary(!state.includeFileSummary)}
+                        includeDirectoryStructure={state.includeDirectoryStructure}
+                        onToggleIncludeDirectoryStructure={() => settings.setIncludeDirectoryStructure(!state.includeDirectoryStructure)}
+                        includeGitDiffs={state.includeGitDiffs}
+                        onToggleIncludeGitDiffs={() => settings.setIncludeGitDiffs(!state.includeGitDiffs)}
+                        exportFormat={state.exportFormat}
+                        onSetExportFormat={settings.setExportFormat}
+                        includePatterns={state.includePatterns}
+                        onSetIncludePatterns={settings.setIncludePatterns}
+                        ignorePatterns={state.ignorePatterns}
+                        onSetIgnorePatterns={settings.setIgnorePatterns}
+                        useDefaultPatterns={state.useDefaultPatterns}
+                        onToggleUseDefaultPatterns={() => settings.setUseDefaultPatterns(!state.useDefaultPatterns)}
+                        useGitignore={state.useGitignore}
+                        onToggleUseGitignore={() => settings.setUseGitignore(!state.useGitignore)}
+                        includeEmptyDirectories={state.includeEmptyDirectories}
+                        onToggleIncludeEmptyDirectories={() => settings.setIncludeEmptyDirectories(!state.includeEmptyDirectories)}
+                        showLineNumbers={state.showLineNumbers}
+                        onToggleShowLineNumbers={() => settings.setShowLineNumbers(!state.showLineNumbers)}
+                        removeEmptyLines={state.removeEmptyLines}
+                        onToggleRemoveEmptyLines={() => settings.setRemoveEmptyLines(!state.removeEmptyLines)}
+                        truncateBase64={state.truncateBase64}
+                        onToggleTruncateBase64={() => settings.setTruncateBase64(!state.truncateBase64)}
+                        exportSplitMaxChars={state.exportSplitMaxChars}
+                        onSetExportSplitMaxChars={settings.setExportSplitMaxChars}
+                        exportHeaderText={state.exportHeaderText}
+                        onSetExportHeaderText={settings.setExportHeaderText}
+                        exportInstructionText={state.exportInstructionText}
+                        onSetExportInstructionText={settings.setExportInstructionText}
                     />
                     </React.Suspense>
                 )}
@@ -158,7 +180,18 @@ const App: React.FC = () => {
                 )}
             </AnimatePresence>
             <AnimatePresence>
-                {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} type={state.toastMessage.includes('错误') ? 'error' : state.toastMessage.includes('已重置') || state.toastMessage.includes('已取消') ? 'info' : 'success'} />}
+                {state.isSecurityFindingsOpen && (
+                    <React.Suspense fallback={<SuspenseFallback />}>
+                    <SecurityFindingsDialog
+                        isOpen={state.isSecurityFindingsOpen}
+                        onClose={() => handlers.setIsSecurityFindingsOpen(false)}
+                        findings={state.processedData?.securityFindings ?? []}
+                    />
+                    </React.Suspense>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} type={state.toastType} />}
             </AnimatePresence>
         </div>
     );

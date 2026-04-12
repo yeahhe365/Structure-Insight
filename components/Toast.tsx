@@ -8,13 +8,13 @@ interface ToastProps {
 }
 
 const Toast: React.FC<ToastProps> = ({ message, onDone, type = 'success' }) => {
-  const iconMap = {
+  const iconMap: Record<NonNullable<ToastProps['type']>, string> = {
     success: 'fa-circle-check text-green-500',
     error: 'fa-circle-xmark text-red-500',
     info: 'fa-circle-info text-blue-500',
   };
 
-  const borderMap = {
+  const borderMap: Record<NonNullable<ToastProps['type']>, string> = {
     success: 'border-green-500/30',
     error: 'border-red-500/30',
     info: 'border-blue-500/30',

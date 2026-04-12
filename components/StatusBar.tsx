@@ -1,4 +1,5 @@
 import React from 'react';
+import type { AnalysisSummary, FileStats } from '../types';
 
 interface StatusBarProps {
     fileCount: number;
@@ -6,7 +7,11 @@ interface StatusBarProps {
     totalChars: number;
     selectedFileName?: string;
     isDark?: boolean;
-    processedData?: { fileContents: { path: string; stats: { lines: number; chars: number }; excluded?: boolean }[] } | null;
+    onShowSecurityFindings?: () => void;
+    processedData?: {
+        fileContents: { path: string; stats: FileStats; excluded?: boolean }[];
+        analysisSummary?: AnalysisSummary;
+    } | null;
 }
 
 const StatusBarItem: React.FC<{icon: string, value: number | string, label: string}> = ({icon, value, label}) => (
@@ -16,8 +21,7 @@ const StatusBarItem: React.FC<{icon: string, value: number | string, label: stri
     </span>
 );
 
-const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars, selectedFileName, isDark, processedData }) => {
-    // Calculate file type breakdown
+const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars, selectedFileName, isDark, processedData, onShowSecurityFindings }) => {
     const typeSummary = React.useMemo(() => {
         if (!processedData?.fileContents) return null;
         const counts = new Map<string, number>();
@@ -29,6 +33,8 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
         const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
         return sorted.map(([ext, count]) => `${ext}: ${count}`).join(' · ');
     }, [processedData]);
+
+    const analysisSummary = processedData?.analysisSummary;
 
     return (
         <footer className="h-8 flex items-center px-4 space-x-6 bg-light-header dark:bg-dark-header border-t border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
@@ -56,6 +62,19 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
             <StatusBarItem icon="fa-file-lines" value={fileCount} label="文件" />
             <StatusBarItem icon="fa-align-left" value={totalLines} label="行数" />
             <StatusBarItem icon="fa-quote-left" value={totalChars} label="字符数" />
+            {analysisSummary && (
+                <StatusBarItem icon="fa-cubes-stacked" value={analysisSummary.totalEstimatedTokens} label="预计 Token" />
+            )}
+            {analysisSummary && analysisSummary.securityFindingCount > 0 && (
+                <button
+                    onClick={onShowSecurityFindings}
+                    className="flex items-center hover:text-amber-500 transition-colors"
+                    title="敏感信息提示"
+                >
+                    <i className="fa-solid fa-triangle-exclamation w-4 text-center mr-1.5"></i>
+                    {analysisSummary.securityFindingCount.toLocaleString()}
+                </button>
+            )}
         </footer>
     );
 }

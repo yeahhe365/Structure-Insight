@@ -33,7 +33,7 @@ const StructureView: React.FC<StructureViewProps> = ({ structureString, fontSize
                     className="w-8 h-8 rounded-md hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center text-light-subtle-text dark:text-dark-subtle-text hover:text-primary transition-colors"
                     title="复制结构"
                 >
-                    <i className="fa-regular fa-copy"></i>
+                    <i className="fa-solid fa-copy"></i>
                 </button>
             </div>
             <div className="p-4 bg-light-bg dark:bg-dark-bg overflow-x-auto">

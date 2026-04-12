@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScrollToTopButtonProps {
-  targetRef: React.RefObject<HTMLElement>;
+  targetRef: React.RefObject<HTMLElement | null>;
 }
 
 const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
@@ -11,7 +11,7 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
   React.useEffect(() => {
     const checkAndAttach = () => {
       const target = targetRef.current;
-      if (!target) return false;
+      if (!target) return undefined;
 
       const toggleVisibility = () => {
         setIsVisible(target.scrollTop > 300);
@@ -24,7 +24,7 @@ const ScrollToTopButton: React.FC<ScrollToTopButtonProps> = ({ targetRef }) => {
       return () => target.removeEventListener('scroll', toggleVisibility);
     };
 
-    let cleanup: (() => void) | false | undefined = checkAndAttach();
+    let cleanup: (() => void) | undefined = checkAndAttach();
 
     if (!cleanup) {
       // Use MutationObserver to detect when the element appears in the DOM

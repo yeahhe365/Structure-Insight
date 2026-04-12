@@ -1,36 +1,42 @@
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    const apiKey = env.GEMINI_API_KEY || env.API_KEY;
-
-    return {
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-      },
-      plugins: [react()],
-      build: {
-        rollupOptions: {
-          output: {
-            manualChunks: {
-              'react-vendor': ['react', 'react-dom'],
-              'framer-motion': ['framer-motion'],
-              'jszip': ['jszip'],
-            }
-          }
+export default defineConfig({
+  server: {
+    port: 3000,
+    host: '0.0.0.0',
+  },
+  plugins: [
+    react(),
+    {
+      name: 'strip-fontawesome-ttf',
+      enforce: 'pre',
+      transform(code, id) {
+        if (!id.includes('@fortawesome/fontawesome-free/css/')) {
+          return null;
         }
+
+        return code.replace(/,url\(\.\.\/webfonts\/[^)]+\.ttf\) format\("truetype"\)/g, '');
       },
-      define: {
-        'process.env.API_KEY': JSON.stringify(apiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(apiKey)
-      },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
+    },
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'framer-motion': ['framer-motion'],
+          'jszip': ['jszip'],
+          'file-tree-vendor': ['react-virtuoso'],
+          'code-view-vendor': ['highlight.js/lib/common', 'marked', 'dompurify'],
         }
       }
-    };
+    }
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.'),
+    }
+  }
 });

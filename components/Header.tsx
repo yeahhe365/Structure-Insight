@@ -9,7 +9,6 @@ export interface HeaderProps {
   onCancel: () => void;
   onSettings: () => void;
   onToggleSearch: () => void;
-  onToggleAiChat: () => void;
   onToggleFileRank: () => void;
   onShowStructure: () => void;
   hasContent: boolean;
@@ -19,7 +18,7 @@ export interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
     onOpenFolder, onCopyAll, onSave, onReset, onCancel,
-    onSettings, onToggleSearch, onToggleAiChat, onToggleFileRank, onShowStructure, hasContent, isLoading, activeView
+    onSettings, onToggleSearch, onToggleFileRank, onShowStructure, hasContent, isLoading, activeView
 }) => {
   const buttonClass = "flex items-center justify-center h-9 w-9 rounded-lg text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-border dark:hover:bg-dark-border/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
   const iconClass = "text-lg";
@@ -34,7 +33,7 @@ const Header: React.FC<HeaderProps> = ({
       </div>
       <div className="flex items-center space-x-2" role="toolbar" aria-label="工具栏">
         <button onClick={onOpenFolder} className={buttonClass} title="打开文件夹 (Ctrl+O)" disabled={isLoading}>
-          <i className={`fa-regular fa-folder-open ${iconClass}`}></i>
+          <i className={`fa-solid fa-folder-open ${iconClass}`}></i>
         </button>
         <button onClick={onToggleSearch} className={buttonClass} title="在文件中查找 (Ctrl+F)" disabled={!hasContent || isLoading}>
             <i className={`fa-solid fa-search ${iconClass}`}></i>
@@ -44,9 +43,6 @@ const Header: React.FC<HeaderProps> = ({
         </button>
         <button onClick={onShowStructure} className={`${buttonClass} ${activeView === 'structure' && hasContent ? 'bg-light-border dark:bg-dark-border/50 text-primary' : ''}`} title="查看项目结构" disabled={!hasContent || isLoading}>
             <i className={`fa-solid fa-sitemap ${iconClass}`}></i>
-        </button>
-        <button onClick={onToggleAiChat} className={`${buttonClass} text-primary dark:text-sky-400`} title="AI 助理" disabled={!hasContent || isLoading}>
-            <i className={`fa-solid fa-wand-magic-sparkles ${iconClass}`}></i>
         </button>
 
         <div className="w-px h-6 bg-light-border dark:bg-dark-border mx-1"></div>

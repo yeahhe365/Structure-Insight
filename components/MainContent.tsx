@@ -1,20 +1,21 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import FileTree from './FileTree';
-import CodeView from './CodeView';
 import InitialPrompt from './InitialPrompt';
 import TabBar from './TabBar';
 import { useAppLogic } from '../hooks/useAppLogic';
 import ScrollSlider from './ScrollSlider';
-import StructureView from './StructureView';
 import ScrollToTopButton from './ScrollToTopButton';
 import { FileNode } from '../types';
 
+const FileTree = React.lazy(() => import('./FileTree'));
+const CodeView = React.lazy(() => import('./CodeView'));
+const StructureView = React.lazy(() => import('./StructureView'));
+
 interface MainContentProps {
     logic: ReturnType<typeof useAppLogic>;
-    codeViewRef: React.RefObject<HTMLDivElement>;
-    leftPanelRef: React.RefObject<HTMLDivElement>;
+    codeViewRef: React.RefObject<HTMLDivElement | null>;
+    leftPanelRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /** Recursively collect unique file extensions from a tree */
@@ -65,6 +66,12 @@ const LoadingIndicator: React.FC<{message: string}> = ({message}) => (
         </div>
         <p className="text-lg font-semibold mb-2">正在处理文件...</p>
         <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text max-w-xs truncate">{message}</p>
+    </div>
+);
+
+const SuspenseFallback: React.FC = () => (
+    <div className="flex items-center justify-center h-full text-sm text-light-subtle-text dark:text-dark-subtle-text">
+        正在加载视图...
     </div>
 );
 
@@ -132,16 +139,18 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                         ))}
                                     </div>
                                 )}
-                                <FileTree
-                                    nodes={filteredNodes}
-                                    onFileSelect={handlers.handleFileTreeSelect}
-                                    onDeleteFile={handlers.handleDeleteFile}
-                                    onCopyPath={handlers.handleCopyPath}
-                                    onToggleExclude={handlers.handleToggleExclude}
-                                    onDirDoubleClick={handlers.handleDirDoubleClick}
-                                    selectedFilePath={state.selectedFilePath}
-                                    showCharCount={state.showCharCount}
-                                />
+                                <React.Suspense fallback={<SuspenseFallback />}>
+                                    <FileTree
+                                        nodes={filteredNodes}
+                                        onFileSelect={handlers.handleFileTreeSelect}
+                                        onDeleteFile={handlers.handleDeleteFile}
+                                        onCopyPath={handlers.handleCopyPath}
+                                        onToggleExclude={handlers.handleToggleExclude}
+                                        onDirDoubleClick={handlers.handleDirDoubleClick}
+                                        selectedFilePath={state.selectedFilePath}
+                                        showCharCount={state.showCharCount}
+                                    />
+                                </React.Suspense>
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
@@ -159,28 +168,32 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 ) : state.processedData ? (
                                     <div ref={codeViewRef} className="flex-1 overflow-y-auto">
                                          {state.activeView === 'structure' ? (
-                                             <StructureView 
-                                                structureString={state.processedData.structureString} 
-                                                fontSize={state.fontSize} 
-                                                onShowToast={(msg) => handlers.setToastMessage(msg)}
-                                             />
+                                             <React.Suspense fallback={<SuspenseFallback />}>
+                                                <StructureView 
+                                                    structureString={state.processedData.structureString} 
+                                                    fontSize={state.fontSize} 
+                                                    onShowToast={(msg) => handlers.setToastMessage(msg)}
+                                                />
+                                             </React.Suspense>
                                          ) : (
-                                             <CodeView 
-                                                selectedFile={state.selectedFile} 
-                                                editingPath={state.editingPath} 
-                                                onStartEdit={handlers.setEditingPath} 
-                                                onSaveEdit={handlers.handleSaveEdit} 
-                                                onCancelEdit={() => handlers.setEditingPath(null)} 
-                                                markdownPreviewPaths={state.markdownPreviewPaths} 
-                                                onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
-                                                onShowToast={(msg) => handlers.setToastMessage(msg)} 
-                                                fontSize={state.fontSize}
-                                                searchQuery={state.searchQuery}
-                                                searchOptions={state.searchOptions}
-                                                activeMatchIndexInFile={state.activeMatchIndexInFile}
-                                                onCopyPath={handlers.handleCopyPath}
-                                                wordWrap={state.wordWrap}
-                                             />
+                                             <React.Suspense fallback={<SuspenseFallback />}>
+                                                <CodeView 
+                                                    selectedFile={state.selectedFile} 
+                                                    editingPath={state.editingPath} 
+                                                    onStartEdit={handlers.setEditingPath} 
+                                                    onSaveEdit={handlers.handleSaveEdit} 
+                                                    onCancelEdit={() => handlers.setEditingPath(null)} 
+                                                    markdownPreviewPaths={state.markdownPreviewPaths} 
+                                                    onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
+                                                    onShowToast={(msg) => handlers.setToastMessage(msg)} 
+                                                    fontSize={state.fontSize}
+                                                    searchQuery={state.searchQuery}
+                                                    searchOptions={state.searchOptions}
+                                                    activeMatchIndexInFile={state.activeMatchIndexInFile}
+                                                    onCopyPath={handlers.handleCopyPath}
+                                                    wordWrap={state.wordWrap}
+                                                />
+                                             </React.Suspense>
                                          )}
                                     </div>
                                 ) : (
@@ -213,16 +226,18 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                             ))}
                                         </div>
                                     )}
-                                    <FileTree
-                                        nodes={filteredNodes}
-                                        onFileSelect={handlers.handleFileTreeSelect}
-                                        onDeleteFile={handlers.handleDeleteFile}
-                                        onCopyPath={handlers.handleCopyPath}
-                                        onToggleExclude={handlers.handleToggleExclude}
-                                        onDirDoubleClick={handlers.handleDirDoubleClick}
-                                        selectedFilePath={state.selectedFilePath}
-                                        showCharCount={state.showCharCount}
-                                    />
+                                    <React.Suspense fallback={<SuspenseFallback />}>
+                                        <FileTree
+                                            nodes={filteredNodes}
+                                            onFileSelect={handlers.handleFileTreeSelect}
+                                            onDeleteFile={handlers.handleDeleteFile}
+                                            onCopyPath={handlers.handleCopyPath}
+                                            onToggleExclude={handlers.handleToggleExclude}
+                                            onDirDoubleClick={handlers.handleDirDoubleClick}
+                                            selectedFilePath={state.selectedFilePath}
+                                            showCharCount={state.showCharCount}
+                                        />
+                                    </React.Suspense>
                                 </>
                            )}
                         </div>
@@ -247,29 +262,33 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 <div className="relative flex-1 min-h-0">
                                     <div ref={codeViewRef} className="h-full overflow-y-auto no-scrollbar">
                                         <div className={state.activeView === 'code' ? 'block min-h-full' : 'hidden'}>
-                                            <CodeView 
-                                                selectedFile={state.selectedFile} 
-                                                editingPath={state.editingPath} 
-                                                markdownPreviewPaths={state.markdownPreviewPaths} 
-                                                onStartEdit={handlers.setEditingPath} 
-                                                onSaveEdit={handlers.handleSaveEdit} 
-                                                onCancelEdit={() => handlers.setEditingPath(null)} 
-                                                onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
-                                                onShowToast={(msg) => handlers.setToastMessage(msg)} 
-                                                fontSize={state.fontSize} 
-                                                searchQuery={state.searchQuery} 
-                                                searchOptions={state.searchOptions}
-                                                activeMatchIndexInFile={state.activeMatchIndexInFile}
-                                                onCopyPath={handlers.handleCopyPath}
-                                                wordWrap={state.wordWrap}
-                                            />
+                                            <React.Suspense fallback={<SuspenseFallback />}>
+                                                <CodeView 
+                                                    selectedFile={state.selectedFile} 
+                                                    editingPath={state.editingPath} 
+                                                    markdownPreviewPaths={state.markdownPreviewPaths} 
+                                                    onStartEdit={handlers.setEditingPath} 
+                                                    onSaveEdit={handlers.handleSaveEdit} 
+                                                    onCancelEdit={() => handlers.setEditingPath(null)} 
+                                                    onToggleMarkdownPreview={handlers.handleToggleMarkdownPreview} 
+                                                    onShowToast={(msg) => handlers.setToastMessage(msg)} 
+                                                    fontSize={state.fontSize} 
+                                                    searchQuery={state.searchQuery} 
+                                                    searchOptions={state.searchOptions}
+                                                    activeMatchIndexInFile={state.activeMatchIndexInFile}
+                                                    onCopyPath={handlers.handleCopyPath}
+                                                    wordWrap={state.wordWrap}
+                                                />
+                                            </React.Suspense>
                                         </div>
                                         <div className={state.activeView === 'structure' ? 'block min-h-full' : 'hidden'}>
-                                            <StructureView 
-                                                structureString={state.processedData.structureString} 
-                                                fontSize={state.fontSize} 
-                                                onShowToast={(msg) => handlers.setToastMessage(msg)}
-                                            />
+                                            <React.Suspense fallback={<SuspenseFallback />}>
+                                                <StructureView 
+                                                    structureString={state.processedData.structureString} 
+                                                    fontSize={state.fontSize} 
+                                                    onShowToast={(msg) => handlers.setToastMessage(msg)}
+                                                />
+                                            </React.Suspense>
                                         </div>
                                     </div>
                                     <ScrollSlider scrollRef={codeViewRef} />

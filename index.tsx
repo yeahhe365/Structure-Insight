@@ -1,12 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+import '@fortawesome/fontawesome-free/css/solid.min.css';
 import { marked } from 'marked';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import './index.css';
+import { registerAppServiceWorker } from './services/pwa';
 
 // Configure marked for markdown rendering with syntax highlighting
 marked.setOptions({
-    langPrefix: 'hljs language-',
     gfm: true,
     breaks: true,
 });
@@ -24,3 +27,5 @@ root.render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+registerAppServiceWorker();

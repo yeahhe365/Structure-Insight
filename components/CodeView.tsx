@@ -1,11 +1,10 @@
 
 import React from 'react';
+import hljs from 'highlight.js/lib/common';
 import { motion } from 'framer-motion';
 import { FileContent, SearchOptions } from '../types';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-
-// hljs types provided by types/hljs.d.ts
 
 interface FileCardProps {
   file: FileContent;
@@ -27,7 +26,7 @@ interface FileCardProps {
 
 const IconButton: React.FC<{icon: string, title: string, onClick: () => void, disabled?: boolean, text?: string}> = ({icon, title, onClick, disabled, text}) => (
     <button onClick={onClick} className="flex items-center space-x-1.5 text-sm text-light-subtle-text dark:text-dark-subtle-text hover:text-light-text dark:hover:text-dark-text disabled:opacity-50 transition-colors" title={title} disabled={disabled}>
-        <i className={`fa-regular ${icon}`}></i>
+        <i className={`fa-solid ${icon}`}></i>
         {text && <span className="hidden sm:inline">{text}</span>}
     </button>
 );
@@ -152,7 +151,7 @@ const FileCard: React.FC<FileCardProps> = ({
   
   const sanitizedMarkdown = React.useMemo(() => {
     if (isMarkdown && isMarkdownPreview && !file.excluded) {
-        const rawHtml = marked.parse(file.content);
+        const rawHtml = marked(file.content, { async: false });
         return DOMPurify.sanitize(rawHtml);
     }
     return '';
@@ -172,10 +171,10 @@ const FileCard: React.FC<FileCardProps> = ({
       </div>
       <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
         <div className="font-mono text-sm text-light-text dark:text-dark-text truncate flex items-center" title={file.path}>
-          <i className="fa-regular fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>
+          <i className="fa-solid fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>
           <span className={`truncate ${file.excluded ? 'line-through text-light-subtle-text dark:text-dark-subtle-text italic' : ''}`}>{file.path} {file.excluded && "(已排除)"}</span>
            <button onClick={() => onCopyPath(file.path)} className="ml-2 text-light-subtle-text hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-light-border dark:hover:bg-dark-border/50" title="复制路径">
-              <i className="fa-regular fa-copy text-xs"></i>
+              <i className="fa-solid fa-copy text-xs"></i>
           </button>
         </div>
         <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-2">
@@ -267,7 +266,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
   if (!selectedFile) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-center p-4 text-light-subtle-text dark:text-dark-subtle-text">
-            <i className="fa-regular fa-file-code text-5xl mb-4"></i>
+            <i className="fa-solid fa-file-code text-5xl mb-4"></i>
             <p className="font-semibold">选择一个文件</p>
             <p className="text-sm">从左侧资源管理器中选择一个文件以查看其内容。</p>
         </div>

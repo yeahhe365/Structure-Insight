@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { getFileIcon } from './FileTree';
+import { getFileIcon } from './fileIcons';
 
 interface TabBarProps {
     openFiles: string[];

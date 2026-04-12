@@ -1,4 +1,20 @@
 
+export type SecurityFindingSeverity = 'high' | 'medium';
+
+export interface SecurityFinding {
+  filePath: string;
+  ruleId: string;
+  severity: SecurityFindingSeverity;
+  message: string;
+  preview: string;
+}
+
+export interface FileStats {
+  lines: number;
+  chars: number;
+  estimatedTokens: number;
+}
+
 export interface FileNode {
   name: string;
   path: string;
@@ -13,12 +29,17 @@ export interface FileNode {
 export interface FileContent {
   path: string;
   content: string;
+  originalContent?: string;
   language: string;
-  stats: {
-    lines: number;
-    chars: number;
-  };
+  stats: FileStats;
+  securityFindings?: SecurityFinding[];
   excluded?: boolean;
+}
+
+export interface AnalysisSummary {
+    totalEstimatedTokens: number;
+    securityFindingCount: number;
+    scannedFileCount: number;
 }
 
 export interface ProcessedFiles {
@@ -26,6 +47,15 @@ export interface ProcessedFiles {
     fileContents: FileContent[];
     structureString: string;
     rootName: string;
+    emptyDirectoryPaths?: string[];
+    removedPaths?: string[];
+    analysisSummary?: AnalysisSummary;
+    securityFindings?: SecurityFinding[];
+    exportMetadata?: {
+      usesDefaultIgnorePatterns: boolean;
+      usesGitignorePatterns: boolean;
+      sortsByGitChangeCount: boolean;
+    };
 }
 
 export interface SearchOptions {

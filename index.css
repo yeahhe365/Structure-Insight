@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Structure Insight - Custom Styles */
 
 :root {
@@ -7,6 +11,10 @@
   --color-highlight-dark: #ca8a04;
   --color-highlight-active: #fb923c;
   --color-highlight-active-border: #f97316;
+  --color-scrollbar-light: #d1d5db;
+  --color-scrollbar-light-hover: #9ca3af;
+  --color-scrollbar-dark: #374151;
+  --color-scrollbar-dark-hover: #4b5563;
 }
 
 /* Custom scrollbar styles */
@@ -20,21 +28,21 @@
 }
 
 html.dark ::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: var(--color-scrollbar-dark);
   border-radius: 5px;
 }
 
 html.light ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: var(--color-scrollbar-light);
   border-radius: 5px;
 }
 
 html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: var(--color-scrollbar-dark-hover);
 }
 
 html.light ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: var(--color-scrollbar-light-hover);
 }
 
 /* Hide scrollbar for specific elements */
@@ -59,32 +67,33 @@ html.light ::-webkit-scrollbar-thumb:hover {
 
 /* Search highlight styles */
 mark.search-highlight {
-  background-color: #fde047; /* yellow-300 */
+  background-color: var(--color-highlight);
   color: inherit;
   padding: 0;
   border-radius: 2px;
 }
 
 html.dark mark.search-highlight {
-  background-color: #ca8a04; /* yellow-600 */
+  background-color: var(--color-highlight-dark);
 }
 
 mark.search-highlight-active {
-  background-color: #fb923c; /* orange-400 */
+  background-color: var(--color-highlight-active);
   color: inherit;
   padding: 0;
   border-radius: 2px;
-  outline: 1px solid #f97316; /* orange-500 */
+  outline: 1px solid var(--color-highlight-active-border);
 }
 
 /* Smooth transitions for theme changes */
 body {
   transition: background-color 0.2s ease, color 0.2s ease;
+  font-family: theme('fontFamily.sans');
 }
 
 /* Focus visible styles for accessibility */
 *:focus-visible {
-  outline: 2px solid #3B82F6;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -99,10 +108,6 @@ pre code.hljs {
 ::selection {
   background-color: rgba(59, 130, 246, 0.3);
   color: inherit;
-}
-
-html.dark ::selection {
-  background-color: rgba(96, 165, 250, 0.3);
 }
 
 /* Transitions for drag and drop overlay */

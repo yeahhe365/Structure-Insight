@@ -4,18 +4,12 @@ import { SearchOptions, SearchResultItem, ProcessedFiles } from '../types';
 
 interface UseSearchParams {
     processedData: ProcessedFiles | null;
-    isMobile: boolean;
-    setMobileView: React.Dispatch<React.SetStateAction<'tree' | 'editor'>>;
-    setSelectedFilePath: React.Dispatch<React.SetStateAction<string | null>>;
-    setActiveView: React.Dispatch<React.SetStateAction<'structure' | 'code'>>;
+    openFile: (path: string) => void;
 }
 
 export const useSearch = ({
     processedData,
-    isMobile,
-    setMobileView,
-    setSelectedFilePath,
-    setActiveView,
+    openFile,
 }: UseSearchParams) => {
     const [isSearchOpen, setIsSearchOpen] = React.useState(false);
     const [searchResults, setSearchResults] = React.useState<SearchResultItem[]>([]);
@@ -77,14 +71,11 @@ export const useSearch = ({
         setSearchResults(results);
         if (results.length > 0) {
             setActiveResultIndex(0);
-            const firstResult = results[0];
-            setSelectedFilePath(firstResult.filePath);
-            setActiveView('code');
-            if (isMobile) setMobileView('editor');
+            openFile(results[0].filePath);
         } else {
             setActiveResultIndex(null);
         }
-    }, [processedData, isMobile, setMobileView, setSelectedFilePath, setActiveView]);
+    }, [processedData, openFile]);
 
     const handleNavigate = React.useCallback((direction: 'next' | 'prev') => {
         if (searchResults.length === 0 || activeResultIndex === null) return;
@@ -97,11 +88,9 @@ export const useSearch = ({
 
         const result = searchResults[newIndex];
         if (result) {
-            setSelectedFilePath(result.filePath);
-            setActiveView('code');
-            if (isMobile) setMobileView('editor');
+            openFile(result.filePath);
         }
-    }, [searchResults, activeResultIndex, isMobile, setMobileView, setSelectedFilePath, setActiveView]);
+    }, [searchResults, activeResultIndex, openFile]);
 
     const resetSearch = React.useCallback(() => {
         setIsSearchOpen(false);
