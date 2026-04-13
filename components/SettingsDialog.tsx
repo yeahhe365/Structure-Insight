@@ -452,7 +452,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                     </div>
                                     <div className="flex flex-col">
                                         <label htmlFor="max-chars-input" className="text-sm font-medium text-light-text dark:text-dark-text cursor-pointer select-none">自动跳过大文件</label>
-                                        <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text">超过此限制的文件不提取内容</span>
+                                        <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text">0 表示不限制，超过此限制的文件不提取内容</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">

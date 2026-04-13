@@ -9,6 +9,9 @@ import { buildExportOutput, type ExportFormat } from '../services/exportBuilder'
 import { splitOutputText } from '../services/exportSplit';
 import { ConfirmationState, FileContent } from '../types';
 
+const LEGACY_MAX_CHARS_THRESHOLD_DEFAULT = 1000000;
+const MAX_CHARS_THRESHOLD_MIGRATION_KEY = 'migration:maxCharsThresholdDefaultDisabled:v1';
+
 export const useAppLogic = (
     codeViewRef: React.RefObject<HTMLDivElement | null>,
     leftPanelRef: React.RefObject<HTMLDivElement | null>
@@ -32,7 +35,7 @@ export const useAppLogic = (
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
     const [showCharCount, setShowCharCount] = usePersistentState('showCharCount', false);
     const [wordWrap, setWordWrap] = usePersistentState('wordWrap', false);
-    const [maxCharsThreshold, setMaxCharsThreshold] = usePersistentState('maxCharsThreshold', 1000000);
+    const [maxCharsThreshold, setMaxCharsThreshold] = usePersistentState('maxCharsThreshold', 0);
     const [includeFileSummary, setIncludeFileSummary] = usePersistentState('includeFileSummary', true);
     const [includeDirectoryStructure, setIncludeDirectoryStructure] = usePersistentState('includeDirectoryStructure', true);
     const [includeGitDiffs, setIncludeGitDiffs] = usePersistentState('includeGitDiffs', false);
@@ -48,6 +51,22 @@ export const useAppLogic = (
     const [removeEmptyLines, setRemoveEmptyLines] = usePersistentState('exportRemoveEmptyLines', false);
     const [truncateBase64, setTruncateBase64] = usePersistentState('exportTruncateBase64', false);
     const [exportSplitMaxChars, setExportSplitMaxChars] = usePersistentState('exportSplitMaxChars', 0);
+
+    React.useEffect(() => {
+        try {
+            if (window.localStorage.getItem(MAX_CHARS_THRESHOLD_MIGRATION_KEY) === 'true') {
+                return;
+            }
+
+            if (window.localStorage.getItem('maxCharsThreshold') === JSON.stringify(LEGACY_MAX_CHARS_THRESHOLD_DEFAULT)) {
+                setMaxCharsThreshold(0);
+            }
+
+            window.localStorage.setItem(MAX_CHARS_THRESHOLD_MIGRATION_KEY, 'true');
+        } catch {
+            // Ignore storage access errors and keep using the in-memory default.
+        }
+    }, [setMaxCharsThreshold]);
 
     const [selectedFilePath, setSelectedFilePath] = React.useState<string | null>(null);
     const [activeView, setActiveView] = React.useState<'structure' | 'code'>('structure');

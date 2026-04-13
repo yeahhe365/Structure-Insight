@@ -36,9 +36,10 @@ npm run check
 
 ## Repository Notes
 
-- The repository root contains the public project README.
-- CI runs from the repository root but uses this directory as the working directory.
-- Cloudflare Pages or similar platforms should point their root/build directory to `structure-insight/`.
+- This repository is the app root for installs, builds, and deployments.
+- Cloudflare Pages or similar platforms should use the repository root as the root directory.
+- The production build output directory is `dist`.
+- Only use `structure-insight/` as a working directory if this app is checked out as a subdirectory inside a larger local workspace.
 
 ## Export Semantics
 

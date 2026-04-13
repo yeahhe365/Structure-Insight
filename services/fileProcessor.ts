@@ -454,8 +454,9 @@ export async function processFiles(
         
         const extension = `.${file.name.split('.').pop()?.toLowerCase()}`;
         const isIgnored = IGNORED_EXTENSIONS.has(extension);
+        const hasCharLimit = maxCharsThreshold > 0;
         // Skip reading very large binary files based on byte size (rough heuristic)
-        const isLikelyTooLarge = file.size > maxCharsThreshold * 3;
+        const isLikelyTooLarge = hasCharLimit && file.size > maxCharsThreshold * 3;
 
         if (!extractContent || isIgnored) {
             fileNode.status = 'skipped';
@@ -464,7 +465,7 @@ export async function processFiles(
             // For files with very large byte size, read content and check actual char count
             try {
                 const content = await readFileContent(file);
-                if (content.length > maxCharsThreshold) {
+                if (hasCharLimit && content.length > maxCharsThreshold) {
                     fileNode.status = 'skipped';
                     fileNode.chars = content.length;
                 } else {
@@ -493,7 +494,7 @@ export async function processFiles(
             try {
                 const content = await readFileContent(file);
                 const lineCount = content.split('\n').length;
-                if (content.length > maxCharsThreshold) {
+                if (hasCharLimit && content.length > maxCharsThreshold) {
                     fileNode.status = 'skipped';
                     fileNode.chars = content.length;
                 } else {

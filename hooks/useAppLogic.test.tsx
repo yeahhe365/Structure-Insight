@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProcessedFiles } from '../types';
 import { useAppLogic } from './useAppLogic';
@@ -163,6 +163,7 @@ describe('useAppLogic', () => {
 
         const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
 
+        expect(result.current.state.maxCharsThreshold).toBe(0);
         expect(result.current.state.includeFileSummary).toBe(true);
         expect(result.current.state.includeDirectoryStructure).toBe(true);
         expect(result.current.state.includeGitDiffs).toBe(false);
@@ -178,6 +179,33 @@ describe('useAppLogic', () => {
         expect(result.current.state.exportSplitMaxChars).toBe(0);
         expect(result.current.state.exportHeaderText).toBe('');
         expect(result.current.state.exportInstructionText).toBe('');
+    });
+
+    it('migrates the legacy large-file threshold default to disabled', async () => {
+        window.localStorage.setItem('maxCharsThreshold', JSON.stringify(1000000));
+
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        await waitFor(() => {
+            expect(result.current.state.maxCharsThreshold).toBe(0);
+            expect(window.localStorage.getItem('maxCharsThreshold')).toBe('0');
+            expect(window.localStorage.getItem('migration:maxCharsThresholdDefaultDisabled:v1')).toBe('true');
+        });
+    });
+
+    it('does not override the large-file threshold after the migration has already run', () => {
+        window.localStorage.setItem('maxCharsThreshold', JSON.stringify(1000000));
+        window.localStorage.setItem('migration:maxCharsThresholdDefaultDisabled:v1', 'true');
+
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        expect(result.current.state.maxCharsThreshold).toBe(1000000);
     });
 
     it('uses the async export builder for copy and save actions', async () => {

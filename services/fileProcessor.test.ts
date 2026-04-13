@@ -29,6 +29,29 @@ describe('processDroppedItems', () => {
 });
 
 describe('processFiles', () => {
+    it('treats a zero maxCharsThreshold as disabled and still extracts content', async () => {
+        const file = new File(['export const value = 1;\n'], 'kept.ts', { type: 'text/plain' });
+        Object.defineProperty(file, 'webkitRelativePath', {
+            value: 'demo/kept.ts',
+            configurable: true,
+        });
+
+        const result = await processFiles(
+            [file],
+            vi.fn(),
+            true,
+            0,
+            new AbortController().signal
+        );
+
+        expect(result.fileContents).toHaveLength(1);
+        expect(result.fileContents[0].path).toBe('demo/kept.ts');
+        expect(result.treeData[0]?.children?.[0]).toMatchObject({
+            path: 'demo/kept.ts',
+            status: 'processed',
+        });
+    });
+
     it('excludes files matched by the root .gitignore file', async () => {
         const gitignore = new File(['ignored.ts\n'], '.gitignore', { type: 'text/plain' });
         Object.defineProperty(gitignore, 'webkitRelativePath', {
