@@ -1,6 +1,7 @@
 import { minimatch } from 'minimatch';
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
+import { buildEditedChanges } from './editedChanges';
 import { processFiles } from './fileProcessor';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
 import { scanSensitiveContent } from './securityScan';
@@ -309,27 +310,9 @@ function buildSecurityWarnings(data: ProcessedFiles) {
     return data.securityFindings ?? data.fileContents.flatMap(file => file.securityFindings ?? []);
 }
 
-function buildGitDiffString(files: FileContent[]): string | null {
-    const diffFiles = files.filter(file => file.originalContent !== undefined && file.originalContent !== file.content);
-    if (diffFiles.length === 0) {
-        return null;
-    }
-
-    return diffFiles.map(file => {
-        return [
-            `diff --git a/${file.path} b/${file.path}`,
-            `--- a/${file.path}`,
-            `+++ b/${file.path}`,
-            `@@ -1,${(file.originalContent ?? '').split('\n').length} +1,${file.content.split('\n').length} @@`,
-            ...(file.originalContent ?? '').split('\n').filter(Boolean).map(line => `-${line}`),
-            ...file.content.split('\n').filter(Boolean).map(line => `+${line}`),
-        ].join('\n');
-    }).join('\n\n');
-}
-
 function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
     const directoryString = buildDirectoryString(data);
-    const gitDiffs = options.includeGitDiffs ? buildGitDiffString(data.fileContents) : null;
+    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     const sections: string[] = [];
@@ -384,7 +367,7 @@ function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
 
 function renderXml(data: ProcessedFiles, options: ExportOptions): string {
     const directoryString = buildDirectoryString(data);
-    const gitDiffs = options.includeGitDiffs ? buildGitDiffString(data.fileContents) : null;
+    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     const parts: string[] = [];
@@ -427,7 +410,7 @@ function renderXml(data: ProcessedFiles, options: ExportOptions): string {
 }
 
 function renderJson(data: ProcessedFiles, options: ExportOptions): string {
-    const gitDiffs = options.includeGitDiffs ? buildGitDiffString(data.fileContents) : null;
+    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     return JSON.stringify(

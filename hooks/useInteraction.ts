@@ -46,6 +46,7 @@ export const useInteraction = ({
                  setProcessedData(prevData => {
                     if (!prevData) return null;
                     const newFileContents = prevData.fileContents.filter(f => f.path !== path);
+                    const nextRemovedPaths = Array.from(new Set([...(prevData.removedPaths ?? []), path]));
                     
                     const filterTreeRecursive = (nodes: FileNode[]): FileNode[] => {
                         return nodes
@@ -71,6 +72,7 @@ export const useInteraction = ({
                         fileContents: newFileContents,
                         treeData: newTreeData,
                         structureString: newStructureString,
+                        removedPaths: nextRemovedPaths,
                         analysisSummary,
                         securityFindings,
                     };

@@ -1,6 +1,6 @@
-import { structuredPatch } from 'diff';
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
+import { buildEditedChanges } from './editedChanges';
 
 const PLAIN_SEPARATOR = '='.repeat(16);
 const PLAIN_LONG_SEPARATOR = '='.repeat(64);
@@ -114,42 +114,6 @@ function buildRepomixDirectoryStructure(processedData: ProcessedFiles): string {
     return buildDirectoryLines(nodesToRender).join('\n');
 }
 
-function buildGitDiffSection(activeFiles: FileContent[]): string | null {
-    const patches = activeFiles
-        .filter(file => file.originalContent !== undefined && file.originalContent !== file.content)
-        .map(file => {
-            const patch = structuredPatch(
-                file.path,
-                file.path,
-                file.originalContent ?? '',
-                file.content,
-                '',
-                '',
-                { context: 3 }
-            );
-
-            const lines = [
-                `diff --git a/${file.path} b/${file.path}`,
-                `--- a/${file.path}`,
-                `+++ b/${file.path}`,
-            ];
-
-            for (const hunk of patch.hunks) {
-                lines.push(`@@ -${hunk.oldStart},${hunk.oldLines} +${hunk.newStart},${hunk.newLines} @@`);
-                lines.push(...hunk.lines);
-            }
-
-            return lines.join('\n');
-        })
-        .filter(Boolean);
-
-    if (patches.length === 0) {
-        return null;
-    }
-
-    return patches.join('\n\n');
-}
-
 function getAnalysisSummary(processedData: ProcessedFiles, activeFiles: FileContent[]) {
     return processedData.analysisSummary ?? summarizeAnalysis(activeFiles).analysisSummary;
 }
@@ -260,7 +224,7 @@ export function generateRepomixPlainOutput(
     }
 
     if (options.includeGitDiffs) {
-        const gitDiffs = buildGitDiffSection(activeFiles);
+        const gitDiffs = buildEditedChanges(activeFiles);
 
         if (gitDiffs) {
             lines.push(

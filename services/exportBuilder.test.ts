@@ -53,6 +53,29 @@ function createFile(path: string, content: string): File {
     return file;
 }
 
+function createExportOptions(
+    overrides: Partial<Parameters<typeof buildExportOutput>[0]['exportOptions']> = {}
+) {
+    return {
+        format: 'plain' as const,
+        includeFileSummary: true,
+        includeDirectoryStructure: true,
+        includeFiles: true,
+        includeGitDiffs: false,
+        includeEmptyDirectories: false,
+        includePatterns: '',
+        ignorePatterns: '',
+        useDefaultPatterns: true,
+        useGitignore: true,
+        showLineNumbers: false,
+        removeEmptyLines: false,
+        truncateBase64: false,
+        userProvidedHeader: '',
+        instruction: '',
+        ...overrides,
+    };
+}
+
 describe('buildExportOutput', () => {
     it('renders XML, Markdown, and JSON export styles', async () => {
         const files = [createFile('demo/src/app.ts', 'const answer = 42;\n')];
@@ -62,23 +85,7 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: {
-                    format: 'xml',
-                    includeFileSummary: true,
-                    includeDirectoryStructure: true,
-                    includeFiles: true,
-                    includeGitDiffs: false,
-                    includeEmptyDirectories: false,
-                    includePatterns: '',
-                    ignorePatterns: '',
-                    useDefaultPatterns: true,
-                    useGitignore: true,
-                    showLineNumbers: false,
-                    removeEmptyLines: false,
-                    truncateBase64: false,
-                    userProvidedHeader: '',
-                    instruction: '',
-                },
+                exportOptions: createExportOptions({ format: 'xml' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
@@ -87,23 +94,7 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: {
-                    format: 'markdown',
-                    includeFileSummary: true,
-                    includeDirectoryStructure: true,
-                    includeFiles: true,
-                    includeGitDiffs: false,
-                    includeEmptyDirectories: false,
-                    includePatterns: '',
-                    ignorePatterns: '',
-                    useDefaultPatterns: true,
-                    useGitignore: true,
-                    showLineNumbers: false,
-                    removeEmptyLines: false,
-                    truncateBase64: false,
-                    userProvidedHeader: '',
-                    instruction: '',
-                },
+                exportOptions: createExportOptions({ format: 'markdown' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
@@ -112,23 +103,7 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: {
-                    format: 'json',
-                    includeFileSummary: true,
-                    includeDirectoryStructure: true,
-                    includeFiles: true,
-                    includeGitDiffs: false,
-                    includeEmptyDirectories: false,
-                    includePatterns: '',
-                    ignorePatterns: '',
-                    useDefaultPatterns: true,
-                    useGitignore: true,
-                    showLineNumbers: false,
-                    removeEmptyLines: false,
-                    truncateBase64: false,
-                    userProvidedHeader: '',
-                    instruction: '',
-                },
+                exportOptions: createExportOptions({ format: 'json' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
@@ -167,21 +142,9 @@ describe('buildExportOutput', () => {
             rawFiles: files,
             emptyDirectoryPaths: [],
             exportOptions: {
-                format: 'json',
-                includeFileSummary: true,
-                includeDirectoryStructure: true,
-                includeFiles: true,
-                includeGitDiffs: false,
-                includeEmptyDirectories: false,
-                includePatterns: '',
-                ignorePatterns: '',
+                ...createExportOptions({ format: 'json' }),
                 useDefaultPatterns: false,
                 useGitignore: false,
-                showLineNumbers: false,
-                removeEmptyLines: false,
-                truncateBase64: false,
-                userProvidedHeader: '',
-                instruction: '',
             },
             extractContent: true,
             maxCharsThreshold: 100000,
@@ -202,21 +165,9 @@ describe('buildExportOutput', () => {
             rawFiles: files,
             emptyDirectoryPaths: [],
             exportOptions: {
-                format: 'json',
-                includeFileSummary: true,
-                includeDirectoryStructure: true,
-                includeFiles: true,
-                includeGitDiffs: false,
-                includeEmptyDirectories: false,
+                ...createExportOptions({ format: 'json' }),
                 includePatterns: 'src/**/*.ts',
                 ignorePatterns: '**/ignored.ts',
-                useDefaultPatterns: true,
-                useGitignore: true,
-                showLineNumbers: false,
-                removeEmptyLines: false,
-                truncateBase64: false,
-                userProvidedHeader: '',
-                instruction: '',
             },
             extractContent: true,
             maxCharsThreshold: 100000,
@@ -236,21 +187,11 @@ describe('buildExportOutput', () => {
             rawFiles: files,
             emptyDirectoryPaths: ['demo/empty-folder'],
             exportOptions: {
-                format: 'plain',
-                includeFileSummary: true,
-                includeDirectoryStructure: true,
-                includeFiles: true,
-                includeGitDiffs: false,
+                ...createExportOptions({ format: 'plain' }),
                 includeEmptyDirectories: true,
-                includePatterns: '',
-                ignorePatterns: '',
-                useDefaultPatterns: true,
-                useGitignore: true,
                 showLineNumbers: true,
                 removeEmptyLines: true,
                 truncateBase64: true,
-                userProvidedHeader: '',
-                instruction: '',
             },
             extractContent: true,
             maxCharsThreshold: 100000,
@@ -261,5 +202,89 @@ describe('buildExportOutput', () => {
         expect(output).toContain('1 | const answer = 42;');
         expect(output).not.toContain('\n\nconst encoded');
         expect(output).toContain('[TRUNCATED_BASE64_DATA]');
+    });
+
+    it('keeps removed files out of exports after users delete them in-app', async () => {
+        const files = [
+            createFile('demo/src/app.ts', 'const answer = 42;\n'),
+            createFile('demo/src/removed.ts', 'export const removed = true;\n'),
+        ];
+
+        const output = await buildExportOutput({
+            currentData: {
+                ...CURRENT_DATA,
+                removedPaths: ['src/removed.ts'],
+                fileContents: [
+                    ...CURRENT_DATA.fileContents,
+                    {
+                        path: 'src/removed.ts',
+                        content: 'export const removed = true;\n',
+                        originalContent: 'export const removed = true;\n',
+                        language: 'typescript',
+                        stats: { lines: 1, chars: 29, estimatedTokens: 7 },
+                    },
+                ],
+            },
+            rawFiles: files,
+            emptyDirectoryPaths: [],
+            exportOptions: createExportOptions({ format: 'json' }),
+            extractContent: true,
+            maxCharsThreshold: 100000,
+            progressCallback: vi.fn(),
+        });
+
+        expect(output).toContain('"src/app.ts"');
+        expect(output).not.toContain('"src/removed.ts"');
+    });
+
+    it('uses the same real diff output for markdown, xml, and json exports', async () => {
+        const files = [createFile('demo/src/app.ts', CURRENT_DATA.fileContents[0].originalContent ?? '')];
+
+        const [markdown, xml, json] = await Promise.all([
+            buildExportOutput({
+                currentData: CURRENT_DATA,
+                rawFiles: files,
+                emptyDirectoryPaths: [],
+                exportOptions: createExportOptions({ format: 'markdown', includeGitDiffs: true }),
+                extractContent: true,
+                maxCharsThreshold: 100000,
+                progressCallback: vi.fn(),
+            }),
+            buildExportOutput({
+                currentData: CURRENT_DATA,
+                rawFiles: files,
+                emptyDirectoryPaths: [],
+                exportOptions: createExportOptions({ format: 'xml', includeGitDiffs: true }),
+                extractContent: true,
+                maxCharsThreshold: 100000,
+                progressCallback: vi.fn(),
+            }),
+            buildExportOutput({
+                currentData: CURRENT_DATA,
+                rawFiles: files,
+                emptyDirectoryPaths: [],
+                exportOptions: createExportOptions({ format: 'json', includeGitDiffs: true }),
+                extractContent: true,
+                maxCharsThreshold: 100000,
+                progressCallback: vi.fn(),
+            }),
+        ]);
+
+        const jsonDiff = JSON.parse(json).editedChanges.diff as string;
+
+        expect(markdown).toContain('-const answer = 0;');
+        expect(markdown).toContain('+const answer = 42;');
+        expect(markdown).not.toContain('-const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
+        expect(markdown).not.toContain('+const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
+
+        expect(xml).toContain('-const answer = 0;');
+        expect(xml).toContain('+const answer = 42;');
+        expect(xml).not.toContain('-const encoded = &quot;data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;');
+        expect(xml).not.toContain('+const encoded = &quot;data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;');
+
+        expect(jsonDiff).toContain('-const answer = 0;');
+        expect(jsonDiff).toContain('+const answer = 42;');
+        expect(jsonDiff).not.toContain('-const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
+        expect(jsonDiff).not.toContain('+const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
     });
 });
