@@ -7,6 +7,7 @@ import { collectExpandedDirectoryPaths, flattenVisibleTreeRows, type VisibleTree
 interface FileTreeProps {
   nodes: FileNode[];
   treeResetKey?: unknown;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
   onFileSelect: (path: string) => void;
   onDeleteFile: (path: string) => void;
   onCopyPath: (path: string) => void;
@@ -186,6 +187,7 @@ const FileTreeRow: React.FC<{
 const FileTree: React.FC<FileTreeProps> = ({
   nodes,
   treeResetKey,
+  scrollContainerRef,
   onFileSelect,
   onDeleteFile,
   onCopyPath,
@@ -196,13 +198,7 @@ const FileTree: React.FC<FileTreeProps> = ({
 }) => {
   const [expandedPaths, setExpandedPaths] = React.useState<Set<string>>(() => collectExpandedDirectoryPaths(nodes));
   const [focusedPath, setFocusedPath] = React.useState<string | null>(null);
-  const [scrollParent, setScrollParent] = React.useState<HTMLElement | null>(null);
-  const rootRef = React.useRef<HTMLDivElement>(null);
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
-
-  React.useLayoutEffect(() => {
-    setScrollParent(rootRef.current?.parentElement ?? null);
-  }, []);
 
   React.useEffect(() => {
     setExpandedPaths(collectExpandedDirectoryPaths(nodes));
@@ -320,7 +316,7 @@ const FileTree: React.FC<FileTreeProps> = ({
   }
 
   return (
-    <div ref={rootRef} className="p-2 h-full min-h-0" role="tree" aria-label="资源管理器" tabIndex={0} onKeyDown={handleKeyDown}>
+    <div className="p-2 h-full min-h-0 flex flex-col" role="tree" aria-label="资源管理器" tabIndex={0} onKeyDown={handleKeyDown}>
       <div className="flex items-center justify-between px-2 mb-2">
         <h3 className="text-xs font-semibold text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
         <div className="flex items-center gap-1">
@@ -332,14 +328,18 @@ const FileTree: React.FC<FileTreeProps> = ({
           </button>
         </div>
       </div>
-      <div className="h-[calc(100%-2.5rem)] min-h-0">
+      <div className="flex-1 min-h-0">
         <Virtuoso
           ref={virtuosoRef}
           style={{ height: '100%' }}
           data={visibleRows}
           computeItemKey={(_index, row) => row.path}
           increaseViewportBy={240}
-          customScrollParent={scrollParent ?? undefined}
+          scrollerRef={ref => {
+            if (scrollContainerRef) {
+              scrollContainerRef.current = ref instanceof HTMLElement ? ref : null;
+            }
+          }}
           itemContent={(_index, row) => (
             <FileTreeRow
               row={row}

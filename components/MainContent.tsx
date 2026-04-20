@@ -78,7 +78,7 @@ const SuspenseFallback: React.FC = () => (
 const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanelRef }) => {
     const { state, handlers } = logic;
     const { isMobile } = state;
-    const fileTreeScrollRef = React.useRef<HTMLDivElement>(null);
+    const fileTreeScrollRef = React.useRef<HTMLElement | null>(null);
     const [filterExt, setFilterExt] = React.useState<string | null>(null);
 
     const treeData = state.processedData?.treeData || [];
@@ -128,9 +128,9 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 <div className="relative w-full h-full overflow-hidden">
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
-                            <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full overflow-y-auto bg-light-panel dark:bg-dark-panel">
+                            <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full bg-light-panel dark:bg-dark-panel flex flex-col">
                                 {extensions.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
+                                    <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
                                         {extensions.map(ext => (
                                             <button
                                                 key={ext}
@@ -146,19 +146,21 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                         ))}
                                     </div>
                                 )}
-                                <React.Suspense fallback={<SuspenseFallback />}>
-                                    <FileTree
-                                        nodes={filteredNodes}
-                                        treeResetKey={state.lastProcessedFiles}
-                                        onFileSelect={handlers.handleFileTreeSelect}
-                                        onDeleteFile={handlers.handleDeleteFile}
-                                        onCopyPath={handlers.handleCopyPath}
-                                        onToggleExclude={handlers.handleToggleExclude}
-                                        onDirDoubleClick={handlers.handleDirDoubleClick}
-                                        selectedFilePath={state.selectedFilePath}
-                                        showCharCount={state.showCharCount}
-                                    />
-                                </React.Suspense>
+                                <div className="flex-1 min-h-0">
+                                    <React.Suspense fallback={<SuspenseFallback />}>
+                                        <FileTree
+                                            nodes={filteredNodes}
+                                            treeResetKey={state.lastProcessedFiles}
+                                            onFileSelect={handlers.handleFileTreeSelect}
+                                            onDeleteFile={handlers.handleDeleteFile}
+                                            onCopyPath={handlers.handleCopyPath}
+                                            onToggleExclude={handlers.handleToggleExclude}
+                                            onDirDoubleClick={handlers.handleDirDoubleClick}
+                                            selectedFilePath={state.selectedFilePath}
+                                            showCharCount={state.showCharCount}
+                                        />
+                                    </React.Suspense>
+                                </div>
                             </motion.div>
                         )}
                         {state.mobileView === 'editor' && (
@@ -213,12 +215,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 </div>
             ) : (
                 <>
-                    <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel" style={{ width: `${state.panelWidth}%` }}>
-                        <div ref={fileTreeScrollRef} className="h-full overflow-y-auto no-scrollbar">
+                    <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel flex flex-col" style={{ width: `${state.panelWidth}%` }}>
+                        <div className="flex-1 min-h-0 flex flex-col">
                            {state.processedData && (
                                 <>
                                     {extensions.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
+                                        <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
                                             {extensions.map(ext => (
                                                 <button
                                                     key={ext}
@@ -234,19 +236,22 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                             ))}
                                         </div>
                                     )}
-                                    <React.Suspense fallback={<SuspenseFallback />}>
-                                        <FileTree
-                                            nodes={filteredNodes}
-                                            treeResetKey={state.lastProcessedFiles}
-                                            onFileSelect={handlers.handleFileTreeSelect}
-                                            onDeleteFile={handlers.handleDeleteFile}
-                                            onCopyPath={handlers.handleCopyPath}
-                                            onToggleExclude={handlers.handleToggleExclude}
-                                            onDirDoubleClick={handlers.handleDirDoubleClick}
-                                            selectedFilePath={state.selectedFilePath}
-                                            showCharCount={state.showCharCount}
-                                        />
-                                    </React.Suspense>
+                                    <div className="relative flex-1 min-h-0">
+                                        <React.Suspense fallback={<SuspenseFallback />}>
+                                            <FileTree
+                                                nodes={filteredNodes}
+                                                treeResetKey={state.lastProcessedFiles}
+                                                scrollContainerRef={fileTreeScrollRef}
+                                                onFileSelect={handlers.handleFileTreeSelect}
+                                                onDeleteFile={handlers.handleDeleteFile}
+                                                onCopyPath={handlers.handleCopyPath}
+                                                onToggleExclude={handlers.handleToggleExclude}
+                                                onDirDoubleClick={handlers.handleDirDoubleClick}
+                                                selectedFilePath={state.selectedFilePath}
+                                                showCharCount={state.showCharCount}
+                                            />
+                                        </React.Suspense>
+                                    </div>
                                 </>
                            )}
                         </div>
