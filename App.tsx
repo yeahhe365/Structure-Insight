@@ -139,8 +139,6 @@ const App: React.FC = () => {
                         onToggleIncludeFileSummary={() => settings.setIncludeFileSummary(!state.includeFileSummary)}
                         includeDirectoryStructure={state.includeDirectoryStructure}
                         onToggleIncludeDirectoryStructure={() => settings.setIncludeDirectoryStructure(!state.includeDirectoryStructure)}
-                        includeGitDiffs={state.includeGitDiffs}
-                        onToggleIncludeGitDiffs={() => settings.setIncludeGitDiffs(!state.includeGitDiffs)}
                         exportFormat={state.exportFormat}
                         onSetExportFormat={settings.setExportFormat}
                         includePatterns={state.includePatterns}

@@ -61,7 +61,6 @@ function createExportOptions(
         includeFileSummary: true,
         includeDirectoryStructure: true,
         includeFiles: true,
-        includeGitDiffs: false,
         includeEmptyDirectories: false,
         includePatterns: '',
         ignorePatterns: '',
@@ -237,7 +236,7 @@ describe('buildExportOutput', () => {
         expect(output).not.toContain('"src/removed.ts"');
     });
 
-    it('uses the same real diff output for markdown, xml, and json exports', async () => {
+    it('does not emit edited changes sections', async () => {
         const files = [createFile('demo/src/app.ts', CURRENT_DATA.fileContents[0].originalContent ?? '')];
 
         const [markdown, xml, json] = await Promise.all([
@@ -245,7 +244,7 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: createExportOptions({ format: 'markdown', includeGitDiffs: true }),
+                exportOptions: createExportOptions({ format: 'markdown' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
@@ -254,7 +253,7 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: createExportOptions({ format: 'xml', includeGitDiffs: true }),
+                exportOptions: createExportOptions({ format: 'xml' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
@@ -263,28 +262,21 @@ describe('buildExportOutput', () => {
                 currentData: CURRENT_DATA,
                 rawFiles: files,
                 emptyDirectoryPaths: [],
-                exportOptions: createExportOptions({ format: 'json', includeGitDiffs: true }),
+                exportOptions: createExportOptions({ format: 'json' }),
                 extractContent: true,
                 maxCharsThreshold: 100000,
                 progressCallback: vi.fn(),
             }),
         ]);
 
-        const jsonDiff = JSON.parse(json).editedChanges.diff as string;
+        expect(markdown).not.toContain('# Edited Changes');
+        expect(markdown).not.toContain('-const answer = 0;');
+        expect(markdown).not.toContain('+const answer = 42;');
 
-        expect(markdown).toContain('-const answer = 0;');
-        expect(markdown).toContain('+const answer = 42;');
-        expect(markdown).not.toContain('-const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
-        expect(markdown).not.toContain('+const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
+        expect(xml).not.toContain('<edited_changes>');
+        expect(xml).not.toContain('-const answer = 0;');
+        expect(xml).not.toContain('+const answer = 42;');
 
-        expect(xml).toContain('-const answer = 0;');
-        expect(xml).toContain('+const answer = 42;');
-        expect(xml).not.toContain('-const encoded = &quot;data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;');
-        expect(xml).not.toContain('+const encoded = &quot;data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;;');
-
-        expect(jsonDiff).toContain('-const answer = 0;');
-        expect(jsonDiff).toContain('+const answer = 42;');
-        expect(jsonDiff).not.toContain('-const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
-        expect(jsonDiff).not.toContain('+const encoded = "data:image/png;base64,ABCDEFGHIJKLMNOPQRSTUVWXYZ";');
+        expect(json).not.toContain('"editedChanges"');
     });
 });

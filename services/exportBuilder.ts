@@ -1,6 +1,5 @@
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
-import { buildEditedChanges } from './editedChanges';
 import { createFileProcessingTask } from './fileProcessingClient';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
 import { scanSensitiveContent } from './securityScan';
@@ -14,7 +13,6 @@ export interface ExportOptions {
     includeFileSummary: boolean;
     includeDirectoryStructure: boolean;
     includeFiles: boolean;
-    includeGitDiffs: boolean;
     includeEmptyDirectories: boolean;
     includePatterns: string;
     ignorePatterns: string;
@@ -307,7 +305,6 @@ function buildSecurityWarnings(data: ProcessedFiles) {
 
 function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
     const directoryString = buildDirectoryString(data);
-    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     const sections: string[] = [];
@@ -349,10 +346,6 @@ function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
         );
     }
 
-    if (gitDiffs) {
-        sections.push(`# Edited Changes\n\`\`\`diff\n${gitDiffs}\n\`\`\``);
-    }
-
     if (options.instruction.trim()) {
         sections.push(`# Instruction\n${options.instruction.trim()}`);
     }
@@ -362,7 +355,6 @@ function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
 
 function renderXml(data: ProcessedFiles, options: ExportOptions): string {
     const directoryString = buildDirectoryString(data);
-    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     const parts: string[] = [];
@@ -393,10 +385,6 @@ function renderXml(data: ProcessedFiles, options: ExportOptions): string {
         parts.push(`<security_warnings>\n${securityWarnings.map(finding => `<warning severity="${escapeXml(finding.severity)}" path="${escapeXml(finding.filePath)}">${escapeXml(finding.message)}</warning>`).join('\n')}\n</security_warnings>`);
     }
 
-    if (gitDiffs) {
-        parts.push(`<edited_changes><diff>${escapeXml(gitDiffs)}</diff></edited_changes>`);
-    }
-
     if (options.instruction.trim()) {
         parts.push(`<instruction>${escapeXml(options.instruction.trim())}</instruction>`);
     }
@@ -405,7 +393,6 @@ function renderXml(data: ProcessedFiles, options: ExportOptions): string {
 }
 
 function renderJson(data: ProcessedFiles, options: ExportOptions): string {
-    const gitDiffs = options.includeGitDiffs ? buildEditedChanges(data.fileContents) : null;
     const analysisSummary = buildAnalysisSummary(data);
     const securityWarnings = buildSecurityWarnings(data);
     return JSON.stringify(
@@ -441,11 +428,6 @@ function renderJson(data: ProcessedFiles, options: ExportOptions): string {
                     filePath: finding.filePath,
                     message: finding.message,
                 })),
-            }),
-            ...(gitDiffs && {
-                editedChanges: {
-                    diff: gitDiffs,
-                },
             }),
             ...(options.instruction.trim() && {
                 instruction: options.instruction.trim(),

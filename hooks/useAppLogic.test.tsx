@@ -185,7 +185,7 @@ describe('useAppLogic', () => {
         expect(result.current.state.maxCharsThreshold).toBe(0);
         expect(result.current.state.includeFileSummary).toBe(true);
         expect(result.current.state.includeDirectoryStructure).toBe(true);
-        expect(result.current.state.includeGitDiffs).toBe(false);
+        expect('includeGitDiffs' in result.current.state).toBe(false);
         expect(result.current.state.exportFormat).toBe('plain');
         expect(result.current.state.includePatterns).toBe('');
         expect(result.current.state.ignorePatterns).toBe('');
@@ -260,7 +260,6 @@ describe('useAppLogic', () => {
                     includeFileSummary: true,
                     includeDirectoryStructure: true,
                     includeFiles: true,
-                    includeGitDiffs: false,
                     includePatterns: '',
                     ignorePatterns: '',
                     useDefaultPatterns: true,
@@ -271,6 +270,11 @@ describe('useAppLogic', () => {
                     truncateBase64: false,
                     userProvidedHeader: '',
                     instruction: '',
+                }),
+            }));
+            expect(buildExportOutputMock).toHaveBeenCalledWith(expect.objectContaining({
+                exportOptions: expect.not.objectContaining({
+                    includeGitDiffs: expect.anything(),
                 }),
             }));
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith('PACKED OUTPUT');

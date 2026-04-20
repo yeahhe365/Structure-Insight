@@ -38,7 +38,6 @@ export const useAppLogic = (
     const [maxCharsThreshold, setMaxCharsThreshold] = usePersistentState('maxCharsThreshold', 0);
     const [includeFileSummary, setIncludeFileSummary] = usePersistentState('includeFileSummary', true);
     const [includeDirectoryStructure, setIncludeDirectoryStructure] = usePersistentState('includeDirectoryStructure', true);
-    const [includeGitDiffs, setIncludeGitDiffs] = usePersistentState('includeGitDiffs', false);
     const [exportHeaderText, setExportHeaderText] = usePersistentState('exportHeaderText', '');
     const [exportInstructionText, setExportInstructionText] = usePersistentState('exportInstructionText', '');
     const [exportFormat, setExportFormat] = usePersistentState<ExportFormat>('exportFormat', 'plain');
@@ -197,7 +196,6 @@ export const useAppLogic = (
                 includeFileSummary,
                 includeDirectoryStructure,
                 includeFiles: true,
-                includeGitDiffs,
                 includeEmptyDirectories,
                 includePatterns,
                 ignorePatterns,
@@ -220,7 +218,6 @@ export const useAppLogic = (
         exportFormat,
         includeFileSummary,
         includeDirectoryStructure,
-        includeGitDiffs,
         includeEmptyDirectories,
         includePatterns,
         ignorePatterns,
@@ -409,7 +406,7 @@ export const useAppLogic = (
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, toastType,
             editingPath, markdownPreviewPaths, confirmation,
             isDark, panelWidth, extractContent, fontSize, showCharCount, maxCharsThreshold, wordWrap,
-            includeFileSummary, includeDirectoryStructure, includeGitDiffs,
+            includeFileSummary, includeDirectoryStructure,
             exportHeaderText, exportInstructionText,
             exportFormat, includePatterns, ignorePatterns, useDefaultPatterns, useGitignore,
             includeEmptyDirectories, showLineNumbers, removeEmptyLines, truncateBase64, exportSplitMaxChars,
@@ -461,7 +458,6 @@ export const useAppLogic = (
             setWordWrap,
             setIncludeFileSummary,
             setIncludeDirectoryStructure,
-            setIncludeGitDiffs,
             setExportHeaderText,
             setExportInstructionText,
             setExportFormat,

@@ -1,6 +1,5 @@
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
-import { buildEditedChanges } from './editedChanges';
 
 const PLAIN_SEPARATOR = '='.repeat(16);
 const PLAIN_LONG_SEPARATOR = '='.repeat(64);
@@ -40,7 +39,6 @@ export interface RepomixPlainOutputOptions {
     includeFileSummary: boolean;
     includeDirectoryStructure: boolean;
     includeFiles: boolean;
-    includeGitDiffs?: boolean;
     userProvidedHeader?: string;
     instruction?: string;
 }
@@ -221,20 +219,6 @@ export function generateRepomixPlainOutput(
             ),
             ''
         );
-    }
-
-    if (options.includeGitDiffs) {
-        const gitDiffs = buildEditedChanges(activeFiles);
-
-        if (gitDiffs) {
-            lines.push(
-                PLAIN_LONG_SEPARATOR,
-                'Edited Changes',
-                PLAIN_LONG_SEPARATOR,
-                gitDiffs,
-                ''
-            );
-        }
     }
 
     if (options.instruction?.trim()) {

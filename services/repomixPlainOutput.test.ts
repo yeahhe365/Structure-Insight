@@ -134,7 +134,6 @@ describe('generateRepomixPlainOutput', () => {
             includeFileSummary: true,
             includeDirectoryStructure: true,
             includeFiles: true,
-            includeGitDiffs: false,
             userProvidedHeader: '',
             instruction: '',
         });
@@ -148,7 +147,6 @@ describe('generateRepomixPlainOutput', () => {
             includeFileSummary: false,
             includeDirectoryStructure: true,
             includeFiles: true,
-            includeGitDiffs: false,
             userProvidedHeader: '',
             instruction: '',
         });
@@ -163,7 +161,6 @@ describe('generateRepomixPlainOutput', () => {
             includeFileSummary: true,
             includeDirectoryStructure: false,
             includeFiles: true,
-            includeGitDiffs: false,
             userProvidedHeader: '',
             instruction: '',
         });
@@ -178,7 +175,6 @@ describe('generateRepomixPlainOutput', () => {
             includeFileSummary: true,
             includeDirectoryStructure: true,
             includeFiles: true,
-            includeGitDiffs: false,
             userProvidedHeader: '',
             instruction: '',
         });
@@ -196,7 +192,6 @@ describe('generateRepomixPlainOutput', () => {
                 includeFileSummary: true,
                 includeDirectoryStructure: true,
                 includeFiles: true,
-                includeGitDiffs: false,
                 userProvidedHeader: '',
                 instruction: '',
             }
@@ -222,7 +217,6 @@ describe('generateRepomixPlainOutput', () => {
                 includeFileSummary: true,
                 includeDirectoryStructure: true,
                 includeFiles: true,
-                includeGitDiffs: false,
                 userProvidedHeader: '',
                 instruction: '',
             }
@@ -272,7 +266,6 @@ describe('generateRepomixPlainOutput', () => {
                 includeFileSummary: false,
                 includeDirectoryStructure: true,
                 includeFiles: false,
-                includeGitDiffs: false,
                 userProvidedHeader: '',
                 instruction: '',
             }
@@ -288,7 +281,6 @@ describe('generateRepomixPlainOutput', () => {
             includeFileSummary: true,
             includeDirectoryStructure: true,
             includeFiles: true,
-            includeGitDiffs: false,
             userProvidedHeader: 'Project overview',
             instruction: 'Focus on architecture decisions.',
         });
@@ -299,26 +291,6 @@ describe('generateRepomixPlainOutput', () => {
         expect(output).toContain(
             `================================================================\nInstruction\n================================================================\nFocus on architecture decisions.`
         );
-    });
-
-    it('renders an edited changes section for modified files when enabled', () => {
-        const output = generateRepomixPlainOutput(PROJECT_DATA, {
-            includeFileSummary: true,
-            includeDirectoryStructure: true,
-            includeFiles: true,
-            includeGitDiffs: true,
-            userProvidedHeader: '',
-            instruction: '',
-        });
-
-        expect(output).toContain(
-            `================================================================\nEdited Changes\n================================================================`
-        );
-        expect(output).toContain('diff --git a/src/app.ts b/src/app.ts');
-        expect(output).toContain('--- a/src/app.ts');
-        expect(output).toContain('+++ b/src/app.ts');
-        expect(output).toContain('-const message = "original";');
-        expect(output).toContain('+const message = "edited";');
     });
 
     it('renders a security warning section when findings are available', () => {
@@ -344,7 +316,6 @@ describe('generateRepomixPlainOutput', () => {
                 includeFileSummary: true,
                 includeDirectoryStructure: true,
                 includeFiles: true,
-                includeGitDiffs: false,
                 userProvidedHeader: '',
                 instruction: '',
             }

@@ -43,8 +43,6 @@ npm run check
 
 ## Export Semantics
 
-- `Edited Changes` represents differences between the imported file contents and your in-app edits.
-- It does **not** read the local git working tree or staged diff.
 - Token counts are estimates intended for planning and comparison, not exact model-token guarantees.
 
 ## Offline Notes

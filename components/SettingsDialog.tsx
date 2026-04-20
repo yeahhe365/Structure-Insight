@@ -22,8 +22,6 @@ interface SettingsDialogProps {
     onToggleIncludeFileSummary: () => void;
     includeDirectoryStructure: boolean;
     onToggleIncludeDirectoryStructure: () => void;
-    includeGitDiffs: boolean;
-    onToggleIncludeGitDiffs: () => void;
     exportFormat: ExportFormat;
     onSetExportFormat: (value: ExportFormat) => void;
     includePatterns: string;
@@ -54,7 +52,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     isOpen, onClose, isDarkTheme, onToggleTheme, extractContent, onToggleExtractContent, fontSize, onSetFontSize, onClearCache,
     showCharCount, onToggleShowCharCount, maxCharsThreshold, onSetMaxCharsThreshold, wordWrap, onToggleWordWrap,
     includeFileSummary, onToggleIncludeFileSummary, includeDirectoryStructure, onToggleIncludeDirectoryStructure,
-    includeGitDiffs, onToggleIncludeGitDiffs, exportFormat, onSetExportFormat, includePatterns, onSetIncludePatterns,
+    exportFormat, onSetExportFormat, includePatterns, onSetIncludePatterns,
     ignorePatterns, onSetIgnorePatterns, useDefaultPatterns, onToggleUseDefaultPatterns, useGitignore,
     onToggleUseGitignore, includeEmptyDirectories, onToggleIncludeEmptyDirectories, showLineNumbers,
     onToggleShowLineNumbers, removeEmptyLines, onToggleRemoveEmptyLines, truncateBase64, onToggleTruncateBase64,
@@ -288,19 +286,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                     </div>
                                 </div>
                                 <Switch id="directory-structure-toggle" checked={includeDirectoryStructure} onChange={onToggleIncludeDirectoryStructure} />
-                            </div>
-
-                            <div className="flex items-center justify-between p-2 rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg/50 transition-colors -mx-2">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-9 h-9 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
-                                        <i className="fa-solid fa-code-compare"></i>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <label htmlFor="git-diffs-toggle" className="text-sm font-medium text-light-text dark:text-dark-text cursor-pointer select-none">Edited Changes</label>
-                                        <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text">在导出上下文中包含应用内编辑改动的 diff 视图</span>
-                                    </div>
-                                </div>
-                                <Switch id="git-diffs-toggle" checked={includeGitDiffs} onChange={onToggleIncludeGitDiffs} />
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 p-2 rounded-lg hover:bg-light-bg dark:hover:bg-dark-bg/50 transition-colors -mx-2">
