@@ -1,7 +1,8 @@
 import { processFiles, type ProcessFilesOptions } from './fileProcessor';
+import type { WorkerFilePayload } from './fileProcessingClient';
 
 interface FileProcessingWorkerRequest {
-    files: File[];
+    files: WorkerFilePayload[];
     extractContent: boolean;
     maxCharsThreshold: number;
     options: ProcessFilesOptions;
@@ -9,7 +10,14 @@ interface FileProcessingWorkerRequest {
 
 self.onmessage = async (event: MessageEvent<FileProcessingWorkerRequest>) => {
     const controller = new AbortController();
-    const { files, extractContent, maxCharsThreshold, options } = event.data;
+    const { files: workerFiles, extractContent, maxCharsThreshold, options } = event.data;
+    const files = workerFiles.map(({ file, relativePath }) => {
+        Object.defineProperty(file, 'webkitRelativePath', {
+            configurable: true,
+            value: relativePath,
+        });
+        return file;
+    });
 
     try {
         const result = await processFiles(

@@ -14,10 +14,26 @@ export interface FileProcessingTask {
     cancel: () => void;
 }
 
+export interface WorkerFilePayload {
+    file: File;
+    relativePath: string;
+}
+
 const USE_MAIN_THREAD_FALLBACK = import.meta.env.MODE === 'test' && typeof Worker === 'undefined';
 
 function createAbortError(): DOMException {
     return new DOMException('Aborted', 'AbortError');
+}
+
+function getRelativePath(file: File): string {
+    return file.webkitRelativePath || file.name;
+}
+
+function serializeFilesForWorker(files: File[]): WorkerFilePayload[] {
+    return files.map(file => ({
+        file,
+        relativePath: getRelativePath(file),
+    }));
 }
 
 export function createFileProcessingTask(params: FileProcessingTaskParams): FileProcessingTask {
@@ -101,7 +117,7 @@ export function createFileProcessingTask(params: FileProcessingTaskParams): File
     });
 
     worker.postMessage({
-        files: params.files,
+        files: serializeFilesForWorker(params.files),
         extractContent: params.extractContent,
         maxCharsThreshold: params.maxCharsThreshold,
         options: params.options,
