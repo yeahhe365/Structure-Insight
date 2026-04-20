@@ -85,6 +85,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
     const extensions = React.useMemo(() => collectExtensions(treeData), [treeData]);
     const filteredNodes = React.useMemo(() => filterTreeByExtension(treeData, filterExt), [treeData, filterExt]);
 
+    React.useEffect(() => {
+        if (filterExt && !extensions.includes(filterExt)) {
+            setFilterExt(null);
+        }
+    }, [extensions, filterExt]);
+
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
         switch(state.mobileView) {
@@ -142,6 +148,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 <React.Suspense fallback={<SuspenseFallback />}>
                                     <FileTree
                                         nodes={filteredNodes}
+                                        treeResetKey={state.lastProcessedFiles}
                                         onFileSelect={handlers.handleFileTreeSelect}
                                         onDeleteFile={handlers.handleDeleteFile}
                                         onCopyPath={handlers.handleCopyPath}
@@ -229,6 +236,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                     <React.Suspense fallback={<SuspenseFallback />}>
                                         <FileTree
                                             nodes={filteredNodes}
+                                            treeResetKey={state.lastProcessedFiles}
                                             onFileSelect={handlers.handleFileTreeSelect}
                                             onDeleteFile={handlers.handleDeleteFile}
                                             onCopyPath={handlers.handleCopyPath}

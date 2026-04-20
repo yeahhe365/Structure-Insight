@@ -6,6 +6,7 @@ import { collectExpandedDirectoryPaths, flattenVisibleTreeRows, type VisibleTree
 
 interface FileTreeProps {
   nodes: FileNode[];
+  treeResetKey?: unknown;
   onFileSelect: (path: string) => void;
   onDeleteFile: (path: string) => void;
   onCopyPath: (path: string) => void;
@@ -184,6 +185,7 @@ const FileTreeRow: React.FC<{
 
 const FileTree: React.FC<FileTreeProps> = ({
   nodes,
+  treeResetKey,
   onFileSelect,
   onDeleteFile,
   onCopyPath,
@@ -201,6 +203,11 @@ const FileTree: React.FC<FileTreeProps> = ({
   React.useLayoutEffect(() => {
     setScrollParent(rootRef.current?.parentElement ?? null);
   }, []);
+
+  React.useEffect(() => {
+    setExpandedPaths(collectExpandedDirectoryPaths(nodes));
+    setFocusedPath(null);
+  }, [treeResetKey]);
 
   const handleToggleExpand = React.useCallback((path: string) => {
     setExpandedPaths(prev => {

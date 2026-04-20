@@ -34,6 +34,69 @@ afterEach(() => {
 });
 
 describe('FileTree virtualization', () => {
+  it('resets to the default expanded state when a different tree is loaded', () => {
+    const { rerender } = render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        treeResetKey="project-a"
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+        showCharCount={false}
+      />
+    );
+
+    fireEvent.click(screen.getByText('src'));
+    expect(screen.queryByText('index.ts')).toBeNull();
+
+    rerender(
+      <FileTree
+        nodes={[
+          {
+            name: 'lib',
+            path: 'lib',
+            isDirectory: true,
+            children: [
+              {
+                name: 'util.ts',
+                path: 'lib/util.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        treeResetKey="project-b"
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+        showCharCount={false}
+      />
+    );
+
+    expect(screen.getByText('util.ts')).not.toBeNull();
+  });
+
   it('passes the flattened visible rows into the virtual list instead of mounting the full tree', () => {
     render(
       <FileTree

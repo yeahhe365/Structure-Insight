@@ -160,9 +160,12 @@ export const useAppLogic = (
     });
 
     const handleDirDoubleClick = React.useCallback(() => {
+        if (!isMobile) {
+            return;
+        }
         setActiveView('code');
         setMobileView('editor');
-    }, [setActiveView, setMobileView]);
+    }, [isMobile, setActiveView, setMobileView]);
 
     React.useEffect(() => {
         if (processedData) {

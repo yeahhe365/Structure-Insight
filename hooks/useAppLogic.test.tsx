@@ -45,8 +45,9 @@ const PROJECT_DATA: ProcessedFiles = {
     securityFindings: [],
 };
 
-const { buildExportOutputMock } = vi.hoisted(() => ({
+const { buildExportOutputMock, windowSizeState } = vi.hoisted(() => ({
     buildExportOutputMock: vi.fn(() => Promise.resolve('PACKED OUTPUT')),
+    windowSizeState: { width: 1280, height: 720 },
 }));
 
 vi.mock('../services/exportBuilder', () => ({
@@ -54,7 +55,7 @@ vi.mock('../services/exportBuilder', () => ({
 }));
 
 vi.mock('./useWindowSize', () => ({
-    useWindowSize: () => ({ width: 1280, height: 720 }),
+    useWindowSize: () => windowSizeState,
 }));
 
 vi.mock('./useFileProcessing', () => ({
@@ -150,6 +151,8 @@ describe('useAppLogic', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         buildExportOutputMock.mockClear();
+        windowSizeState.width = 1280;
+        windowSizeState.height = 720;
 
         Object.defineProperty(window, 'localStorage', {
             configurable: true,
@@ -329,5 +332,35 @@ describe('useAppLogic', () => {
         expect(result.current.state.openFiles).toEqual([]);
         expect(result.current.state.selectedFilePath).toBeNull();
         expect(result.current.state.activeView).toBe('structure');
+    });
+
+    it('keeps desktop directory double-click from forcing the code view open', () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        act(() => {
+            result.current.handlers.handleDirDoubleClick();
+        });
+
+        expect(result.current.state.activeView).toBe('structure');
+        expect(result.current.state.mobileView).toBe('editor');
+    });
+
+    it('still switches mobile directory double-clicks into the editor view', () => {
+        windowSizeState.width = 640;
+
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        act(() => {
+            result.current.handlers.handleDirDoubleClick();
+        });
+
+        expect(result.current.state.activeView).toBe('code');
+        expect(result.current.state.mobileView).toBe('editor');
     });
 });
