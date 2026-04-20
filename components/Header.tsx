@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({
     : "hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-1 sm:flex sm:gap-2";
 
   return (
-    <header className="flex min-h-16 flex-wrap items-center justify-between gap-2 bg-light-header p-2 border-b border-light-border dark:bg-dark-header dark:border-dark-border shrink-0 z-20" role="banner">
+    <header className="flex min-h-[52px] flex-wrap items-center justify-between gap-2 bg-light-header px-2 py-1.5 border-b border-light-border dark:bg-dark-header dark:border-dark-border shrink-0 z-20" role="banner">
       <div className="flex min-w-0 items-center gap-3">
         <a href="https://structure-insight-website.pages.dev/" target="_blank" rel="noopener noreferrer" title="访问 Structure Insight 主页">
           <img src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIzMCAwIDE0MCAxNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGcgaWQ9Im1vbm9DdWJlIj48cGF0aCBkPSJNMzAgMCBMNjAgMTUgTDMwIDMwIEwwIDE1IFoiIGZpbGw9IiNlZWYyZjMiLz48cGF0aCBkPSJNMCAxNSBMMzAgMzAgVjY1IEwwIDUwIFoiIGZpbGw9IiM5ZmE4YjAiLz48cGF0aCBkPSJNMzAgMzAgTDYwIDE1IFY1MCBMMzAgNjUgWiIgZmlsbD0iIzE5MWMyMCIvPjwvZz48L2RlZnM+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSI0MCIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iNzAiIHk9IjAiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjM2IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMTA0IiB5PSI1NyIgLz48dXNlIGhyZWY9IiNtb25vQ3ViZSIgeD0iMzYiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSIxMDQiIHk9IjE3IiAvPjx1c2UgaHJlZj0iI21vbm9DdWJlIiB4PSI3MCIgeT0iNzQiIC8+PHVzZSBocmVmPSIjbW9ub0N1YmUiIHg9IjcwIiB5PSIzNCIgLz48L3N2Zz4=" alt="Structure Insight Logo" className="h-9 w-9" />
