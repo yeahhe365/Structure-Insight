@@ -186,11 +186,6 @@ input[type="range"]::-moz-range-thumb {
   transition: background-color 0.1s ease, color 0.1s ease;
 }
 
-/* Tooltip styles */
-[title] {
-  cursor: help;
-}
-
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
