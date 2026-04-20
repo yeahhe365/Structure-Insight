@@ -568,11 +568,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
     const renderAboutSection = () => (
         <div className="flex min-h-full flex-col items-center px-4 py-3 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="relative group">
-                <div className="absolute -inset-4 rounded-[32px] bg-gradient-to-r from-primary/20 to-cyan-500/20 blur-xl opacity-80 transition duration-500" />
-                <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-primary to-cyan-500 text-white shadow-2xl shadow-primary/20">
-                    <img src="/icon.svg" alt="Structure Insight Logo" className="h-24 w-24 rounded-[28px]" />
-                </div>
+            <div className="relative">
+                <img
+                    src="/icon.svg"
+                    alt="Structure Insight Logo"
+                    className="h-24 w-24 rounded-[28px] drop-shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
+                />
             </div>
 
             <div className="mt-5 max-w-xl space-y-4">
