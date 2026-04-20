@@ -283,7 +283,7 @@ describe('FileTree virtualization', () => {
     expect(screen.getByText('index.ts').closest('[title]')?.getAttribute('title')).toBe('src/index.ts');
   });
 
-  it('renders file action buttons in an overlay that does not change row layout', () => {
+  it('renders file action buttons below the file row instead of centering them over the label', () => {
     render(
       <FileTree
         nodes={[
@@ -312,10 +312,12 @@ describe('FileTree virtualization', () => {
 
     const pathButton = screen.getByRole('button', { name: '路径' });
     const actionContainer = pathButton.parentElement;
+    const rowContainer = screen.getByText('index.ts').closest('.group');
 
     expect(actionContainer).not.toBeNull();
     expect(actionContainer?.className).toContain('absolute');
-    expect(actionContainer?.className).toContain('opacity-0');
-    expect(actionContainer?.className).not.toContain('group-hover:flex');
+    expect(actionContainer?.className).toContain('top-full');
+    expect(actionContainer?.className).not.toContain('top-1/2');
+    expect(rowContainer?.className).not.toContain('flex-col');
   });
 });

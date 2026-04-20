@@ -132,7 +132,7 @@ const FileTreeRow: React.FC<{
         )}
 
         {!node.isDirectory && (
-          <div className="absolute right-2 top-1/2 z-10 flex -translate-y-1/2 items-center space-x-2 rounded-md bg-light-panel/95 px-1 py-0.5 opacity-0 shadow-sm backdrop-blur-sm pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto dark:bg-dark-panel/95">
+          <div className="absolute right-2 top-full z-20 mt-1 flex items-center space-x-2 rounded-md bg-light-panel/95 px-1 py-0.5 opacity-0 shadow-sm backdrop-blur-sm pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto dark:bg-dark-panel/95">
             <button
               onClick={(event) => { event.stopPropagation(); onCopyPath(node.path); }}
               className="flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text hover:text-primary hover:border-primary transition-colors shrink-0"
