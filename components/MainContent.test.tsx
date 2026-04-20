@@ -99,7 +99,7 @@ function createProcessedData(fileName: string, filePath: string): ProcessedFiles
   };
 }
 
-function createLogic(processedData: ProcessedFiles) {
+function createLogic(processedData: ProcessedFiles | null) {
   return {
     state: {
       isMobile: false,
@@ -110,7 +110,9 @@ function createLogic(processedData: ProcessedFiles) {
       isDragging: false,
       isLoading: false,
       progressMessage: '',
-      lastProcessedFiles: [new File(['demo'], processedData.fileContents[0].path.split('/').pop() ?? 'demo.txt')],
+      lastProcessedFiles: processedData
+        ? [new File(['demo'], processedData.fileContents[0].path.split('/').pop() ?? 'demo.txt')]
+        : null,
       selectedFilePath: null,
       openFiles: [],
       selectedFile: null,
@@ -142,6 +144,21 @@ function createLogic(processedData: ProcessedFiles) {
 }
 
 describe('MainContent', () => {
+  it('renders the empty state without the desktop split-pane chrome when no project is loaded', () => {
+    const codeViewRef = React.createRef<HTMLDivElement>();
+    const leftPanelRef = React.createRef<HTMLDivElement>();
+    const { container } = render(
+      <MainContent
+        logic={createLogic(null) as never}
+        codeViewRef={codeViewRef}
+        leftPanelRef={leftPanelRef}
+      />
+    );
+
+    expect(screen.getByTestId('initial-prompt')).not.toBeNull();
+    expect(container.querySelector('.cursor-col-resize')).toBeNull();
+  });
+
   it('clears a stale extension filter without collapsing nested directories in the replacement tree', async () => {
     const codeViewRef = React.createRef<HTMLDivElement>();
     const leftPanelRef = React.createRef<HTMLDivElement>();

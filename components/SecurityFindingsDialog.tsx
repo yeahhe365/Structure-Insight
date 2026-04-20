@@ -58,6 +58,7 @@ const SecurityFindingsDialog: React.FC<SecurityFindingsDialogProps> = ({ isOpen,
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="关闭安全提示"
                         title="关闭安全提示"
                         className="w-8 h-8 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center text-light-subtle-text dark:text-dark-subtle-text transition-colors"
                     >

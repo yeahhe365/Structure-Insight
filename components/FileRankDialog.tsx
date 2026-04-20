@@ -83,6 +83,7 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                     </h3>
                     <button 
                         onClick={onClose} 
+                        aria-label="关闭文件大小排行"
                         className="w-8 h-8 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center text-light-subtle-text dark:text-dark-subtle-text transition-colors"
                     >
                         <i className="fa-solid fa-times"></i>

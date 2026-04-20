@@ -212,54 +212,50 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                         )}
                    </AnimatePresence>
                 </div>
-            ) : (
+            ) : state.processedData ? (
                 <>
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel flex flex-col" style={{ width: `${state.panelWidth}%` }}>
                         <div className="flex-1 min-h-0 flex flex-col">
-                           {state.processedData && (
-                                <>
-                                    {extensions.length > 0 && (
-                                        <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
-                                            {extensions.map(ext => (
-                                                <button
-                                                    key={ext}
-                                                    onClick={() => setFilterExt(filterExt === ext ? null : ext)}
-                                                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                                                        filterExt === ext
-                                                            ? 'bg-primary text-white'
-                                                            : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
-                                                    }`}
-                                                >
-                                                    {ext}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="relative flex-1 min-h-0">
-                                        <React.Suspense fallback={<SuspenseFallback />}>
-                                            <FileTree
-                                                nodes={filteredNodes}
-                                                treeResetKey={state.lastProcessedFiles}
-                                                scrollContainerRef={fileTreeScrollRef}
-                                                onFileSelect={handlers.handleFileTreeSelect}
-                                                onDeleteFile={handlers.handleDeleteFile}
-                                            onCopyPath={handlers.handleCopyPath}
-                                            onToggleExclude={handlers.handleToggleExclude}
-                                            onDirDoubleClick={handlers.handleDirDoubleClick}
-                                            selectedFilePath={state.selectedFilePath}
-                                        />
-                                        </React.Suspense>
-                                    </div>
-                                </>
-                           )}
+                            {extensions.length > 0 && (
+                                <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
+                                    {extensions.map(ext => (
+                                        <button
+                                            key={ext}
+                                            onClick={() => setFilterExt(filterExt === ext ? null : ext)}
+                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                                filterExt === ext
+                                                    ? 'bg-primary text-white'
+                                                    : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
+                                            }`}
+                                        >
+                                            {ext}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="relative flex-1 min-h-0">
+                                <React.Suspense fallback={<SuspenseFallback />}>
+                                    <FileTree
+                                        nodes={filteredNodes}
+                                        treeResetKey={state.lastProcessedFiles}
+                                        scrollContainerRef={fileTreeScrollRef}
+                                        onFileSelect={handlers.handleFileTreeSelect}
+                                        onDeleteFile={handlers.handleDeleteFile}
+                                        onCopyPath={handlers.handleCopyPath}
+                                        onToggleExclude={handlers.handleToggleExclude}
+                                        onDirDoubleClick={handlers.handleDirDoubleClick}
+                                        selectedFilePath={state.selectedFilePath}
+                                    />
+                                </React.Suspense>
+                            </div>
                         </div>
-                        {state.processedData && <ScrollSlider scrollRef={fileTreeScrollRef} />}
+                        <ScrollSlider scrollRef={fileTreeScrollRef} />
                     </div>
                     <div onMouseDown={handlers.handleMouseDownResize} className="w-1.5 h-full cursor-col-resize group z-10">
                          <div className="w-full h-full bg-light-border dark:bg-dark-border group-hover:bg-primary transition-colors duration-200" />
                     </div>
                     <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex flex-col">
-                        {state.activeView === 'code' && state.processedData && (
+                        {state.activeView === 'code' && (
                             <TabBar
                                 openFiles={state.openFiles}
                                 selectedFilePath={state.selectedFilePath}
@@ -270,7 +266,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                         <div className="flex-1 h-full flex flex-col min-w-0">
                             {state.isLoading ? (
                                 <LoadingIndicator message={state.progressMessage} />
-                            ) : state.processedData ? (
+                            ) : (
                                 <div className="relative flex-1 min-h-0">
                                     <div ref={codeViewRef} className="h-full overflow-y-auto no-scrollbar">
                                         <div className={state.activeView === 'code' ? 'block min-h-full' : 'hidden'}>
@@ -306,15 +302,17 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                     <ScrollSlider scrollRef={codeViewRef} />
                                     <ScrollToTopButton targetRef={codeViewRef} />
                                 </div>
-                            ) : (
-                                <InitialPrompt onOpenFolder={handlers.handleFileSelect} onOpenRecentProject={handlers.handleRecentProjectSelect} recentProjects={state.recentProjects}/>
                             )}
                         </div>
                     </div>
                 </>
+            ) : (
+                <div className="flex-1 min-w-0 bg-light-bg dark:bg-dark-bg">
+                    <InitialPrompt onOpenFolder={handlers.handleFileSelect} onOpenRecentProject={handlers.handleRecentProjectSelect} recentProjects={state.recentProjects}/>
+                </div>
             )}
              {isMobile && state.processedData && (
-                <button onClick={handlers.handleMobileViewToggle} className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center z-20 active:scale-90 transition-transform">
+                <button onClick={handlers.handleMobileViewToggle} aria-label={state.mobileView === 'tree' ? '切换到代码视图' : '切换到文件树'} className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center z-20 active:scale-90 transition-transform">
                     <i className={`fa-solid ${mobileFabIcon()} text-xl`}></i>
                 </button>
             )}

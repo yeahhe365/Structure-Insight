@@ -19,7 +19,7 @@ interface InitialPromptProps {
 
 const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProjects = [], onOpenRecentProject }) => {
     return (
-        <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden p-6 select-none bg-light-bg dark:bg-dark-bg">
+        <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden p-4 sm:p-6 select-none bg-light-bg dark:bg-dark-bg">
             {/* Background Pattern */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" 
@@ -31,18 +31,18 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                 <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-primary/5 to-transparent"></div>
             </div>
 
-            <div className="z-10 w-full max-w-5xl flex flex-col items-center">
+            <div className="z-10 w-full max-w-5xl flex flex-col items-center px-2 sm:px-0">
                 {/* Hero */}
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-center mb-12"
+                    className="text-center mb-12 px-2"
                 >
-                    <h1 className="text-4xl md:text-6xl font-extrabold text-light-text dark:text-dark-text mb-6 tracking-tight">
+                    <h1 className="mx-auto max-w-[10ch] text-3xl font-extrabold leading-tight tracking-tight text-light-text dark:text-dark-text sm:max-w-none sm:text-4xl md:text-6xl mb-6">
                         Structure <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Insight</span>
                     </h1>
-                    <p className="text-lg md:text-xl text-light-subtle-text dark:text-dark-subtle-text max-w-2xl mx-auto leading-relaxed">
+                    <p className="mx-auto max-w-sm px-2 text-sm leading-relaxed text-light-subtle-text dark:text-dark-subtle-text sm:text-lg md:max-w-2xl md:text-xl">
                         将代码库整理为 AI 友好 格式
                     </p>
                 </motion.div>
@@ -56,14 +56,14 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                 >
                     <button
                         onClick={onOpenFolder}
-                        className="group relative w-full bg-light-panel dark:bg-dark-panel border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary dark:hover:border-primary rounded-2xl p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center gap-4 text-center cursor-pointer outline-none focus:ring-4 focus:ring-primary/10"
+                        className="group relative w-full bg-light-panel dark:bg-dark-panel border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary dark:hover:border-primary rounded-2xl p-5 sm:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center gap-4 text-center cursor-pointer outline-none focus:ring-4 focus:ring-primary/10"
                     >
                          <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                             <i className="fa-solid fa-folder-open text-2xl"></i>
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-light-text dark:text-dark-text mb-1 group-hover:text-primary transition-colors">选择文件夹</h3>
-                            <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text">或将文件夹拖放到页面任意位置</p>
+                            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-1 group-hover:text-primary transition-colors">选择文件夹</h3>
+                            <p className="text-xs sm:text-sm text-light-subtle-text dark:text-dark-subtle-text">或将文件夹拖放到页面任意位置</p>
                         </div>
                     </button>
                 </motion.div>
@@ -100,7 +100,7 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.8 }}
-                className="absolute bottom-4 text-xs text-light-subtle-text/50 dark:text-dark-subtle-text/50"
+                className="absolute bottom-4 px-4 text-center text-[11px] sm:text-xs text-light-subtle-text/50 dark:text-dark-subtle-text/50"
             >
                 Secure & Local • Browser-based Processing
             </motion.div>

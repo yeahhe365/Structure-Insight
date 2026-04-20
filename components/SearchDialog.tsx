@@ -2,6 +2,25 @@ import React from 'react';
 import { SearchOptions } from '../types';
 import { usePersistentState } from '../hooks/usePersistentState';
 
+const DIALOG_MARGIN = 16;
+const DIALOG_DEFAULT_HEIGHT = 220;
+const DIALOG_MAX_WIDTH = 400;
+
+function getViewportSafePosition(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+) {
+    const maxX = Math.max(DIALOG_MARGIN, window.innerWidth - width - DIALOG_MARGIN);
+    const maxY = Math.max(DIALOG_MARGIN, window.innerHeight - height - DIALOG_MARGIN);
+
+    return {
+        x: Math.min(Math.max(DIALOG_MARGIN, x), maxX),
+        y: Math.min(Math.max(DIALOG_MARGIN, y), maxY),
+    };
+}
+
 interface SearchDialogProps {
     onClose: () => void;
     onSearch: (query: string, options: SearchOptions) => void;
@@ -19,11 +38,13 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     
     const dialogRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const clampPosition = React.useCallback((x: number, y: number) => {
+        const width = dialogRef.current?.offsetWidth ?? Math.min(DIALOG_MAX_WIDTH, window.innerWidth - (DIALOG_MARGIN * 2));
+        const height = dialogRef.current?.offsetHeight ?? DIALOG_DEFAULT_HEIGHT;
+        return getViewportSafePosition(x, y, width, height);
+    }, []);
 
-    const [position, setPosition] = React.useState(() => ({
-        x: Math.max(16, window.innerWidth - 420),
-        y: Math.min(70, window.innerHeight - 200),
-    }));
+    const [position, setPosition] = React.useState(() => clampPosition(window.innerWidth - DIALOG_MAX_WIDTH - DIALOG_MARGIN, 70));
     const [isDragging, setIsDragging] = React.useState(false);
     const dragStartPos = React.useRef({ x: 0, y: 0 });
 
@@ -39,11 +60,11 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
 
     const handleMouseMove = React.useCallback((e: MouseEvent) => {
         if (!isDragging) return;
-        setPosition({
-            x: e.clientX - dragStartPos.current.x,
-            y: e.clientY - dragStartPos.current.y,
-        });
-    }, [isDragging]);
+        setPosition(clampPosition(
+            e.clientX - dragStartPos.current.x,
+            e.clientY - dragStartPos.current.y,
+        ));
+    }, [clampPosition, isDragging]);
 
     const handleMouseUp = React.useCallback(() => {
         setIsDragging(false);
@@ -64,6 +85,10 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     React.useEffect(() => {
+        setPosition((current) => clampPosition(current.x, current.y));
+    }, [clampPosition]);
+
+    React.useEffect(() => {
         inputRef.current?.focus();
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -73,13 +98,18 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                 setIsHistoryOpen(false);
             }
         }
+        const handleResize = () => {
+            setPosition((current) => clampPosition(current.x, current.y));
+        };
         window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('resize', handleResize);
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('resize', handleResize);
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [onClose]);
+    }, [clampPosition, onClose]);
     
     const updateHistory = (newQuery: string) => {
         if (!newQuery.trim()) return;
@@ -138,7 +168,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
     return (
         <div
             ref={dialogRef}
-            className="fixed z-30 bg-light-panel dark:bg-dark-panel rounded-lg shadow-2xl border border-light-border dark:border-dark-border w-[400px]"
+            className="fixed z-30 w-[calc(100vw-2rem)] max-w-[400px] overflow-hidden rounded-lg border border-light-border bg-light-panel shadow-2xl dark:border-dark-border dark:bg-dark-panel"
             style={{ top: `${position.y}px`, left: `${position.x}px` }}
         >
             <div
@@ -146,7 +176,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                 onMouseDown={handleMouseDown}
             >
                 <h3 className="font-semibold text-sm pl-2">在文件中查找</h3>
-                <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
+                <button onClick={onClose} aria-label="关闭搜索" className="w-7 h-7 rounded-full hover:bg-light-border dark:hover:bg-dark-border flex items-center justify-center">
                     <i className="fa-solid fa-times text-xs"></i>
                 </button>
             </div>
@@ -182,8 +212,8 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                                 </div>
                             )}
                         </div>
-                        <button type="button" onClick={() => onNavigate('prev')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-up"></i></button>
-                        <button type="button" onClick={() => onNavigate('next')} disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-down"></i></button>
+                        <button type="button" onClick={() => onNavigate('prev')} aria-label="上一个结果" disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-up"></i></button>
+                        <button type="button" onClick={() => onNavigate('next')} aria-label="下一个结果" disabled={resultsCount === 0} className="w-10 h-10 rounded-md bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border disabled:opacity-50 flex items-center justify-center hover:bg-light-border dark:hover:bg-dark-border/50"><i className="fa-solid fa-arrow-down"></i></button>
                     </div>
                     <div className="flex items-center space-x-2 mt-3">
                         <button type="button" onClick={() => toggleOption('caseSensitive')} className={optionButtonClass(options.caseSensitive)} title="区分大小写 (Alt+C)">
