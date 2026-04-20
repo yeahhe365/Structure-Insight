@@ -571,7 +571,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             <div className="relative group">
                 <div className="absolute -inset-4 rounded-[32px] bg-gradient-to-r from-primary/20 to-cyan-500/20 blur-xl opacity-80 transition duration-500" />
                 <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-primary to-cyan-500 text-white shadow-2xl shadow-primary/20">
-                    <i className="fa-solid fa-folder-tree text-4xl" />
+                    <img src="/icon.svg" alt="Structure Insight Logo" className="h-24 w-24 rounded-[28px]" />
                 </div>
             </div>
 

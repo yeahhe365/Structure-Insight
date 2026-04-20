@@ -5,13 +5,14 @@ import InitialPrompt from './InitialPrompt';
 
 describe('InitialPrompt recent projects', () => {
   it('renders the AI-friendly repository subtitle on the homepage', () => {
-    render(
+    const { container } = render(
       <InitialPrompt
         onOpenFolder={vi.fn()}
       />
     );
 
     expect(screen.getByText('将代码库整理为 AI 友好 格式')).not.toBeNull();
+    expect(container.querySelector('.fa-layer-group')).toBeNull();
   });
 
   it('opens a recent project when its card is clicked', () => {

@@ -104,6 +104,7 @@ describe('SettingsDialog', () => {
 
         fireEvent.click(screen.getByRole('tab', { name: '关于' }));
 
+        expect(screen.getByAltText('Structure Insight Logo').getAttribute('src')).toBe('/icon.svg');
         expect(screen.getByText('Structure Insight')).toBeTruthy();
         expect(screen.getByText('v5.4.0')).toBeTruthy();
         expect(screen.getByRole('link', { name: '查看 GitHub' })).toBeTruthy();

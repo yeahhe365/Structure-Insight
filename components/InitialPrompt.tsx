@@ -39,9 +39,6 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="text-center mb-12"
                 >
-                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-500 to-indigo-600 shadow-xl shadow-blue-500/20 mb-8 transform rotate-3 hover:rotate-6 transition-transform duration-500">
-                        <i className="fa-solid fa-layer-group text-5xl text-white drop-shadow-md"></i>
-                    </div>
                     <h1 className="text-4xl md:text-6xl font-extrabold text-light-text dark:text-dark-text mb-6 tracking-tight">
                         Structure <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Insight</span>
                     </h1>
