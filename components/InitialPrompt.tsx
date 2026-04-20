@@ -46,9 +46,7 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                         Structure <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Insight</span>
                     </h1>
                     <p className="text-lg md:text-xl text-light-subtle-text dark:text-dark-subtle-text max-w-2xl mx-auto leading-relaxed">
-                        您的本地代码分析专家。
-                        <br className="hidden md:block"/>
-                        无需上传文件，直接在浏览器中解析项目结构与内容。
+                        将代码库整理为 AI 友好 格式
                     </p>
                 </motion.div>
 

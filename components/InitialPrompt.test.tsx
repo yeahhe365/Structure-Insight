@@ -4,6 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 import InitialPrompt from './InitialPrompt';
 
 describe('InitialPrompt recent projects', () => {
+  it('renders the AI-friendly repository subtitle on the homepage', () => {
+    render(
+      <InitialPrompt
+        onOpenFolder={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('将代码库整理为 AI 友好 格式')).not.toBeNull();
+  });
+
   it('opens a recent project when its card is clicked', () => {
     const onOpenRecentProject = vi.fn();
     const project = {
