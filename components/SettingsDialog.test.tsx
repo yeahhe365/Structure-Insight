@@ -63,19 +63,20 @@ describe('SettingsDialog', () => {
             />
         );
 
-        expect(screen.getByRole('button', { name: '工作区' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('tablist', { name: '设置导航' })).toBeTruthy();
+        expect(screen.getByRole('tab', { name: '工作区' }).getAttribute('aria-selected')).toBe('true');
         expect(screen.getByRole('heading', { level: 2, name: '工作区设置' })).toBeTruthy();
         expect(screen.queryByText('导出设置')).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: '导出' }));
+        fireEvent.click(screen.getByRole('tab', { name: '导出' }));
 
-        expect(screen.getByRole('button', { name: '导出' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('tab', { name: '导出' }).getAttribute('aria-selected')).toBe('true');
         expect(screen.getByRole('heading', { level: 2, name: '导出设置' })).toBeTruthy();
         expect(screen.queryByText('工作区设置')).toBeNull();
 
-        fireEvent.click(screen.getByRole('button', { name: '关于' }));
+        fireEvent.click(screen.getByRole('tab', { name: '关于' }));
 
-        expect(screen.getByRole('button', { name: '关于' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByRole('tab', { name: '关于' }).getAttribute('aria-selected')).toBe('true');
         expect(screen.getByRole('heading', { level: 2, name: '项目与版本' })).toBeTruthy();
         expect(screen.queryByText('导出设置')).toBeNull();
     });
