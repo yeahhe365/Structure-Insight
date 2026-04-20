@@ -6,7 +6,7 @@ import type { ConfirmationState, ProcessedFiles } from '../types';
 
 const INITIAL_DATA: ProcessedFiles = {
     rootName: 'demo',
-    structureString: 'demo\n└── app.ts (3 字符)\n',
+    structureString: 'demo\n└── app.ts\n',
     treeData: [
         {
             name: 'app.ts',
@@ -35,7 +35,7 @@ const INITIAL_DATA: ProcessedFiles = {
 };
 
 describe('useInteraction', () => {
-    it('keeps tree stats, token estimates, and security findings in sync after editing a file', () => {
+    it('keeps tree content, token estimates, and security findings in sync after editing a file', () => {
         const setConfirmation = vi.fn() as unknown as React.Dispatch<React.SetStateAction<ConfirmationState>>;
 
         const { result } = renderHook(() => {
@@ -50,7 +50,6 @@ describe('useInteraction', () => {
                 selectedFilePath: 'app.ts',
                 setSelectedFilePath: vi.fn(),
                 setActiveView: vi.fn(),
-                showCharCount: true,
             });
 
             return { processedData, ...interaction };
@@ -65,7 +64,7 @@ describe('useInteraction', () => {
         expect(updatedData!.fileContents[0].stats).toEqual({ lines: 2, chars: 50, estimatedTokens: 13 });
         expect(updatedData!.treeData[0].lines).toBe(2);
         expect(updatedData!.treeData[0].chars).toBe(50);
-        expect(updatedData!.structureString).toContain('app.ts (50 字符)');
+        expect(updatedData!.structureString).toBe('demo\n└── app.ts\n');
         expect(updatedData!.analysisSummary).toEqual({
             totalEstimatedTokens: 13,
             securityFindingCount: 1,
@@ -94,7 +93,6 @@ describe('useInteraction', () => {
                 selectedFilePath: 'app.ts',
                 setSelectedFilePath: vi.fn(),
                 setActiveView: vi.fn(),
-                showCharCount: true,
             });
 
             return { processedData, ...interaction };

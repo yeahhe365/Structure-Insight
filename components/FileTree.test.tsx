@@ -59,7 +59,6 @@ describe('FileTree virtualization', () => {
         onCopyPath={vi.fn()}
         onToggleExclude={vi.fn()}
         selectedFilePath={null}
-        showCharCount={false}
       />
     );
 
@@ -90,7 +89,6 @@ describe('FileTree virtualization', () => {
         onCopyPath={vi.fn()}
         onToggleExclude={vi.fn()}
         selectedFilePath={null}
-        showCharCount={false}
       />
     );
 
@@ -106,7 +104,6 @@ describe('FileTree virtualization', () => {
         onCopyPath={vi.fn()}
         onToggleExclude={vi.fn()}
         selectedFilePath={null}
-        showCharCount={false}
       />
     );
 
@@ -139,7 +136,6 @@ describe('FileTree virtualization', () => {
         onCopyPath={vi.fn()}
         onToggleExclude={vi.fn()}
         selectedFilePath={null}
-        showCharCount={false}
       />
     );
 
@@ -174,7 +170,6 @@ describe('FileTree virtualization', () => {
         onCopyPath={vi.fn()}
         onToggleExclude={vi.fn()}
         selectedFilePath={null}
-        showCharCount={false}
       />
     );
 
@@ -186,5 +181,39 @@ describe('FileTree virtualization', () => {
     fireEvent.keyDown(tree, { key: 'Enter' });
 
     expect(onFileSelect).toHaveBeenCalledWith('src/index.ts');
+  });
+
+  it('does not render file line or character counts in the explorer rows', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+                lines: 42,
+                chars: 420,
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    expect(screen.queryByText('420')).toBeNull();
+    expect(screen.queryByText('42')).toBeNull();
+    expect(screen.getByText('index.ts').closest('[title]')?.getAttribute('title')).toBe('src/index.ts');
   });
 });

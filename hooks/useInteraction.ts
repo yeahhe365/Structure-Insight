@@ -17,7 +17,6 @@ interface InteractionProps {
     selectedFilePath: string | null;
     setSelectedFilePath: (path: string | null) => void;
     setActiveView: (view: 'structure' | 'code') => void;
-    showCharCount: boolean;
     onDeleteConfirmed?: (path: string) => void;
 }
 
@@ -31,7 +30,6 @@ export const useInteraction = ({
     selectedFilePath,
     setSelectedFilePath,
     setActiveView,
-    showCharCount,
     onDeleteConfirmed,
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
@@ -67,7 +65,7 @@ export const useInteraction = ({
                     };
 
                     const newTreeData = filterTreeRecursive(JSON.parse(JSON.stringify(prevData.treeData)));
-                    const newStructureString = buildASCIITree(newTreeData, prevData.rootName, showCharCount);
+                    const newStructureString = buildASCIITree(newTreeData, prevData.rootName);
                     const { analysisSummary, securityFindings } = summarizeAnalysis(newFileContents);
                     
                     return {
@@ -132,7 +130,7 @@ export const useInteraction = ({
                 });
 
             const newTreeData = updateTreeRecursive(prev.treeData);
-            const newStructureString = buildASCIITree(newTreeData, prev.rootName, showCharCount);
+            const newStructureString = buildASCIITree(newTreeData, prev.rootName);
             const { analysisSummary, securityFindings } = summarizeAnalysis(newFileContents);
 
             return {
@@ -179,7 +177,7 @@ export const useInteraction = ({
             const newTreeData = updateNodeRecursive(prevData.treeData);
             
             // Regenerate structure string
-            const newStructureString = buildASCIITree(newTreeData, prevData.rootName, showCharCount);
+            const newStructureString = buildASCIITree(newTreeData, prevData.rootName);
             const { analysisSummary, securityFindings } = summarizeAnalysis(newFileContents);
 
             return {

@@ -12,8 +12,6 @@ interface SettingsDialogProps {
     fontSize: number;
     onSetFontSize: (size: number) => void;
     onClearCache: () => void;
-    showCharCount: boolean;
-    onToggleShowCharCount: () => void;
     maxCharsThreshold: number;
     onSetMaxCharsThreshold: (val: number) => void;
     wordWrap: boolean;
@@ -54,6 +52,7 @@ interface SettingsSectionDefinition {
     id: SettingsSectionId;
     label: string;
     title: string;
+    icon: string;
 }
 
 const APP_VERSION = '5.4.0';
@@ -63,36 +62,73 @@ const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
         id: 'workspace',
         label: '工作区',
         title: '工作区设置',
+        icon: 'fa-sliders',
     },
     {
         id: 'export',
         label: '导出',
         title: '导出设置',
+        icon: 'fa-file-export',
     },
     {
         id: 'about',
         label: '关于',
         title: '项目与版本',
+        icon: 'fa-circle-info',
     },
 ];
 
 const SettingsDialog: React.FC<SettingsDialogProps> = ({
-    isOpen, onClose, isDarkTheme, onToggleTheme, extractContent, onToggleExtractContent, fontSize, onSetFontSize, onClearCache,
-    showCharCount, onToggleShowCharCount, maxCharsThreshold, onSetMaxCharsThreshold, wordWrap, onToggleWordWrap,
-    includeFileSummary, onToggleIncludeFileSummary, includeDirectoryStructure, onToggleIncludeDirectoryStructure,
-    exportFormat, onSetExportFormat, includePatterns, onSetIncludePatterns,
-    ignorePatterns, onSetIgnorePatterns, useDefaultPatterns, onToggleUseDefaultPatterns, useGitignore,
-    onToggleUseGitignore, includeEmptyDirectories, onToggleIncludeEmptyDirectories, showLineNumbers,
-    onToggleShowLineNumbers, removeEmptyLines, onToggleRemoveEmptyLines, truncateBase64, onToggleTruncateBase64,
-    exportSplitMaxChars, onSetExportSplitMaxChars, exportHeaderText, onSetExportHeaderText,
-    exportInstructionText, onSetExportInstructionText,
+    isOpen,
+    onClose,
+    isDarkTheme,
+    onToggleTheme,
+    extractContent,
+    onToggleExtractContent,
+    fontSize,
+    onSetFontSize,
+    onClearCache,
+    maxCharsThreshold,
+    onSetMaxCharsThreshold,
+    wordWrap,
+    onToggleWordWrap,
+    includeFileSummary,
+    onToggleIncludeFileSummary,
+    includeDirectoryStructure,
+    onToggleIncludeDirectoryStructure,
+    exportFormat,
+    onSetExportFormat,
+    includePatterns,
+    onSetIncludePatterns,
+    ignorePatterns,
+    onSetIgnorePatterns,
+    useDefaultPatterns,
+    onToggleUseDefaultPatterns,
+    useGitignore,
+    onToggleUseGitignore,
+    includeEmptyDirectories,
+    onToggleIncludeEmptyDirectories,
+    showLineNumbers,
+    onToggleShowLineNumbers,
+    removeEmptyLines,
+    onToggleRemoveEmptyLines,
+    truncateBase64,
+    onToggleTruncateBase64,
+    exportSplitMaxChars,
+    onSetExportSplitMaxChars,
+    exportHeaderText,
+    onSetExportHeaderText,
+    exportInstructionText,
+    onSetExportInstructionText,
 }) => {
     const [stars, setStars] = React.useState<number | null>(null);
     const [starsLoading, setStarsLoading] = React.useState(false);
     const [activeSection, setActiveSection] = React.useState<SettingsSectionId>('workspace');
 
     React.useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            return;
+        }
 
         setActiveSection('workspace');
         setStarsLoading(true);
@@ -102,13 +138,18 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             .then(data => {
                 if (typeof data?.stargazers_count === 'number') {
                     setStars(data.stargazers_count);
+                } else {
+                    setStars(null);
                 }
             })
-            .catch(err => console.error('Failed to fetch GitHub stars:', err))
+            .catch(err => {
+                console.error('Failed to fetch GitHub stars:', err);
+                setStars(null);
+            })
             .finally(() => setStarsLoading(false));
 
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
                 onClose();
             }
         };
@@ -117,56 +158,17 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    if (!isOpen) {
+        return null;
+    }
 
     const currentSection = SETTINGS_SECTIONS.find(section => section.id === activeSection) ?? SETTINGS_SECTIONS[0];
     const panelId = `settings-panel-${activeSection}`;
     const panelLabelId = `settings-tab-${activeSection}`;
     const maxCharsThresholdInKb = Math.round(maxCharsThreshold / 1024);
+    const starStatusText = starsLoading ? '正在获取 GitHub 数据…' : stars !== null ? `${stars.toLocaleString()} Stars` : 'GitHub 数据暂不可用';
 
-    const TabButton = ({ section }: { section: SettingsSectionDefinition }) => {
-        const isActive = section.id === activeSection;
-
-        return (
-            <button
-                id={`settings-tab-${section.id}`}
-                type="button"
-                role="tab"
-                aria-label={section.label}
-                aria-controls={`settings-panel-${section.id}`}
-                aria-selected={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => setActiveSection(section.id)}
-                className={[
-                    'group relative flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-all',
-                    'focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 dark:focus:ring-offset-dark-panel',
-                    isActive
-                        ? 'bg-white text-light-text shadow-sm ring-1 ring-black/6 dark:bg-slate-900 dark:text-dark-text dark:ring-white/10'
-                        : 'bg-transparent text-light-subtle-text hover:bg-white/70 hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/70 dark:hover:text-dark-text',
-                ].join(' ')}
-            >
-                <span
-                    className={[
-                        'absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full transition-opacity',
-                        isActive ? 'bg-primary opacity-100' : 'opacity-0 group-hover:opacity-60',
-                    ].join(' ')}
-                />
-                <span
-                    className={[
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs transition-colors',
-                        isActive
-                            ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100'
-                            : 'bg-transparent text-light-subtle-text dark:text-dark-subtle-text',
-                    ].join(' ')}
-                >
-                    <i className="fa-solid fa-chevron-right"></i>
-                </span>
-                <span className={['font-medium tracking-tight', isActive ? '' : 'opacity-95'].join(' ')}>{section.label}</span>
-            </button>
-        );
-    };
-
-    const Switch = ({
+    const Toggle = ({
         checked,
         onChange,
         label,
@@ -184,9 +186,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             aria-pressed={checked}
             onClick={onChange}
             className={[
-                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 dark:focus:ring-offset-dark-panel',
-                checked ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-700',
+                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all',
+                'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-slate-950',
+                checked
+                    ? 'border-primary/30 bg-primary shadow-sm shadow-primary/25'
+                    : 'border-light-border bg-light-panel dark:border-dark-border dark:bg-slate-800',
             ].join(' ')}
         >
             <span
@@ -198,44 +202,81 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         </button>
     );
 
-    const SectionBlock = ({
+    const SidebarTabButton = ({ section }: { section: SettingsSectionDefinition }) => {
+        const isActive = activeSection === section.id;
+
+        return (
+            <button
+                id={`settings-tab-${section.id}`}
+                type="button"
+                role="tab"
+                aria-label={section.label}
+                aria-controls={`settings-panel-${section.id}`}
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => setActiveSection(section.id)}
+                className={[
+                    'flex flex-shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all outline-none select-none',
+                    'w-auto md:w-full focus-visible:ring-2 focus-visible:ring-primary/50',
+                    isActive
+                        ? 'bg-light-bg text-light-text shadow-sm dark:bg-slate-900 dark:text-dark-text'
+                        : 'text-light-subtle-text hover:bg-light-hover hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/60 dark:hover:text-dark-text',
+                ].join(' ')}
+            >
+                <i
+                    className={[
+                        'fa-solid w-4 text-center transition-colors',
+                        section.icon,
+                        isActive ? 'text-primary' : 'text-light-subtle-text dark:text-dark-subtle-text',
+                    ].join(' ')}
+                />
+                <span>{section.label}</span>
+            </button>
+        );
+    };
+
+    const SectionGroup = ({
         title,
-        description,
+        icon,
         children,
     }: {
         title: string;
-        description?: string;
+        icon?: string;
         children: React.ReactNode;
     }) => (
-        <section className="rounded-2xl border border-black/5 bg-white dark:border-white/5 dark:bg-slate-900">
-            <div className="border-b border-black/5 px-4 py-3 dark:border-white/5">
-                <h4 className="text-sm font-semibold text-light-text dark:text-dark-text">{title}</h4>
-                {description ? (
-                    <p className="mt-1 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">{description}</p>
-                ) : null}
+        <section className="py-2">
+            <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">
+                {icon ? <i className={`fa-solid ${icon} w-3.5 text-center`} /> : null}
+                {title}
+            </h4>
+            <div className="divide-y divide-light-border/80 rounded-2xl border border-light-border/80 bg-light-panel px-4 dark:divide-dark-border/80 dark:border-dark-border/80 dark:bg-slate-900">
+                {children}
             </div>
-            <div>{children}</div>
         </section>
     );
 
-    const Row = ({
-        title,
+    const SettingsRow = ({
+        label,
         description,
         control,
-        stacked = false,
         children,
+        stacked = false,
     }: {
-        title: string;
-        description: string;
+        label: string;
+        description?: string;
         control?: React.ReactNode;
-        stacked?: boolean;
         children?: React.ReactNode;
+        stacked?: boolean;
     }) => (
-        <div className="border-b border-black/5 px-4 py-3 last:border-b-0 dark:border-white/5">
-            <div className={stacked ? 'space-y-3' : 'flex items-start gap-4'}>
+        <div className="py-3">
+            <div className={stacked ? 'space-y-3' : 'flex items-start justify-between gap-4'}>
                 <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-light-text dark:text-dark-text">{title}</div>
-                    <div className="mt-1 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">{description}</div>
+                    <div className="text-sm font-medium text-light-text dark:text-dark-text">{label}</div>
+                    {description ? (
+                        <p className="mt-0.5 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">
+                            {description}
+                        </p>
+                    ) : null}
                 </div>
                 {!stacked && control ? <div className="shrink-0">{control}</div> : null}
             </div>
@@ -263,16 +304,16 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         type?: string;
         min?: number;
     }) => {
-        const className = 'w-full rounded-xl border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition placeholder:text-light-subtle-text focus:border-primary focus:ring-2 focus:ring-primary/15 dark:border-dark-border dark:bg-dark-bg dark:text-dark-text dark:placeholder:text-dark-subtle-text';
+        const className = 'w-full rounded-lg border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-slate-950 dark:text-dark-text';
 
         if (multiline) {
             return (
                 <textarea
                     id={id}
                     value={String(value)}
-                    onChange={(e) => onChange(e.target.value)}
+                    onChange={(event) => onChange(event.target.value)}
                     rows={rows}
-                    className={className}
+                    className={`${className} resize-y`}
                     placeholder={placeholder}
                 />
             );
@@ -284,29 +325,57 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 type={type}
                 min={min}
                 value={String(value)}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(event) => onChange(event.target.value)}
                 className={className}
                 placeholder={placeholder}
             />
         );
     };
 
+    const ThemeSegmentedControl = () => (
+        <div className="inline-flex rounded-lg border border-light-border bg-light-bg p-1 dark:border-dark-border dark:bg-slate-950">
+            {[
+                { id: 'light', label: '浅色', active: !isDarkTheme },
+                { id: 'dark', label: '深色', active: isDarkTheme },
+            ].map(option => (
+                <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                        if (option.active) {
+                            return;
+                        }
+                        onToggleTheme();
+                    }}
+                    className={[
+                        'rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
+                        option.active
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'text-light-subtle-text hover:text-light-text dark:text-dark-subtle-text dark:hover:text-dark-text',
+                    ].join(' ')}
+                >
+                    {option.label}
+                </button>
+            ))}
+        </div>
+    );
+
     const renderWorkspaceSection = () => (
-        <div className="space-y-3">
-            <SectionBlock title="显示" description="高频的阅读体验设置。">
-                <Row
-                    title="深色主题"
-                    description="切换整体界面明暗风格。"
-                    control={<Switch id="theme-toggle" label="深色主题" checked={isDarkTheme} onChange={onToggleTheme} />}
-                />
-                <Row
-                    title="显示统计信息"
-                    description="在文件树中显示字符数和行数。"
-                    control={<Switch id="char-count-toggle" label="显示统计信息" checked={showCharCount} onChange={onToggleShowCharCount} />}
-                />
-                <Row title="字体大小" description={`当前 ${fontSize}px，可即时调整代码阅读密度。`} stacked>
-                    <div className="flex items-center gap-3">
-                        <span className="text-xs font-semibold text-light-subtle-text dark:text-dark-subtle-text">A</span>
+        <div className="max-w-3xl mx-auto w-full space-y-6">
+            <SectionGroup title="外观" icon="fa-palette">
+                <SettingsRow label="主题模式" description="对齐 All-Model-Chat 的分段式主题切换。">
+                    <ThemeSegmentedControl />
+                </SettingsRow>
+                <SettingsRow label="字体大小" description="即时调整阅读密度。" stacked>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-light-subtle-text dark:text-dark-subtle-text">
+                                阅读尺寸
+                            </span>
+                            <span className="rounded-md bg-light-bg px-2 py-0.5 font-mono text-sm text-primary dark:bg-slate-950">
+                                {fontSize}px
+                            </span>
+                        </div>
                         <input
                             type="range"
                             id="font-size-slider"
@@ -314,30 +383,31 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                             max="24"
                             step="1"
                             value={fontSize}
-                            onChange={(e) => onSetFontSize(Number(e.target.value))}
-                            className="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 dark:bg-slate-700"
+                            onChange={(event) => onSetFontSize(Number(event.target.value))}
+                            className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-light-border accent-primary dark:bg-dark-border"
                         />
-                        <span className="text-sm font-semibold text-light-text dark:text-dark-text">A</span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                            {fontSize}px
-                        </span>
+                        <div className="flex justify-between px-1 text-[11px] font-mono text-light-subtle-text dark:text-dark-subtle-text">
+                            <span>10px</span>
+                            <span>17px</span>
+                            <span>24px</span>
+                        </div>
                     </div>
-                </Row>
-            </SectionBlock>
+                </SettingsRow>
+            </SectionGroup>
 
-            <SectionBlock title="工作区" description="控制文件处理和本地行为。">
-                <Row
-                    title="自动换行"
-                    description="代码超出宽度时自动换行，减少横向滚动。"
-                    control={<Switch id="word-wrap-toggle" label="自动换行" checked={wordWrap} onChange={onToggleWordWrap} />}
+            <SectionGroup title="工作区行为" icon="fa-folder-tree">
+                <SettingsRow
+                    label="自动换行"
+                    description="减少代码横向滚动，更接近聊天产品里的阅读方式。"
+                    control={<Toggle id="word-wrap-toggle" label="自动换行" checked={wordWrap} onChange={onToggleWordWrap} />}
                 />
-                <Row
-                    title="提取文件内容"
-                    description="关闭后仅保留目录结构，适合超大项目快速查看。"
-                    control={<Switch id="extract-toggle" label="提取文件内容" checked={extractContent} onChange={onToggleExtractContent} />}
+                <SettingsRow
+                    label="提取文件内容"
+                    description="关闭后仅分析结构，适合体量更大的仓库。"
+                    control={<Toggle id="extract-toggle" label="提取文件内容" checked={extractContent} onChange={onToggleExtractContent} />}
                 />
-                <Row title="自动跳过大文件" description="0 表示不限制；超过阈值的文件只保留路径。">
-                    <div className="mt-3 flex items-center gap-2">
+                <SettingsRow label="大文件阈值" description="超过阈值时只保留路径，不提取正文。">
+                    <div className="flex items-center gap-2">
                         <div className="w-24">
                             <Field
                                 id="max-chars-input"
@@ -347,34 +417,47 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                                 onChange={(value) => onSetMaxCharsThreshold((Math.max(0, Number(value) || 0)) * 1024)}
                             />
                         </div>
-                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-light-subtle-text dark:text-dark-subtle-text">KB</span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-light-subtle-text dark:text-dark-subtle-text">
+                            KB
+                        </span>
                     </div>
-                </Row>
-                <Row title="应用缓存" description="清空所有本地设置和缓存项目数据。">
-                    <div className="mt-3">
+                </SettingsRow>
+            </SectionGroup>
+
+            <section className="rounded-2xl bg-gradient-to-br from-red-600 to-red-700 p-5 text-white shadow-lg shadow-red-900/20">
+                <div className="mb-4 flex items-center gap-2 border-b border-white/10 pb-2">
+                    <i className="fa-solid fa-triangle-exclamation w-4 text-center" />
+                    <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-white">Danger Zone</h4>
+                </div>
+                <div className="divide-y divide-white/10">
+                    <div className="flex items-center justify-between gap-4 py-3">
+                        <div>
+                            <div className="text-sm font-semibold text-white">清除缓存</div>
+                            <p className="mt-0.5 text-xs leading-5 text-white/75">重置所有本地设置与缓存项目数据。</p>
+                        </div>
                         <button
                             type="button"
                             onClick={onClearCache}
-                            className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-900/50"
+                            className="rounded-lg border border-white/20 bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-white/40"
                         >
                             清除缓存
                         </button>
                     </div>
-                </Row>
-            </SectionBlock>
+                </div>
+            </section>
         </div>
     );
 
     const renderExportSection = () => (
-        <div className="space-y-3">
-            <SectionBlock title="导出结构" description="决定最终上下文的组织方式。">
-                <Row title="导出格式" description="支持 plain、xml、markdown 和 json。">
-                    <div className="mt-3 max-w-xs">
+        <div className="max-w-3xl mx-auto w-full space-y-6">
+            <SectionGroup title="导出结构" icon="fa-layer-group">
+                <SettingsRow label="导出格式" description="决定上下文输出的最终载体。">
+                    <div className="w-full sm:w-64">
                         <select
                             id="export-format-select"
                             value={exportFormat}
-                            onChange={(e) => onSetExportFormat(e.target.value as ExportFormat)}
-                            className="w-full rounded-xl border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 dark:border-dark-border dark:bg-dark-bg dark:text-dark-text"
+                            onChange={(event) => onSetExportFormat(event.target.value as ExportFormat)}
+                            className="w-full rounded-lg border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-slate-950 dark:text-dark-text"
                         >
                             <option value="plain">Plain</option>
                             <option value="xml">XML</option>
@@ -382,37 +465,37 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                             <option value="json">JSON</option>
                         </select>
                     </div>
-                </Row>
-                <Row
-                    title="文件摘要"
-                    description="保留摘要头部。"
-                    control={<Switch id="file-summary-toggle" label="文件摘要" checked={includeFileSummary} onChange={onToggleIncludeFileSummary} />}
+                </SettingsRow>
+                <SettingsRow
+                    label="文件摘要"
+                    description="在导出开头保留概览信息。"
+                    control={<Toggle id="file-summary-toggle" label="文件摘要" checked={includeFileSummary} onChange={onToggleIncludeFileSummary} />}
                 />
-                <Row
-                    title="包含目录结构"
-                    description="在导出中保留目录树。"
-                    control={<Switch id="directory-structure-toggle" label="包含目录结构" checked={includeDirectoryStructure} onChange={onToggleIncludeDirectoryStructure} />}
+                <SettingsRow
+                    label="目录结构"
+                    description="保留完整目录树，方便快速理解仓库轮廓。"
+                    control={<Toggle id="directory-structure-toggle" label="目录结构" checked={includeDirectoryStructure} onChange={onToggleIncludeDirectoryStructure} />}
                 />
-            </SectionBlock>
+            </SectionGroup>
 
-            <SectionBlock title="内容处理" description="直接影响输出文本的体积和可读性。">
-                <Row
-                    title="显示行号"
-                    description="为每一行内容添加编号。"
-                    control={<Switch id="line-numbers-toggle" label="显示行号" checked={showLineNumbers} onChange={onToggleShowLineNumbers} />}
+            <SectionGroup title="内容处理" icon="fa-wand-magic-sparkles">
+                <SettingsRow
+                    label="显示行号"
+                    description="为导出的正文追加行号。"
+                    control={<Toggle id="line-numbers-toggle" label="显示行号" checked={showLineNumbers} onChange={onToggleShowLineNumbers} />}
                 />
-                <Row
-                    title="移除空行"
-                    description="压缩导出内容中的冗余空白。"
-                    control={<Switch id="remove-empty-lines-toggle" label="移除空行" checked={removeEmptyLines} onChange={onToggleRemoveEmptyLines} />}
+                <SettingsRow
+                    label="移除空行"
+                    description="收紧输出内容的空白体积。"
+                    control={<Toggle id="remove-empty-lines-toggle" label="移除空行" checked={removeEmptyLines} onChange={onToggleRemoveEmptyLines} />}
                 />
-                <Row
-                    title="截断 Base64"
-                    description="将长 data URL 和 Base64 内容替换成占位符。"
-                    control={<Switch id="truncate-base64-toggle" label="截断 Base64" checked={truncateBase64} onChange={onToggleTruncateBase64} />}
+                <SettingsRow
+                    label="截断 Base64"
+                    description="避免长 data URL 直接淹没上下文。"
+                    control={<Toggle id="truncate-base64-toggle" label="截断 Base64" checked={truncateBase64} onChange={onToggleTruncateBase64} />}
                 />
-                <Row title="导出拆分阈值" description="0 表示不拆分；按字符数自动拆分保存。">
-                    <div className="mt-3 max-w-xs">
+                <SettingsRow label="拆分阈值" description="大于 0 时按字符数自动拆分导出文件。">
+                    <div className="w-full sm:w-48">
                         <Field
                             id="export-split-max-chars"
                             type="number"
@@ -421,119 +504,117 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                             onChange={(value) => onSetExportSplitMaxChars(Math.max(0, Number(value) || 0))}
                         />
                     </div>
-                </Row>
-            </SectionBlock>
+                </SettingsRow>
+            </SectionGroup>
 
-            <SectionBlock title="过滤规则" description="定义哪些内容进入导出。">
-                <Row title="包含模式" description="例如 src/**/*.ts,docs/**。">
-                    <div className="mt-3">
-                        <Field
-                            id="include-patterns"
-                            value={includePatterns}
-                            onChange={onSetIncludePatterns}
-                            placeholder="例如 src/**/*.ts,docs/**"
-                        />
-                    </div>
-                </Row>
-                <Row title="忽略模式" description="例如 **/*.test.ts,dist/**。">
-                    <div className="mt-3">
-                        <Field
-                            id="ignore-patterns"
-                            value={ignorePatterns}
-                            onChange={onSetIgnorePatterns}
-                            placeholder="例如 **/*.test.ts,dist/**"
-                        />
-                    </div>
-                </Row>
-                <Row
-                    title="默认忽略规则"
-                    description="启用内置的忽略目录和文件模式。"
-                    control={<Switch id="default-patterns-toggle" label="默认忽略规则" checked={useDefaultPatterns} onChange={onToggleUseDefaultPatterns} />}
+            <SectionGroup title="过滤规则" icon="fa-filter">
+                <SettingsRow label="包含模式" description="例如 `src/**/*.ts`、`docs/**`。" stacked>
+                    <Field
+                        id="include-patterns"
+                        value={includePatterns}
+                        onChange={onSetIncludePatterns}
+                        placeholder="例如 src/**/*.ts,docs/**"
+                    />
+                </SettingsRow>
+                <SettingsRow label="忽略模式" description="例如 `**/*.test.ts`、`dist/**`。" stacked>
+                    <Field
+                        id="ignore-patterns"
+                        value={ignorePatterns}
+                        onChange={onSetIgnorePatterns}
+                        placeholder="例如 **/*.test.ts,dist/**"
+                    />
+                </SettingsRow>
+                <SettingsRow
+                    label="默认忽略规则"
+                    description="使用内置忽略模式。"
+                    control={<Toggle id="default-patterns-toggle" label="默认忽略规则" checked={useDefaultPatterns} onChange={onToggleUseDefaultPatterns} />}
                 />
-                <Row
-                    title="使用 .gitignore / .ignore"
-                    description="应用项目中的分层忽略规则。"
-                    control={<Switch id="gitignore-toggle" label="使用 .gitignore / .ignore" checked={useGitignore} onChange={onToggleUseGitignore} />}
+                <SettingsRow
+                    label="应用 .gitignore"
+                    description="复用项目已有的忽略配置。"
+                    control={<Toggle id="gitignore-toggle" label="应用 .gitignore" checked={useGitignore} onChange={onToggleUseGitignore} />}
                 />
-                <Row
-                    title="包含空目录"
-                    description="在目录结构中保留没有文件的目录。"
-                    control={<Switch id="empty-directories-toggle" label="包含空目录" checked={includeEmptyDirectories} onChange={onToggleIncludeEmptyDirectories} />}
+                <SettingsRow
+                    label="包含空目录"
+                    description="导出目录树时保留空目录节点。"
+                    control={<Toggle id="empty-directories-toggle" label="包含空目录" checked={includeEmptyDirectories} onChange={onToggleIncludeEmptyDirectories} />}
                 />
-            </SectionBlock>
+            </SectionGroup>
 
-            <SectionBlock title="附加说明" description="给导出内容补充背景。">
-                <Row title="Header 文本" description="为空时不输出；适合放项目背景和任务说明。">
-                    <div className="mt-3">
-                        <Field
-                            id="export-header-text"
-                            multiline
-                            rows={3}
-                            value={exportHeaderText}
-                            onChange={onSetExportHeaderText}
-                            placeholder="例如：请先理解项目结构，再指出风险最大的模块。"
-                        />
-                    </div>
-                </Row>
-                <Row title="Instruction 文本" description="为空时不输出；适合告诉 AI 你想要的结果。">
-                    <div className="mt-3">
-                        <Field
-                            id="export-instruction-text"
-                            multiline
-                            rows={3}
-                            value={exportInstructionText}
-                            onChange={onSetExportInstructionText}
-                            placeholder="例如：先列 P0 / P1 问题，再给分步骤修改建议。"
-                        />
-                    </div>
-                </Row>
-            </SectionBlock>
+            <SectionGroup title="附加说明" icon="fa-pen-ruler">
+                <SettingsRow label="Header 文本" description="适合放项目背景、任务上下文或外部限制。" stacked>
+                    <Field
+                        id="export-header-text"
+                        multiline
+                        rows={3}
+                        value={exportHeaderText}
+                        onChange={onSetExportHeaderText}
+                        placeholder="例如：请先理解项目结构，再指出最值得优先重构的模块。"
+                    />
+                </SettingsRow>
+                <SettingsRow label="Instruction 文本" description="适合告诉 AI 希望得到的输出形式。" stacked>
+                    <Field
+                        id="export-instruction-text"
+                        multiline
+                        rows={3}
+                        value={exportInstructionText}
+                        onChange={onSetExportInstructionText}
+                        placeholder="例如：先列 P0 / P1 问题，再给可执行的修改方案。"
+                    />
+                </SettingsRow>
+            </SectionGroup>
         </div>
     );
 
     const renderAboutSection = () => (
-        <div className="space-y-3">
-            <SectionBlock title="项目与版本" description="项目状态和仓库入口。">
-                <Row title="版本" description="当前应用版本。">
-                    <div className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                        v{APP_VERSION}
-                    </div>
-                </Row>
-                <Row title="GitHub 仓库" description="打开项目主页和 issue / PR 页面。">
-                    <div className="mt-3">
-                        <a
-                            href="https://github.com/yeahhe365/Structure-Insight"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-full border border-light-border bg-white px-3 py-1.5 text-xs font-semibold text-light-text transition hover:border-primary/25 hover:text-primary dark:border-dark-border dark:bg-slate-900 dark:text-dark-text dark:hover:border-primary/25 dark:hover:text-primary"
-                        >
-                            <i className="fa-solid fa-code-branch"></i>
-                            打开 GitHub
-                        </a>
-                    </div>
-                </Row>
-                <Row title="GitHub Stars" description="实时读取仓库星标数。">
-                    <div className="mt-3 text-xs font-semibold text-light-text dark:text-dark-text">
-                        {starsLoading ? '正在获取最新星标数…' : stars !== null ? `${stars.toLocaleString()} stars` : '暂时无法获取'}
-                    </div>
-                </Row>
-            </SectionBlock>
-
-            <SectionBlock title="设计说明" description="这版设置页更接近 ChatGPT 的紧凑设置模型。">
-                <div className="space-y-2 px-4 py-3 text-sm text-light-text dark:text-dark-text">
-                    {[
-                        '左侧是窄导航，只保留分区入口。',
-                        '右侧改成扁平分组列表，不再使用展示型大卡片。',
-                        '设置项统一成标题、说明、控件三段式行布局。',
-                        '整体收紧边距、圆角和视觉装饰，优先保证扫描效率。',
-                    ].map(item => (
-                        <div key={item} className="flex items-start gap-2.5">
-                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary"></span>
-                            <span className="leading-6">{item}</span>
-                        </div>
-                    ))}
+        <div className="flex min-h-full flex-col items-center px-4 py-3 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="relative group">
+                <div className="absolute -inset-4 rounded-[32px] bg-gradient-to-r from-primary/20 to-cyan-500/20 blur-xl opacity-80 transition duration-500" />
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-primary to-cyan-500 text-white shadow-2xl shadow-primary/20">
+                    <i className="fa-solid fa-folder-tree text-4xl" />
                 </div>
-            </SectionBlock>
+            </div>
+
+            <div className="mt-5 max-w-xl space-y-4">
+                <h3 className="text-[1.9rem] font-bold tracking-tight text-light-text dark:text-dark-text">Structure Insight</h3>
+
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-light-border bg-light-panel px-4 py-2 shadow-sm dark:border-dark-border dark:bg-slate-900">
+                        <span className="font-mono text-sm font-bold text-light-text dark:text-dark-text">v{APP_VERSION}</span>
+                        <span className="h-3.5 w-px bg-light-border dark:bg-dark-border" />
+                        <span className="inline-flex items-center gap-2 text-xs font-medium text-light-subtle-text dark:text-dark-subtle-text">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                            {starStatusText}
+                        </span>
+                    </div>
+                </div>
+
+                <p className="text-sm leading-6 text-light-subtle-text dark:text-dark-subtle-text">
+                    面向代码结构理解、项目导出与目录探索的工作台。这个设置页现在按 All-Model-Chat 的产品化设置面板风格重做，
+                    更强调侧边导航、内容扫描效率和一致的控件层级。
+                </p>
+            </div>
+
+            <div className="mt-5 flex w-full max-w-md flex-col items-stretch justify-center gap-2.5 sm:flex-row">
+                <a
+                    href="https://github.com/yeahhe365/Structure-Insight"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                >
+                    <i className="fa-solid fa-code-branch text-sm" />
+                    <span>查看 GitHub</span>
+                </a>
+                <a
+                    href="https://github.com/yeahhe365/Structure-Insight/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-light-border bg-light-panel px-5 py-2.5 text-sm font-medium text-light-text shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary dark:border-dark-border dark:bg-slate-900 dark:text-dark-text dark:hover:border-primary/30 dark:hover:text-primary"
+                >
+                    <i className="fa-solid fa-bug text-sm" />
+                    <span>反馈问题</span>
+                </a>
+            </div>
         </div>
     );
 
@@ -552,60 +633,63 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
     return (
         <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-2 backdrop-blur-sm sm:p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
         >
             <motion.div
-                className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] border border-black/5 bg-light-panel shadow-2xl shadow-slate-900/12 dark:border-white/10 dark:bg-slate-950"
-                onClick={(e) => e.stopPropagation()}
+                className="w-full h-[100dvh] sm:h-[85vh] sm:w-[90vw] max-w-6xl overflow-hidden bg-light-panel shadow-2xl transition-all sm:rounded-xl dark:bg-slate-950 md:flex md:flex-row"
+                onClick={(event) => event.stopPropagation()}
                 initial={{ scale: 0.98, opacity: 0, y: 8 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.98, opacity: 0, y: 8 }}
                 transition={{ duration: 0.16, ease: 'easeOut' }}
             >
-                <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 dark:border-white/5 sm:px-5">
-                    <div className="min-w-0">
-                        <h3 className="text-base font-semibold text-light-text dark:text-dark-text">设置</h3>
+                <aside className="flex w-full flex-shrink-0 flex-col border-b border-light-border bg-light-header dark:border-dark-border dark:bg-slate-900 md:w-64 md:border-b-0 md:border-r">
+                    <div className="flex items-center justify-between px-4 py-3 md:px-5 md:py-5">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            aria-label="关闭设置"
+                            className="flex h-9 w-9 items-center justify-center rounded-md text-light-subtle-text transition hover:bg-light-hover hover:text-light-text focus:outline-none focus:ring-2 focus:ring-primary/50 dark:text-dark-subtle-text dark:hover:bg-slate-800 dark:hover:text-dark-text"
+                        >
+                            <i className="fa-solid fa-times" />
+                        </button>
+                        <span className="font-semibold text-light-text dark:text-dark-text md:hidden">设置</span>
+                        <div className="w-9 md:hidden" />
                     </div>
-                    <button
-                        type="button"
-                        title="关闭设置"
-                        onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-full border border-black/5 bg-white text-light-subtle-text transition hover:text-light-text dark:border-white/10 dark:bg-slate-900 dark:text-dark-subtle-text dark:hover:text-dark-text"
+
+                    <nav
+                        role="tablist"
+                        aria-label="设置导航"
+                        className="flex flex-1 gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:px-3 md:pb-3"
                     >
-                        <i className="fa-solid fa-times"></i>
-                    </button>
-                </div>
+                        {SETTINGS_SECTIONS.map(section => (
+                            <SidebarTabButton key={section.id} section={section} />
+                        ))}
+                    </nav>
+                </aside>
 
-                <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)]">
-                    <aside className="border-b border-black/5 bg-slate-50/70 px-3 py-3 dark:border-white/5 dark:bg-slate-950 lg:border-b-0 lg:border-r dark:lg:bg-slate-950">
-                        <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">
-                            菜单
-                        </div>
-                        <div role="tablist" aria-label="设置导航" className="space-y-1">
-                            {SETTINGS_SECTIONS.map(section => (
-                                <TabButton key={section.id} section={section} />
-                            ))}
-                        </div>
-                    </aside>
+                <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-light-bg dark:bg-slate-950">
+                    <header className="hidden flex-shrink-0 items-center px-8 py-6 md:flex">
+                        <h2 className="text-2xl font-bold tracking-tight text-light-text dark:text-dark-text">
+                            {currentSection.title}
+                        </h2>
+                    </header>
 
-                    <main className="min-h-0 overflow-y-auto bg-light-bg/70 px-3 py-3 no-scrollbar dark:bg-slate-950/80 sm:px-4 sm:py-4">
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 no-scrollbar">
                         <section
                             id={panelId}
                             role="tabpanel"
                             aria-labelledby={panelLabelId}
-                            className="space-y-3"
+                            className="space-y-4"
                         >
-                            <div className="px-1 pb-1">
-                                <h2 className="text-2xl font-semibold tracking-tight text-light-text dark:text-dark-text">{currentSection.title}</h2>
-                            </div>
                             {renderSectionContent()}
                         </section>
-                    </main>
-                </div>
+                    </div>
+                </main>
             </motion.div>
         </motion.div>
     );

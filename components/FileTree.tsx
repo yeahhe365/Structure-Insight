@@ -14,7 +14,6 @@ interface FileTreeProps {
   onToggleExclude: (path: string) => void;
   onDirDoubleClick?: () => void;
   selectedFilePath: string | null;
-  showCharCount: boolean;
 }
 
 function countFiles(node: FileNode): number {
@@ -33,10 +32,6 @@ function getRowStatus(node: FileNode): { statusClass: string; title: string; dis
   let statusClass = node.status === 'processed' || !node.status ? '' : 'cursor-default';
   let title = node.path;
   let displayName = node.name;
-
-  if (!node.isDirectory && (node.status === 'processed' || !node.status) && typeof node.lines === 'number' && typeof node.chars === 'number') {
-    title = `${node.path}\n${node.lines} 行 · ${node.chars} 字符`;
-  }
 
   if (node.status === 'skipped') {
     statusClass += ' opacity-60';
@@ -61,8 +56,7 @@ const FileTreeRow: React.FC<{
   onToggleExclude: (path: string) => void;
   onDirDoubleClick?: () => void;
   onToggleExpand: (path: string) => void;
-  showCharCount: boolean;
-}> = React.memo(({ row, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, onToggleExpand, showCharCount }) => {
+}> = React.memo(({ row, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, onToggleExpand }) => {
   const { node, level, isOpen, isSelected, isFocused } = row;
   const { statusClass, title, displayName } = getRowStatus(node);
 
@@ -134,17 +128,6 @@ const FileTreeRow: React.FC<{
               {countFiles(node)}
             </span>
           )}
-
-          {!node.isDirectory && node.status === 'processed' && (
-            <div className={`flex items-center space-x-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-2 transition-opacity ${showCharCount ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              {typeof node.chars === 'number' && <span title={`${node.chars} 个字符`}>{node.chars}</span>}
-              {typeof node.lines === 'number' && (
-                <span className="border-l border-light-border dark:border-dark-border pl-2" title={`${node.lines} 行`}>
-                  {node.lines}
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {!node.isDirectory && (
@@ -194,7 +177,6 @@ const FileTree: React.FC<FileTreeProps> = ({
   onToggleExclude,
   onDirDoubleClick,
   selectedFilePath,
-  showCharCount,
 }) => {
   const [expandedPaths, setExpandedPaths] = React.useState<Set<string>>(() => collectExpandedDirectoryPaths(nodes));
   const [focusedPath, setFocusedPath] = React.useState<string | null>(null);
@@ -345,14 +327,13 @@ const FileTree: React.FC<FileTreeProps> = ({
               row={row}
               onFileSelect={onFileSelect}
               onDeleteFile={onDeleteFile}
-              onCopyPath={onCopyPath}
-              onToggleExclude={onToggleExclude}
-              onDirDoubleClick={onDirDoubleClick}
-              onToggleExpand={handleToggleExpand}
-              showCharCount={showCharCount}
-            />
-          )}
-        />
+            onCopyPath={onCopyPath}
+            onToggleExclude={onToggleExclude}
+            onDirDoubleClick={onDirDoubleClick}
+            onToggleExpand={handleToggleExpand}
+          />
+        )}
+      />
       </div>
     </div>
   );

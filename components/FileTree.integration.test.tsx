@@ -60,7 +60,6 @@ describe('FileTree with real Virtuoso', () => {
             onCopyPath={vi.fn()}
             onToggleExclude={vi.fn()}
             selectedFilePath={null}
-            showCharCount={false}
           />
         </VirtuosoMockContext.Provider>
       </div>

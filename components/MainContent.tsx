@@ -157,7 +157,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                             onToggleExclude={handlers.handleToggleExclude}
                                             onDirDoubleClick={handlers.handleDirDoubleClick}
                                             selectedFilePath={state.selectedFilePath}
-                                            showCharCount={state.showCharCount}
                                         />
                                     </React.Suspense>
                                 </div>
@@ -244,12 +243,11 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                                 scrollContainerRef={fileTreeScrollRef}
                                                 onFileSelect={handlers.handleFileTreeSelect}
                                                 onDeleteFile={handlers.handleDeleteFile}
-                                                onCopyPath={handlers.handleCopyPath}
-                                                onToggleExclude={handlers.handleToggleExclude}
-                                                onDirDoubleClick={handlers.handleDirDoubleClick}
-                                                selectedFilePath={state.selectedFilePath}
-                                                showCharCount={state.showCharCount}
-                                            />
+                                            onCopyPath={handlers.handleCopyPath}
+                                            onToggleExclude={handlers.handleToggleExclude}
+                                            onDirDoubleClick={handlers.handleDirDoubleClick}
+                                            selectedFilePath={state.selectedFilePath}
+                                        />
                                         </React.Suspense>
                                     </div>
                                 </>

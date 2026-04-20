@@ -4,7 +4,6 @@ import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { useSearch } from './useSearch';
-import { buildASCIITree } from '../services/treeFormatter';
 import { buildExportOutput, type ExportFormat } from '../services/exportBuilder';
 import { splitOutputText } from '../services/exportSplit';
 import { ConfirmationState, FileContent, RecentProject } from '../types';
@@ -33,7 +32,6 @@ export const useAppLogic = (
     const [panelWidth, setPanelWidth] = usePersistentState('panelWidth', 30);
     const [extractContent, setExtractContent] = usePersistentState('extractContent', true);
     const [fontSize, setFontSize] = usePersistentState('fontSize', 14);
-    const [showCharCount, setShowCharCount] = usePersistentState('showCharCount', false);
     const [wordWrap, setWordWrap] = usePersistentState('wordWrap', false);
     const [maxCharsThreshold, setMaxCharsThreshold] = usePersistentState('maxCharsThreshold', 0);
     const [includeFileSummary, setIncludeFileSummary] = usePersistentState('includeFileSummary', true);
@@ -109,7 +107,7 @@ export const useAppLogic = (
         handleToggleMarkdownPreview, clearInteractionState, handleCopyPath, handleToggleExclude,
     } = useInteraction({
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
-        selectedFilePath, setSelectedFilePath, setActiveView, showCharCount,
+        selectedFilePath, setSelectedFilePath, setActiveView,
         onDeleteConfirmed: (path: string) => {
             setOpenFiles(prev => prev.filter(openPath => openPath !== path));
             if (path === selectedFilePath) {
@@ -172,15 +170,6 @@ export const useAppLogic = (
         setActiveView('code');
         setMobileView('editor');
     }, [isMobile, setActiveView, setMobileView]);
-
-    React.useEffect(() => {
-        if (processedData) {
-            const newStructure = buildASCIITree(processedData.treeData, processedData.rootName, showCharCount);
-            if (newStructure !== processedData.structureString) {
-                setProcessedData(prev => (prev ? ({ ...prev, structureString: newStructure }) : null));
-            }
-        }
-    }, [showCharCount, processedData?.treeData, processedData?.rootName]);
 
     const selectedFile = React.useMemo<FileContent | null>(() => {
         if (!selectedFilePath || !processedData?.fileContents) return null;
@@ -408,7 +397,7 @@ export const useAppLogic = (
         state: {
             processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, toastType,
             editingPath, markdownPreviewPaths, confirmation,
-            isDark, panelWidth, extractContent, fontSize, showCharCount, maxCharsThreshold, wordWrap,
+            isDark, panelWidth, extractContent, fontSize, maxCharsThreshold, wordWrap,
             includeFileSummary, includeDirectoryStructure,
             exportHeaderText, exportInstructionText,
             exportFormat, includePatterns, ignorePatterns, useDefaultPatterns, useGitignore,
@@ -457,7 +446,6 @@ export const useAppLogic = (
             setExtractContent,
             setFontSize,
             handleClearCache,
-            setShowCharCount,
             setMaxCharsThreshold,
             setWordWrap,
             setIncludeFileSummary,

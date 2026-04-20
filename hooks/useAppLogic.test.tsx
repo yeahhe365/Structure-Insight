@@ -201,6 +201,8 @@ describe('useAppLogic', () => {
         expect(result.current.state.exportSplitMaxChars).toBe(0);
         expect(result.current.state.exportHeaderText).toBe('');
         expect(result.current.state.exportInstructionText).toBe('');
+        expect('showCharCount' in result.current.state).toBe(false);
+        expect('setShowCharCount' in result.current.settings).toBe(false);
     });
 
     it('migrates the legacy large-file threshold default to disabled', async () => {

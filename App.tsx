@@ -129,8 +129,6 @@ const App: React.FC = () => {
                         fontSize={state.fontSize}
                         onSetFontSize={settings.setFontSize}
                         onClearCache={settings.handleClearCache}
-                        showCharCount={state.showCharCount}
-                        onToggleShowCharCount={() => settings.setShowCharCount(!state.showCharCount)}
                         maxCharsThreshold={state.maxCharsThreshold}
                         onSetMaxCharsThreshold={settings.setMaxCharsThreshold}
                         wordWrap={state.wordWrap}

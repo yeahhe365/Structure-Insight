@@ -112,7 +112,6 @@ function createLogic(processedData: ProcessedFiles) {
       progressMessage: '',
       lastProcessedFiles: [new File(['demo'], processedData.fileContents[0].path.split('/').pop() ?? 'demo.txt')],
       selectedFilePath: null,
-      showCharCount: false,
       openFiles: [],
       selectedFile: null,
       editingPath: null,
