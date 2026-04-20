@@ -105,33 +105,31 @@ const FileTreeRow: React.FC<{
       className="list-none"
     >
       <div
-        className={`group flex flex-col py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass} ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''} ${isFocused ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
+        className={`group relative flex min-h-9 items-center py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass} ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''} ${isFocused ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
         onClick={handleSelect}
         onDoubleClick={handleDoubleClick}
         title={title}
         data-path={node.path}
       >
-        <div className="flex items-center space-x-2 w-full">
-          {node.isDirectory ? (
-            <span className="w-4 text-center shrink-0" onClick={(event) => { event.stopPropagation(); handleToggle(); }}>
-              <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 text-light-subtle-text dark:text-dark-subtle-text ${isOpen ? 'rotate-0' : '-rotate-90'}`}></i>
-            </span>
-          ) : (
-            <span className="w-4 shrink-0"></span>
-          )}
+        {node.isDirectory ? (
+          <span className="w-4 text-center shrink-0" onClick={(event) => { event.stopPropagation(); handleToggle(); }}>
+            <i className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 text-light-subtle-text dark:text-dark-subtle-text ${isOpen ? 'rotate-0' : '-rotate-90'}`}></i>
+          </span>
+        ) : (
+          <span className="w-4 shrink-0"></span>
+        )}
 
-          <span className="shrink-0">{iconElement}</span>
-          <span className={`truncate text-sm flex-1 ${node.excluded ? 'line-through' : ''}`}>{displayName}</span>
+        <span className="shrink-0 ml-2">{iconElement}</span>
+        <span className={`truncate text-sm flex-1 min-w-0 ml-2 ${node.excluded ? 'line-through' : ''}`}>{displayName}</span>
 
-          {node.isDirectory && (
-            <span className="text-[10px] text-light-subtle-text/60 dark:text-dark-subtle-text/60 shrink-0 ml-1 tabular-nums">
-              {countFiles(node)}
-            </span>
-          )}
-        </div>
+        {node.isDirectory && (
+          <span className="text-[10px] text-light-subtle-text/60 dark:text-dark-subtle-text/60 shrink-0 ml-1 tabular-nums">
+            {countFiles(node)}
+          </span>
+        )}
 
         {!node.isDirectory && (
-          <div className="hidden group-hover:flex items-center space-x-2 pl-9 mt-1.5 pb-0.5 animate-enter origin-top w-full overflow-x-auto no-scrollbar">
+          <div className="absolute right-2 top-1/2 z-10 flex -translate-y-1/2 items-center space-x-2 rounded-md bg-light-panel/95 px-1 py-0.5 opacity-0 shadow-sm backdrop-blur-sm pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto dark:bg-dark-panel/95">
             <button
               onClick={(event) => { event.stopPropagation(); onCopyPath(node.path); }}
               className="flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text hover:text-primary hover:border-primary transition-colors shrink-0"

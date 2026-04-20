@@ -216,4 +216,40 @@ describe('FileTree virtualization', () => {
     expect(screen.queryByText('42')).toBeNull();
     expect(screen.getByText('index.ts').closest('[title]')?.getAttribute('title')).toBe('src/index.ts');
   });
+
+  it('renders file action buttons in an overlay that does not change row layout', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    const pathButton = screen.getByRole('button', { name: '路径' });
+    const actionContainer = pathButton.parentElement;
+
+    expect(actionContainer).not.toBeNull();
+    expect(actionContainer?.className).toContain('absolute');
+    expect(actionContainer?.className).toContain('opacity-0');
+    expect(actionContainer?.className).not.toContain('group-hover:flex');
+  });
 });
