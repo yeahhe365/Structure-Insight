@@ -7,6 +7,8 @@ export interface SecurityFinding {
   severity: SecurityFindingSeverity;
   message: string;
   preview: string;
+  line: number;
+  column: number;
 }
 
 export interface FileStats {
@@ -83,5 +85,5 @@ export interface ConfirmationState {
     isOpen: boolean;
     title: string;
     message: string;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
 }

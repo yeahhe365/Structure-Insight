@@ -4,9 +4,10 @@ import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { useSearch } from './useSearch';
-import { buildExportOutput, type ExportFormat } from '../services/exportBuilder';
+import { buildExportArtifact, type ExportFormat } from '../services/exportBuilder';
 import { splitOutputText } from '../services/exportSplit';
 import { ConfirmationState, FileContent, RecentProject } from '../types';
+import { clearPersistedAppData } from '../services/appStorage';
 
 const LEGACY_MAX_CHARS_THRESHOLD_DEFAULT = 1000000;
 const MAX_CHARS_THRESHOLD_MIGRATION_KEY = 'migration:maxCharsThresholdDefaultDisabled:v1';
@@ -17,8 +18,9 @@ export const useAppLogic = (
 ) => {
     const [isDragging, setIsDragging] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
-    const isLoadingRef = React.useRef(false);
-    React.useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+    const [isExporting, setIsExporting] = React.useState(false);
+    const isBusyRef = React.useRef(false);
+    React.useEffect(() => { isBusyRef.current = isLoading || isExporting; }, [isLoading, isExporting]);
     const [progressMessage, setProgressMessage] = React.useState('');
     const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
     const [isFileRankOpen, setIsFileRankOpen] = React.useState(false);
@@ -76,10 +78,14 @@ export const useAppLogic = (
     const [recentProjects, setRecentProjects] = usePersistentState<RecentProject[]>('recentProjects', []);
 
     const rememberRecentProject = React.useCallback((project: RecentProject) => {
+        let evictedProjectIds: string[] = [];
         setRecentProjects(prev => {
             const filtered = prev.filter(p => p.id !== project.id);
-            return [{ ...project }, ...filtered].slice(0, 5);
+            const next = [{ ...project }, ...filtered];
+            evictedProjectIds = next.slice(5).map(item => item.id);
+            return next.slice(0, 5);
         });
+        return evictedProjectIds;
     }, [setRecentProjects]);
 
     const forgetRecentProject = React.useCallback((projectId: string) => {
@@ -95,8 +101,9 @@ export const useAppLogic = (
         processedData, setProcessedData, lastProcessedFiles, setLastProcessedFiles, handleProcessing,
         lastEmptyDirectoryPaths, handleFileSelect, handleRecentProjectSelect, handleDrop, handleRefresh, handleCancel, abortControllerRef,
     } = useFileProcessing({
-        extractContent, maxCharsThreshold, setIsLoading, setProgressMessage,
-        setMobileView, handleShowToast, isMobile, setSelectedFilePath, setActiveView,
+        extractContent, maxCharsThreshold, useDefaultIgnorePatterns: useDefaultPatterns, useGitignorePatterns: useGitignore,
+        includePatterns, ignorePatterns, includeEmptyDirectories, setIsLoading, setProgressMessage,
+        setMobileView, handleShowToast, isMobile, setSelectedFilePath, setActiveView, recentProjects,
         onRememberProject: rememberRecentProject,
         onForgetProject: forgetRecentProject,
     });
@@ -176,10 +183,10 @@ export const useAppLogic = (
         return processedData.fileContents.find(f => f.path === selectedFilePath) || null;
     }, [selectedFilePath, processedData]);
 
-    const buildProjectContext = React.useCallback(async () => {
+    const buildProjectContext = React.useCallback(async (progressCallback: (message: string) => void) => {
         if (!processedData || !lastProcessedFiles) return null;
 
-        return await buildExportOutput({
+        return await buildExportArtifact({
             currentData: processedData,
             rawFiles: lastProcessedFiles,
             emptyDirectoryPaths: lastEmptyDirectoryPaths,
@@ -201,7 +208,7 @@ export const useAppLogic = (
             },
             extractContent,
             maxCharsThreshold,
-            progressCallback: () => {},
+            progressCallback,
         });
     }, [
         processedData,
@@ -243,6 +250,7 @@ export const useAppLogic = (
                 setProcessedData(null);
                 setLastProcessedFiles(null);
                 setIsLoading(false);
+                setIsExporting(false);
                 setProgressMessage('');
                 setIsSettingsOpen(false);
                 clearInteractionState();
@@ -270,62 +278,88 @@ export const useAppLogic = (
             isOpen: true,
             title: '清除缓存',
             message: '您确定要清除所有缓存的应用数据吗？此操作将重置所有设置。',
-            onConfirm: () => {
-                localStorage.clear();
+            onConfirm: async () => {
+                await clearPersistedAppData({
+                    localStorage: window.localStorage,
+                    indexedDB: window.indexedDB,
+                    caches: 'caches' in window ? window.caches : undefined,
+                    navigator: window.navigator,
+                });
                 window.location.reload();
             },
         });
     }, []);
 
     const handleCopyAll = React.useCallback(async () => {
-        const output = await buildProjectContext();
-        if (!output) return;
+        setIsExporting(true);
+        setProgressMessage('正在生成导出内容...');
 
-        navigator.clipboard.writeText(output).then(() => {
-            const warningCount = processedData?.analysisSummary?.securityFindingCount ?? 0;
+        try {
+            const artifact = await buildProjectContext(setProgressMessage);
+            if (!artifact) return;
+
+            await navigator.clipboard.writeText(artifact.output);
+            const warningCount = artifact.analysisSummary.securityFindingCount ?? 0;
             if (warningCount > 0) {
                 handleShowToast(`已复制内容，并检测到 ${warningCount} 条敏感信息提示。`, 'info');
                 return;
             }
             handleShowToast('已将所有内容复制到剪贴板！');
-        });
-    }, [buildProjectContext, handleShowToast, processedData?.analysisSummary?.securityFindingCount]);
+        } catch (error) {
+            console.error('Error copying packed output:', error);
+            handleShowToast('复制到剪贴板失败。', 'error');
+        } finally {
+            setIsExporting(false);
+            setTimeout(() => setProgressMessage(''), 1200);
+        }
+    }, [buildProjectContext, handleShowToast]);
 
     const handleSave = React.useCallback(async () => {
         if (!processedData) return;
-        const output = await buildProjectContext();
-        if (!output) return;
+        setIsExporting(true);
+        setProgressMessage('正在生成导出内容...');
 
-        const extensionMap: Record<ExportFormat, string> = {
-            plain: 'txt',
-            markdown: 'md',
-            xml: 'xml',
-            json: 'json',
-        };
-        const safeBaseName = (processedData.rootName || 'structure-insight').replace(/[\\/?<>:*|"']/g, '_');
-        const parts = splitOutputText(output, exportSplitMaxChars);
+        try {
+            const artifact = await buildProjectContext(setProgressMessage);
+            if (!artifact) return;
 
-        parts.forEach((part, index) => {
-            const blob = new Blob([part], { type: 'text/plain;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = parts.length === 1
-                ? `${safeBaseName}.${extensionMap[exportFormat]}`
-                : `${safeBaseName}.part${index + 1}.${extensionMap[exportFormat]}`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-        });
+            const extensionMap: Record<ExportFormat, string> = {
+                plain: 'txt',
+                markdown: 'md',
+                xml: 'xml',
+                json: 'json',
+            };
+            const safeBaseName = (processedData.rootName || 'structure-insight').replace(/[\\/?<>:*|"']/g, '_');
+            const parts = splitOutputText(artifact.output, exportSplitMaxChars);
 
-        const warningCount = processedData.analysisSummary?.securityFindingCount ?? 0;
-        if (parts.length > 1) {
-            handleShowToast(`导出文件已拆分保存，共 ${parts.length} 份。`, warningCount > 0 ? 'info' : 'success');
-            return;
+            parts.forEach((part, index) => {
+                const blob = new Blob([part], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = parts.length === 1
+                    ? `${safeBaseName}.${extensionMap[exportFormat]}`
+                    : `${safeBaseName}.part${index + 1}.${extensionMap[exportFormat]}`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+            });
+
+            const warningCount = artifact.analysisSummary.securityFindingCount ?? 0;
+            if (parts.length > 1) {
+                handleShowToast(`导出文件已拆分保存，共 ${parts.length} 份。`, warningCount > 0 ? 'info' : 'success');
+                return;
+            }
+            if (warningCount > 0) {
+                handleShowToast(`已保存导出文件，并检测到 ${warningCount} 条敏感信息提示。`, 'info');
+                return;
+            }
+            handleShowToast('导出文件已保存。');
+        } catch (error) {
+            console.error('Error saving packed output:', error);
+            handleShowToast('保存导出文件失败。', 'error');
+        } finally {
+            setIsExporting(false);
+            setTimeout(() => setProgressMessage(''), 1200);
         }
-        if (warningCount > 0) {
-            handleShowToast(`已保存导出文件，并检测到 ${warningCount} 条敏感信息提示。`, 'info');
-            return;
-        }
-        handleShowToast('导出文件已保存。');
     }, [processedData, buildProjectContext, exportFormat, exportSplitMaxChars, handleShowToast]);
 
     const handleMobileViewToggle = React.useCallback(() => {
@@ -395,7 +429,7 @@ export const useAppLogic = (
 
     return {
         state: {
-            processedData, isLoading, isDragging, progressMessage, isSettingsOpen, toastMessage, toastType,
+            processedData, isLoading, isExporting, isDragging, progressMessage, isSettingsOpen, toastMessage, toastType,
             editingPath, markdownPreviewPaths, confirmation,
             isDark, panelWidth, extractContent, fontSize, maxCharsThreshold, wordWrap,
             includeFileSummary, includeDirectoryStructure,
@@ -411,13 +445,13 @@ export const useAppLogic = (
         },
         handlers: {
             setIsDragging,
-            handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoadingRef.current); },
+            handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isBusyRef.current); },
             handleFileSelect,
             handleRecentProjectSelect,
             handleCopyAll,
             handleSave,
             handleReset,
-            handleRefresh: () => handleRefresh(handleProcessing),
+            handleRefresh,
             handleCancel,
             setIsSettingsOpen,
             setToastMessage,

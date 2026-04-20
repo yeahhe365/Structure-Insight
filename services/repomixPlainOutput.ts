@@ -3,7 +3,7 @@ import { compareTreeNodes } from './treeSort';
 
 const PLAIN_SEPARATOR = '='.repeat(16);
 const PLAIN_LONG_SEPARATOR = '='.repeat(64);
-const GENERATION_HEADER = 'This file is a merged representation of the entire codebase, combined into a single document by Repomix.';
+const GENERATION_HEADER = 'This file is a merged representation of the current codebase, prepared by Structure Insight.';
 const SUMMARY_PURPOSE = [
     "This file contains a packed representation of the entire repository's contents.",
     'It is designed to be easily consumable by AI systems for analysis, code review,',
@@ -31,7 +31,7 @@ const BASE_SUMMARY_USAGE_GUIDELINES = [
     '  the same level of security as you would the original repository.',
 ];
 const BASE_SUMMARY_NOTES = [
-    "- Some files may have been excluded based on .gitignore rules and Repomix's configuration",
+    "- Some files may have been excluded based on detected ignore files and Structure Insight's export settings",
     '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
 ];
 
@@ -80,7 +80,7 @@ function buildSummaryNotes(processedData: ProcessedFiles): string {
     const notes = [...BASE_SUMMARY_NOTES];
 
     if (metadata.usesGitignorePatterns) {
-        notes.push('- Files matching patterns in .gitignore are excluded');
+        notes.push('- Files matching patterns in .gitignore, .ignore, or .repomixignore are excluded');
     }
 
     if (metadata.usesDefaultIgnorePatterns) {

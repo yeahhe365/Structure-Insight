@@ -13,12 +13,13 @@ export interface HeaderProps {
   onShowStructure: () => void;
   hasContent: boolean;
   isLoading: boolean;
+  isCancelable?: boolean;
   activeView: 'structure' | 'code';
 }
 
 const Header: React.FC<HeaderProps> = ({ 
     onOpenFolder, onCopyAll, onSave, onReset, onCancel,
-    onSettings, onToggleSearch, onToggleFileRank, onShowStructure, hasContent, isLoading, activeView
+    onSettings, onToggleSearch, onToggleFileRank, onShowStructure, hasContent, isLoading, isCancelable = false, activeView
 }) => {
   const buttonClass = "flex shrink-0 items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-border dark:hover:bg-dark-border/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all";
   const iconClass = "text-lg";
@@ -64,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
           </>
         )}
 
-        {isLoading ? (
+        {isCancelable ? (
          <button onClick={onCancel} className={`${buttonClass} h-9 w-auto px-4 !text-red-500 hover:!bg-red-500/10`} title="取消 (Esc)" aria-label="取消">
              <i className={`fa-solid fa-ban ${iconClass} mr-2`}></i> 取消
          </button>

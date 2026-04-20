@@ -530,9 +530,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     control={<Toggle id="default-patterns-toggle" label="默认忽略规则" checked={useDefaultPatterns} onChange={onToggleUseDefaultPatterns} />}
                 />
                 <SettingsRow
-                    label="应用 .gitignore"
-                    description="复用项目已有的忽略配置。"
-                    control={<Toggle id="gitignore-toggle" label="应用 .gitignore" checked={useGitignore} onChange={onToggleUseGitignore} />}
+                    label="应用忽略文件"
+                    description="复用项目里的 `.gitignore`、`.ignore` 与 `.repomixignore` 规则。"
+                    control={<Toggle id="gitignore-toggle" label="应用忽略文件" checked={useGitignore} onChange={onToggleUseGitignore} />}
                 />
                 <SettingsRow
                     label="包含空目录"

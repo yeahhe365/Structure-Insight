@@ -5,7 +5,16 @@ export interface DroppedItemsResult {
     emptyDirectoryPaths: string[];
 }
 
-export async function processDroppedItems(items: DataTransferItemList, onProgress: (msg: string) => void, signal?: AbortSignal): Promise<DroppedItemsResult> {
+interface ProcessDroppedItemsOptions {
+    skipDefaultIgnoredDirectories?: boolean;
+}
+
+export async function processDroppedItems(
+    items: DataTransferItemList,
+    onProgress: (msg: string) => void,
+    signal?: AbortSignal,
+    options: ProcessDroppedItemsOptions = {}
+): Promise<DroppedItemsResult> {
     const allFiles: File[] = [];
     const emptyDirectoryPaths: string[] = [];
     const entries: FileSystemEntry[] = [];
@@ -42,7 +51,7 @@ export async function processDroppedItems(items: DataTransferItemList, onProgres
 
         if (entry.isDirectory) {
             const dirName = entry.name;
-            if (IGNORED_DIRS.has(dirName)) return { files: [], emptyDirectoryPaths: [] };
+            if (options.skipDefaultIgnoredDirectories !== false && IGNORED_DIRS.has(dirName)) return { files: [], emptyDirectoryPaths: [] };
 
             const dirReader = (entry as FileSystemDirectoryEntry).createReader();
             const allDirFiles: File[] = [];

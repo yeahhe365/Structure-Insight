@@ -45,3 +45,12 @@ export async function loadRecentProjectHandle(projectId: string): Promise<FileSy
 export async function deleteRecentProjectHandle(projectId: string): Promise<void> {
     await withStore('readwrite', store => store.delete(projectId));
 }
+
+export async function clearRecentProjectHandles(indexedDBLike: IDBFactory = indexedDB): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+        const request = indexedDBLike.deleteDatabase(DATABASE_NAME);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error ?? new Error('Failed to clear recent project handle store'));
+        request.onblocked = () => reject(new Error('Recent project handle store is blocked'));
+    });
+}

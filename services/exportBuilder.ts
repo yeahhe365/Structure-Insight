@@ -1,4 +1,4 @@
-import type { FileContent, FileNode, ProcessedFiles } from '../types';
+import type { AnalysisSummary, FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
 import { createFileProcessingTask } from './fileProcessingClient';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
@@ -68,6 +68,11 @@ const SUMMARY_USAGE_GUIDELINES = [
     '- Be aware that this file may contain sensitive information. Handle it with',
     '  the same level of security as you would the original repository.',
 ].join('\n');
+
+export interface ExportArtifact {
+    output: string;
+    analysisSummary: AnalysisSummary;
+}
 
 function parsePatternList(value: string): string[] {
     return value
@@ -269,12 +274,12 @@ function buildNotes(data: ProcessedFiles): string {
         sortsByGitChangeCount: false,
     };
     const notes = [
-        "- Some files may have been excluded based on .gitignore/.ignore rules and Repomix's configuration",
+        "- Some files may have been excluded based on detected ignore files and Structure Insight's export settings",
         '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
     ];
 
     if (metadata.usesGitignorePatterns) {
-        notes.push('- Files matching patterns in .gitignore or .ignore are excluded');
+        notes.push('- Files matching patterns in .gitignore, .ignore, or .repomixignore are excluded');
     }
 
     if (metadata.usesDefaultIgnorePatterns) {
@@ -300,7 +305,7 @@ function renderMarkdown(data: ProcessedFiles, options: ExportOptions): string {
 
     if (options.includeFileSummary) {
         sections.push(
-            `${SUMMARY_PURPOSE ? `${'This file is a merged representation of the entire codebase, combined into a single document by Repomix.'}\n\n` : ''}# File Summary\n\n## Purpose\n${SUMMARY_PURPOSE}\n\n## File Format\n${SUMMARY_FILE_FORMAT_PLAIN}\n5. Multiple file entries, each consisting of:\n  a. A header with the file path (## File: path/to/file)\n  b. The full contents of the file in a code block\n\n## Usage Guidelines\n${SUMMARY_USAGE_GUIDELINES}\n\n## Notes\n${buildNotes(data)}`
+            `${SUMMARY_PURPOSE ? `${'This file is a merged representation of the current codebase, prepared by Structure Insight.'}\n\n` : ''}# File Summary\n\n## Purpose\n${SUMMARY_PURPOSE}\n\n## File Format\n${SUMMARY_FILE_FORMAT_PLAIN}\n5. Multiple file entries, each consisting of:\n  a. A header with the file path (## File: path/to/file)\n  b. The full contents of the file in a code block\n\n## Usage Guidelines\n${SUMMARY_USAGE_GUIDELINES}\n\n## Notes\n${buildNotes(data)}`
         );
     }
 
@@ -388,7 +393,7 @@ function renderJson(data: ProcessedFiles, options: ExportOptions): string {
         {
             ...(options.includeFileSummary && {
                 fileSummary: {
-                    generationHeader: 'This file is a merged representation of the entire codebase, combined into a single document by Repomix.',
+                    generationHeader: 'This file is a merged representation of the current codebase, prepared by Structure Insight.',
                     purpose: SUMMARY_PURPOSE,
                     fileFormat: SUMMARY_FILE_FORMAT_JSON,
                     usageGuidelines: SUMMARY_USAGE_GUIDELINES,
@@ -427,7 +432,7 @@ function renderJson(data: ProcessedFiles, options: ExportOptions): string {
     );
 }
 
-export async function buildExportOutput(params: BuildExportOutputParams): Promise<string> {
+export async function buildExportArtifact(params: BuildExportOutputParams): Promise<ExportArtifact> {
     const includePatterns = parsePatternList(params.exportOptions.includePatterns);
     const ignorePatterns = parsePatternList(params.exportOptions.ignorePatterns);
 
@@ -455,16 +460,28 @@ export async function buildExportOutput(params: BuildExportOutputParams): Promis
     mergedData.analysisSummary = recomputed.analysisSummary;
     mergedData.securityFindings = recomputed.securityFindings;
 
-    switch (params.exportOptions.format) {
-        case 'plain':
-            return generateRepomixPlainOutput(mergedData, params.exportOptions);
-        case 'xml':
-            return renderXml(mergedData, params.exportOptions);
-        case 'markdown':
-            return renderMarkdown(mergedData, params.exportOptions);
-        case 'json':
-            return renderJson(mergedData, params.exportOptions);
-        default:
-            return generateRepomixPlainOutput(mergedData, params.exportOptions);
-    }
+    const output = (() => {
+        switch (params.exportOptions.format) {
+            case 'plain':
+                return generateRepomixPlainOutput(mergedData, params.exportOptions);
+            case 'xml':
+                return renderXml(mergedData, params.exportOptions);
+            case 'markdown':
+                return renderMarkdown(mergedData, params.exportOptions);
+            case 'json':
+                return renderJson(mergedData, params.exportOptions);
+            default:
+                return generateRepomixPlainOutput(mergedData, params.exportOptions);
+        }
+    })();
+
+    return {
+        output,
+        analysisSummary: recomputed.analysisSummary,
+    };
+}
+
+export async function buildExportOutput(params: BuildExportOutputParams): Promise<string> {
+    const artifact = await buildExportArtifact(params);
+    return artifact.output;
 }

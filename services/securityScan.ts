@@ -40,22 +40,42 @@ function buildPreview(match: string): string {
     return match.length > 80 ? `${match.slice(0, 77)}...` : match;
 }
 
+function getLineAndColumn(content: string, index: number): { line: number; column: number } {
+    const beforeMatch = content.slice(0, index);
+    const line = beforeMatch.split('\n').length;
+    const lastNewlineIndex = beforeMatch.lastIndexOf('\n');
+    const column = index - lastNewlineIndex;
+
+    return {
+        line,
+        column,
+    };
+}
+
 export function scanSensitiveContent(filePath: string, content: string): SecurityFinding[] {
     const findings: SecurityFinding[] = [];
 
     for (const rule of SECURITY_RULES) {
-        for (const match of content.matchAll(rule.pattern)) {
+        const regex = new RegExp(rule.pattern);
+        let match: RegExpExecArray | null = regex.exec(content);
+
+        while (match) {
+            const { line, column } = getLineAndColumn(content, match.index ?? 0);
             findings.push({
                 filePath,
                 ruleId: rule.ruleId,
                 severity: rule.severity,
                 message: rule.message,
                 preview: buildPreview(match[0]),
+                line,
+                column,
             });
 
             if (findings.length >= MAX_FINDINGS_PER_FILE) {
                 return findings;
             }
+
+            match = regex.exec(content);
         }
     }
 

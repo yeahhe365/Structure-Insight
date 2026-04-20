@@ -1,6 +1,10 @@
 import type { DroppedItemsResult } from './droppedItems';
 import { IGNORED_DIRS } from './constants';
 
+interface ReadDirectoryHandleOptions {
+    skipDefaultIgnoredDirectories?: boolean;
+}
+
 function attachRelativePath(file: File, relativePath: string): File {
     Object.defineProperty(file, 'webkitRelativePath', {
         configurable: true,
@@ -13,19 +17,20 @@ async function readDirectory(
     handle: FileSystemDirectoryHandle,
     relativePath: string,
     files: File[],
-    emptyDirectoryPaths: string[]
+    emptyDirectoryPaths: string[],
+    options: ReadDirectoryHandleOptions
 ): Promise<boolean> {
     let sawAnySupportedEntries = false;
 
     for await (const entry of handle.values()) {
         if (entry.kind === 'directory') {
             const directoryEntry = entry as FileSystemDirectoryHandle;
-            if (IGNORED_DIRS.has(directoryEntry.name)) {
+            if (options.skipDefaultIgnoredDirectories !== false && IGNORED_DIRS.has(directoryEntry.name)) {
                 continue;
             }
 
             sawAnySupportedEntries = true;
-            await readDirectory(directoryEntry, `${relativePath}/${directoryEntry.name}`, files, emptyDirectoryPaths);
+            await readDirectory(directoryEntry, `${relativePath}/${directoryEntry.name}`, files, emptyDirectoryPaths, options);
             continue;
         }
 
@@ -41,11 +46,14 @@ async function readDirectory(
     return sawAnySupportedEntries;
 }
 
-export async function readDirectoryHandle(handle: FileSystemDirectoryHandle): Promise<DroppedItemsResult> {
+export async function readDirectoryHandle(
+    handle: FileSystemDirectoryHandle,
+    options: ReadDirectoryHandleOptions = {}
+): Promise<DroppedItemsResult> {
     const files: File[] = [];
     const emptyDirectoryPaths: string[] = [];
 
-    await readDirectory(handle, handle.name, files, emptyDirectoryPaths);
+    await readDirectory(handle, handle.name, files, emptyDirectoryPaths, options);
 
     return {
         files,

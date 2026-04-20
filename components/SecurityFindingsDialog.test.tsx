@@ -20,6 +20,8 @@ describe('SecurityFindingsDialog', () => {
                         severity: 'high',
                         message: 'Potential OpenAI API key detected.',
                         preview: 'sk-proj-abc123',
+                        line: 1,
+                        column: 17,
                     },
                     {
                         filePath: 'src/config.ts',
@@ -27,6 +29,8 @@ describe('SecurityFindingsDialog', () => {
                         severity: 'medium',
                         message: 'Potential inline secret assignment detected.',
                         preview: 'password = "secret"',
+                        line: 12,
+                        column: 7,
                     },
                 ]}
             />
@@ -36,6 +40,7 @@ describe('SecurityFindingsDialog', () => {
         expect(screen.getByText('src/.env')).toBeTruthy();
         expect(screen.getByText('Potential OpenAI API key detected.')).toBeTruthy();
         expect(screen.getByText('password = "secret"')).toBeTruthy();
+        expect(screen.getByText('L12:C7')).toBeTruthy();
     });
 
     it('closes when the close button is pressed', () => {

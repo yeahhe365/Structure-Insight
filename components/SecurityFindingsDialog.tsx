@@ -79,8 +79,13 @@ const SecurityFindingsDialog: React.FC<SecurityFindingsDialogProps> = ({ isOpen,
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
-                                        <div className="font-medium text-light-text dark:text-dark-text break-all">
-                                            {finding.filePath}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <div className="font-medium text-light-text dark:text-dark-text break-all">
+                                                {finding.filePath}
+                                            </div>
+                                            <span className="rounded-full bg-light-border px-2 py-0.5 font-mono text-[11px] text-light-subtle-text dark:bg-dark-border dark:text-dark-subtle-text">
+                                                {`L${finding.line}:C${finding.column}`}
+                                            </span>
                                         </div>
                                         <div className="text-sm text-light-subtle-text dark:text-dark-subtle-text mt-1">
                                             {finding.message}

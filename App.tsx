@@ -44,7 +44,7 @@ const App: React.FC = () => {
             aria-label="Structure Insight 代码分析工具"
         >
             {/* Loading progress bar */}
-            {state.isLoading && (
+            {(state.isLoading || state.isExporting) && (
                 <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-light-border dark:bg-dark-border overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
                 </div>
@@ -60,7 +60,8 @@ const App: React.FC = () => {
                 onToggleFileRank={() => handlers.setIsFileRankOpen(true)}
                 onShowStructure={() => handlers.setActiveView('structure')}
                 hasContent={!!state.processedData} 
-                isLoading={state.isLoading}
+                isLoading={state.isLoading || state.isExporting}
+                isCancelable={state.isLoading}
                 activeView={state.activeView}
             />
             

@@ -56,7 +56,7 @@ const PROJECT_DATA: ProcessedFiles = {
 };
 
 const EXPECTED_DEFAULT_OUTPUT = [
-    'This file is a merged representation of the entire codebase, combined into a single document by Repomix.',
+    'This file is a merged representation of the current codebase, prepared by Structure Insight.',
     '',
     '================================================================',
     'File Summary',
@@ -93,9 +93,9 @@ const EXPECTED_DEFAULT_OUTPUT = [
     '',
     'Notes:',
     '------',
-    '- Some files may have been excluded based on .gitignore rules and Repomix\'s configuration',
+    '- Some files may have been excluded based on detected ignore files and Structure Insight\'s export settings',
     '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
-    '- Files matching patterns in .gitignore are excluded',
+    '- Files matching patterns in .gitignore, .ignore, or .repomixignore are excluded',
     '- Files matching default ignore patterns are excluded',
     '',
     '================================================================',
@@ -122,7 +122,7 @@ const EXPECTED_DEFAULT_OUTPUT = [
 ].join('\n');
 
 const EXPECTED_OUTPUT_WITH_HEADER_AND_INSTRUCTION = [
-    'This file is a merged representation of the entire codebase, combined into a single document by Repomix.',
+    'This file is a merged representation of the current codebase, prepared by Structure Insight.',
     '',
     '================================================================',
     'File Summary',
@@ -161,9 +161,9 @@ const EXPECTED_OUTPUT_WITH_HEADER_AND_INSTRUCTION = [
     '',
     'Notes:',
     '------',
-    "- Some files may have been excluded based on .gitignore rules and Repomix's configuration",
+    "- Some files may have been excluded based on detected ignore files and Structure Insight's export settings",
     '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
-    '- Files matching patterns in .gitignore are excluded',
+    '- Files matching patterns in .gitignore, .ignore, or .repomixignore are excluded',
     '- Files matching default ignore patterns are excluded',
     '',
     '',
@@ -296,7 +296,7 @@ describe('generateRepomixPlainOutput', () => {
         );
 
         expect(output).toContain('- Files matching default ignore patterns are excluded');
-        expect(output).not.toContain('- Files matching patterns in .gitignore are excluded');
+        expect(output).not.toContain('- Files matching patterns in .gitignore, .ignore, or .repomixignore are excluded');
         expect(output).not.toContain('- Files are sorted by Git change count (files with more changes are at the bottom)');
     });
 
@@ -453,6 +453,8 @@ describe('generateRepomixPlainOutput', () => {
                         severity: 'high',
                         message: 'Potential OpenAI API key detected.',
                         preview: 'sk-proj-abc123',
+                        line: 1,
+                        column: 1,
                     },
                 ],
             },

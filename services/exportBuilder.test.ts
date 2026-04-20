@@ -116,17 +116,21 @@ describe('buildExportOutput', () => {
         expect(markdown).toContain('# File Summary');
         expect(markdown).toContain('# Directory Structure');
         expect(markdown).toContain('## File: src/app.ts');
+        expect(markdown).not.toContain('Repomix');
 
         expect(json).toContain('"fileSummary"');
         expect(json).toContain('"directoryStructure"');
         expect(json).toContain('"src/app.ts"');
+        expect(json).not.toContain('Repomix');
     });
 
     it('supports include, ignore, no-default-patterns, and no-gitignore export filters', async () => {
         const files = [
             createFile('demo/.gitignore', 'ignored.ts\n'),
+            createFile('demo/.repomixignore', 'ignored-by-repomix.ts\n'),
             createFile('demo/src/kept.ts', 'export const kept = true;\n'),
             createFile('demo/ignored.ts', 'export const ignored = true;\n'),
+            createFile('demo/ignored-by-repomix.ts', 'export const ignoredByRepomix = true;\n'),
             createFile('demo/node_modules/pkg/index.ts', 'export const pkg = true;\n'),
         ];
 
@@ -175,6 +179,7 @@ describe('buildExportOutput', () => {
 
         expect(filtered).toContain('src/kept.ts');
         expect(filtered).not.toContain('ignored.ts');
+        expect(filtered).not.toContain('ignored-by-repomix.ts');
         expect(filtered).not.toContain('node_modules/pkg/index.ts');
     });
 

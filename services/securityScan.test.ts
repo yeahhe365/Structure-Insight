@@ -20,12 +20,14 @@ describe('scanSensitiveContent', () => {
     it('detects risky inline password assignments', () => {
         const findings = scanSensitiveContent(
             'src/config.ts',
-            'const password = "super-secret-password";\n'
+            'const enabled = true;\nconst password = "super-secret-password";\n'
         );
 
         expect(findings).toHaveLength(1);
         expect(findings[0].ruleId).toBe('inline-secret');
         expect(findings[0].severity).toBe('medium');
+        expect(findings[0].line).toBe(2);
+        expect(findings[0].column).toBe(7);
     });
 
     it('returns an empty list for normal source content', () => {

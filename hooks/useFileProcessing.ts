@@ -9,6 +9,11 @@ import { RecentProject, ProcessedFiles } from '../types';
 interface FileProcessingProps {
     extractContent: boolean;
     maxCharsThreshold: number;
+    useDefaultIgnorePatterns: boolean;
+    useGitignorePatterns: boolean;
+    includePatterns: string;
+    ignorePatterns: string;
+    includeEmptyDirectories: boolean;
     setIsLoading: (loading: boolean) => void;
     setProgressMessage: (message: string) => void;
     setMobileView: (view: 'tree' | 'editor') => void;
@@ -16,13 +21,26 @@ interface FileProcessingProps {
     isMobile: boolean;
     setSelectedFilePath: (path: string | null) => void;
     setActiveView: (view: 'structure' | 'code') => void;
-    onRememberProject: (project: RecentProject) => void;
+    recentProjects: RecentProject[];
+    onRememberProject: (project: RecentProject) => string[] | void;
     onForgetProject: (projectId: string) => void;
+}
+
+function parsePatternList(value: string): string[] {
+    return value
+        .split(',')
+        .map(pattern => pattern.trim())
+        .filter(Boolean);
 }
 
 export const useFileProcessing = ({
     extractContent,
     maxCharsThreshold,
+    useDefaultIgnorePatterns,
+    useGitignorePatterns,
+    includePatterns,
+    ignorePatterns,
+    includeEmptyDirectories,
     setIsLoading,
     setProgressMessage,
     setMobileView,
@@ -30,6 +48,7 @@ export const useFileProcessing = ({
     isMobile,
     setSelectedFilePath,
     setActiveView,
+    recentProjects,
     onRememberProject,
     onForgetProject,
 }: FileProcessingProps) => {
@@ -37,9 +56,44 @@ export const useFileProcessing = ({
     const [lastProcessedFiles, setLastProcessedFiles] = React.useState<File[] | null>(null);
     const [lastEmptyDirectoryPaths, setLastEmptyDirectoryPaths] = React.useState<string[]>([]);
     const abortControllerRef = React.useRef<{ abort: () => void } | null>(null);
+    const currentDirectoryHandleRef = React.useRef<FileSystemDirectoryHandle | null>(null);
+
+    const applyRecentProjectRecord = React.useCallback(async (project: RecentProject, directoryHandle?: FileSystemDirectoryHandle) => {
+        const evictedProjectIds = onRememberProject(project) ?? [];
+        await Promise.all(evictedProjectIds.map(projectId => deleteRecentProjectHandle(projectId).catch(() => {})));
+
+        if (directoryHandle) {
+            await saveRecentProjectHandle(project.id, directoryHandle);
+        }
+    }, [onRememberProject]);
+
+    const resolveExistingProjectId = React.useCallback(async (directoryHandle: FileSystemDirectoryHandle) => {
+        if (typeof directoryHandle.isSameEntry !== 'function') {
+            return null;
+        }
+
+        for (const project of recentProjects) {
+            const storedHandle = await loadRecentProjectHandle(project.id);
+            if (!storedHandle) {
+                onForgetProject(project.id);
+                continue;
+            }
+
+            try {
+                if (await directoryHandle.isSameEntry(storedHandle)) {
+                    return project.id;
+                }
+            } catch {
+                await deleteRecentProjectHandle(project.id).catch(() => {});
+                onForgetProject(project.id);
+            }
+        }
+
+        return null;
+    }, [onForgetProject, recentProjects]);
 
     const handleProcessing = async (files: File[], isRefresh = false, emptyDirectoryPaths: string[] = []) => {
-        if (files.length === 0) {
+        if (files.length === 0 && emptyDirectoryPaths.length === 0) {
             return;
         }
         
@@ -56,9 +110,11 @@ export const useFileProcessing = ({
             extractContent,
             maxCharsThreshold,
             options: {
-                useDefaultIgnorePatterns: true,
-                useGitignorePatterns: true,
-                includeEmptyDirectories: true,
+                useDefaultIgnorePatterns,
+                useGitignorePatterns,
+                includePatterns: parsePatternList(includePatterns),
+                ignorePatterns: parsePatternList(ignorePatterns),
+                includeEmptyDirectories,
                 emptyDirectoryPaths,
             },
         });
@@ -94,15 +150,17 @@ export const useFileProcessing = ({
         if (window.showDirectoryPicker) {
             try {
                 const directoryHandle = await window.showDirectoryPicker({ mode: 'read' });
-                const projectId = crypto.randomUUID();
-                const dropped = await readDirectoryHandle(directoryHandle);
+                const projectId = (await resolveExistingProjectId(directoryHandle)) ?? crypto.randomUUID();
+                const dropped = await readDirectoryHandle(directoryHandle, {
+                    skipDefaultIgnoredDirectories: useDefaultIgnorePatterns,
+                });
 
-                await saveRecentProjectHandle(projectId, directoryHandle);
-                onRememberProject({
+                currentDirectoryHandleRef.current = directoryHandle;
+                await applyRecentProjectRecord({
                     id: projectId,
                     name: directoryHandle.name,
                     openedAt: Date.now(),
-                });
+                }, directoryHandle);
                 await handleProcessing(dropped.files, false, dropped.emptyDirectoryPaths);
                 return;
             } catch (error: any) {
@@ -120,6 +178,7 @@ export const useFileProcessing = ({
         input.multiple = true;
         input.onchange = (e: any) => {
             if (e.target.files) {
+                currentDirectoryHandleRef.current = null;
                 handleProcessing(Array.from(e.target.files));
             }
         };
@@ -145,11 +204,15 @@ export const useFileProcessing = ({
                 return;
             }
 
-            const dropped = await readDirectoryHandle(directoryHandle);
-            onRememberProject({
+            const dropped = await readDirectoryHandle(directoryHandle, {
+                skipDefaultIgnoredDirectories: useDefaultIgnorePatterns,
+            });
+            currentDirectoryHandleRef.current = directoryHandle;
+            await applyRecentProjectRecord({
                 ...project,
                 openedAt: Date.now(),
-            });
+            }, directoryHandle);
+
             await handleProcessing(dropped.files, false, dropped.emptyDirectoryPaths);
         } catch (error) {
             console.error('Error reopening recent project:', error);
@@ -171,7 +234,15 @@ export const useFileProcessing = ({
         };
 
         try {
-            const dropped = await processDroppedItems(e.dataTransfer.items, (msg) => setProgressMessage(msg), dropController.signal);
+            currentDirectoryHandleRef.current = null;
+            const dropped = await processDroppedItems(
+                e.dataTransfer.items,
+                (msg) => setProgressMessage(msg),
+                dropController.signal,
+                {
+                    skipDefaultIgnoredDirectories: useDefaultIgnorePatterns,
+                }
+            );
             await handleProcessing(dropped.files, false, dropped.emptyDirectoryPaths);
         } catch (error: any) {
             if (error.name !== 'AbortError') {
@@ -185,9 +256,17 @@ export const useFileProcessing = ({
         }
     };
 
-    const handleRefresh = (processFn: (files: File[], isRefresh: boolean, emptyDirectoryPaths?: string[]) => Promise<void>) => {
+    const handleRefresh = async () => {
+        if (currentDirectoryHandleRef.current) {
+            const dropped = await readDirectoryHandle(currentDirectoryHandleRef.current, {
+                skipDefaultIgnoredDirectories: useDefaultIgnorePatterns,
+            });
+            await handleProcessing(dropped.files, true, dropped.emptyDirectoryPaths);
+            return;
+        }
+
         if (lastProcessedFiles) {
-            processFn(lastProcessedFiles, true, lastEmptyDirectoryPaths);
+            await handleProcessing(lastProcessedFiles, true, lastEmptyDirectoryPaths);
         }
     };
 

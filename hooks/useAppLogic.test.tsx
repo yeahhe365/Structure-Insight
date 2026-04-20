@@ -46,12 +46,19 @@ const PROJECT_DATA: ProcessedFiles = {
 };
 
 const { buildExportOutputMock, windowSizeState } = vi.hoisted(() => ({
-    buildExportOutputMock: vi.fn(() => Promise.resolve('PACKED OUTPUT')),
+    buildExportOutputMock: vi.fn(() => Promise.resolve({
+        output: 'PACKED OUTPUT',
+        analysisSummary: {
+            totalEstimatedTokens: 6,
+            securityFindingCount: 0,
+            scannedFileCount: 1,
+        },
+    })),
     windowSizeState: { width: 1280, height: 720 },
 }));
 
 vi.mock('../services/exportBuilder', () => ({
-    buildExportOutput: buildExportOutputMock,
+    buildExportArtifact: buildExportOutputMock,
 }));
 
 vi.mock('./useWindowSize', () => ({
@@ -69,9 +76,18 @@ vi.mock('./useFileProcessing', () => ({
         handleFileSelect: vi.fn(),
         handleDrop: vi.fn(),
         handleRefresh: vi.fn(),
+        handleRecentProjectSelect: vi.fn(),
         handleCancel: vi.fn(),
         abortControllerRef: { current: null },
     }),
+}));
+
+const { clearPersistedAppDataMock } = vi.hoisted(() => ({
+    clearPersistedAppDataMock: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('../services/appStorage', () => ({
+    clearPersistedAppData: clearPersistedAppDataMock,
 }));
 
 vi.mock('./useInteraction', () => ({
@@ -151,6 +167,7 @@ describe('useAppLogic', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         buildExportOutputMock.mockClear();
+        clearPersistedAppDataMock.mockClear();
         windowSizeState.width = 1280;
         windowSizeState.height = 720;
 
@@ -174,6 +191,13 @@ describe('useAppLogic', () => {
         Object.defineProperty(URL, 'revokeObjectURL', {
             configurable: true,
             value: vi.fn(),
+        });
+
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: {
+                reload: vi.fn(),
+            },
         });
 
         vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -276,6 +300,7 @@ describe('useAppLogic', () => {
                     userProvidedHeader: '',
                     instruction: '',
                 }),
+                progressCallback: expect.any(Function),
             }));
             expect(buildExportOutputMock).toHaveBeenCalledWith(expect.objectContaining({
                 exportOptions: expect.not.objectContaining({
@@ -298,7 +323,14 @@ describe('useAppLogic', () => {
                 result.current.settings.setExportSplitMaxChars(9);
             });
 
-            buildExportOutputMock.mockResolvedValueOnce('part-one\npart-two\n');
+            buildExportOutputMock.mockResolvedValueOnce({
+                output: 'part-one\npart-two\n',
+                analysisSummary: {
+                    totalEstimatedTokens: 6,
+                    securityFindingCount: 0,
+                    scannedFileCount: 1,
+                },
+            });
 
             await act(async () => {
                 await result.current.handlers.handleSave();
@@ -311,6 +343,56 @@ describe('useAppLogic', () => {
                 value: OriginalBlob,
             });
         }
+    });
+
+    it('uses the current export analysis for copy feedback and handles clipboard failures', async () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        buildExportOutputMock.mockResolvedValueOnce({
+            output: 'PACKED OUTPUT',
+            analysisSummary: {
+                totalEstimatedTokens: 6,
+                securityFindingCount: 2,
+                scannedFileCount: 1,
+            },
+        });
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        await act(async () => {
+            await result.current.handlers.handleCopyAll();
+        });
+
+        expect(result.current.state.toastType).toBe('info');
+        expect(result.current.state.toastMessage).toContain('2 条敏感信息提示');
+
+        vi.mocked(navigator.clipboard.writeText).mockRejectedValueOnce(new Error('clipboard blocked'));
+
+        await act(async () => {
+            await result.current.handlers.handleCopyAll();
+        });
+
+        expect(result.current.state.toastType).toBe('error');
+        expect(result.current.state.toastMessage).toBe('复制到剪贴板失败。');
+    });
+
+    it('clears persisted app data before reloading when cache reset is confirmed', async () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        act(() => {
+            result.current.settings.handleClearCache();
+        });
+
+        await act(async () => {
+            await result.current.state.confirmation.onConfirm();
+        });
+
+        expect(clearPersistedAppDataMock).toHaveBeenCalledTimes(1);
+        expect(window.location.reload).toHaveBeenCalledTimes(1);
     });
 
     it('removes deleted files from open tabs and clears the active selection', () => {

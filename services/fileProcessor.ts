@@ -9,7 +9,7 @@ import { countLines } from './textMetrics';
 import { buildASCIITree } from './treeFormatter';
 import { compareFilePaths, sortTreeNodes } from './treeSort';
 
-const IGNORE_FILE_NAMES = new Set(['.gitignore', '.ignore']);
+const IGNORE_FILE_NAMES = new Set(['.gitignore', '.ignore', '.repomixignore']);
 
 interface IgnoreMatcher {
     basePath: string;
