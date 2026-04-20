@@ -317,6 +317,7 @@ describe('FileTree virtualization', () => {
     expect(actionContainer).not.toBeNull();
     expect(actionContainer?.className).toContain('absolute');
     expect(actionContainer?.className).toContain('top-full');
+    expect(actionContainer?.className).not.toContain('mt-1');
     expect(actionContainer?.className).not.toContain('top-1/2');
     expect(rowContainer?.className).not.toContain('flex-col');
   });
