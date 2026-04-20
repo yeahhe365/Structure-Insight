@@ -131,6 +131,53 @@ describe('FileTree virtualization', () => {
     expect(screen.getByTestId('virtuoso').getAttribute('data-fixed-item-height')).toBe('36');
   });
 
+  it('indents each nested tree level progressively to the right', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'nested',
+                path: 'src/nested',
+                isDirectory: true,
+                children: [
+                  {
+                    name: 'deeper',
+                    path: 'src/nested/deeper',
+                    isDirectory: true,
+                    children: [
+                      {
+                        name: 'index.ts',
+                        path: 'src/nested/deeper/index.ts',
+                        isDirectory: false,
+                        children: [],
+                        status: 'processed',
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    expect((screen.getByText('src').closest('[role="treeitem"]') as HTMLElement).style.paddingLeft).toBe('0rem');
+    expect((screen.getByText('nested').closest('[role="treeitem"]') as HTMLElement).style.paddingLeft).toBe('1.25rem');
+    expect((screen.getByText('deeper').closest('[role="treeitem"]') as HTMLElement).style.paddingLeft).toBe('2.5rem');
+    expect((screen.getByText('index.ts').closest('[role="treeitem"]') as HTMLElement).style.paddingLeft).toBe('3.75rem');
+  });
+
   it('removes descendant rows when collapsing a directory', () => {
     render(
       <FileTree

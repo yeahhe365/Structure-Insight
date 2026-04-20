@@ -17,6 +17,7 @@ interface FileTreeProps {
 }
 
 const FILE_TREE_ROW_HEIGHT = 36;
+const FILE_TREE_INDENT_REM = 1.25;
 
 function countFiles(node: FileNode): number {
   if (!node.isDirectory) {
@@ -103,7 +104,7 @@ const FileTreeRow: React.FC<{
       aria-level={level}
       aria-expanded={node.isDirectory ? isOpen : undefined}
       aria-selected={isSelected || undefined}
-      style={{ paddingLeft: `${level > 1 ? 1.25 : 0}rem` }}
+      style={{ paddingLeft: `${Math.max(0, level - 1) * FILE_TREE_INDENT_REM}rem` }}
       className="list-none"
     >
       <div
