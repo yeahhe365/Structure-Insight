@@ -30,3 +30,5 @@ export const MAX_CHARS_DEFAULT = 1000000;
 export const SEARCH_HISTORY_LIMIT = 10;
 export const RECENT_PROJECTS_LIMIT = 5;
 export const FILE_PROCESS_BATCH_SIZE = 50;
+export const MAIN_THREAD_YIELD_INTERVAL_MS = 12;
+export const SEARCH_MATCH_BATCH_SIZE = 100;

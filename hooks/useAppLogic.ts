@@ -4,7 +4,7 @@ import { useWindowSize } from './useWindowSize';
 import { useFileProcessing } from './useFileProcessing';
 import { useInteraction } from './useInteraction';
 import { useSearch } from './useSearch';
-import { buildASCIITree } from '../services/fileProcessor';
+import { buildASCIITree } from '../services/treeFormatter';
 import { buildExportOutput, type ExportFormat } from '../services/exportBuilder';
 import { splitOutputText } from '../services/exportSplit';
 import { ConfirmationState, FileContent } from '../types';
@@ -105,6 +105,12 @@ export const useAppLogic = (
     } = useInteraction({
         processedData, setProcessedData, handleShowToast, isMobile, setMobileView, setConfirmation,
         selectedFilePath, setSelectedFilePath, setActiveView, showCharCount,
+        onDeleteConfirmed: (path: string) => {
+            setOpenFiles(prev => prev.filter(openPath => openPath !== path));
+            if (path === selectedFilePath) {
+                setActiveView('structure');
+            }
+        },
     });
 
     const handleTabSelect = React.useCallback((path: string) => {

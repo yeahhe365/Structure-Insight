@@ -25,14 +25,15 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
           'framer-motion': ['framer-motion'],
-          'jszip': ['jszip'],
           'file-tree-vendor': ['react-virtuoso'],
           'code-view-vendor': ['highlight.js/lib/common', 'marked', 'dompurify'],
         }
       }
     }
+  },
+  worker: {
+    format: 'es',
   },
   resolve: {
     alias: {

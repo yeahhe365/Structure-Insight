@@ -1,11 +1,11 @@
-import { minimatch } from 'minimatch';
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
 import { summarizeAnalysis } from './analysisSummary';
 import { buildEditedChanges } from './editedChanges';
-import { processFiles } from './fileProcessor';
+import { createFileProcessingTask } from './fileProcessingClient';
 import { generateRepomixPlainOutput } from './repomixPlainOutput';
 import { scanSensitiveContent } from './securityScan';
 import { estimateTokens } from './tokenEstimate';
+import { countLines } from './textMetrics';
 
 export type ExportFormat = 'plain' | 'xml' | 'markdown' | 'json';
 
@@ -130,7 +130,7 @@ function normalizeFile(file: FileContent, options: ExportOptions): FileContent {
         ...file,
         content,
         stats: {
-            lines: content.length === 0 ? 0 : content.split('\n').length,
+            lines: countLines(content),
             chars: content.length,
             estimatedTokens: estimateTokens(content),
         },
@@ -202,11 +202,6 @@ function buildTree(files: FileContent[], emptyDirectoryPaths: string[], preferre
         rootName,
         treeData: roots,
     };
-}
-
-function matchPath(path: string, patterns: string[]): boolean {
-    const variants = [path, path.split('/').slice(1).join('/')].filter(Boolean);
-    return patterns.some(pattern => variants.some(variant => minimatch(variant, pattern, { dot: true })));
 }
 
 function applyManualState(exportData: ProcessedFiles, currentData: ProcessedFiles): ProcessedFiles {
@@ -465,21 +460,22 @@ export async function buildExportOutput(params: BuildExportOutputParams): Promis
     const includePatterns = parsePatternList(params.exportOptions.includePatterns);
     const ignorePatterns = parsePatternList(params.exportOptions.ignorePatterns);
 
-    const exportData = await processFiles(
-        params.rawFiles,
-        params.progressCallback,
-        params.extractContent,
-        params.maxCharsThreshold,
-        new AbortController().signal,
-        {
+    const exportTask = createFileProcessingTask({
+        files: params.rawFiles,
+        onProgress: params.progressCallback,
+        extractContent: params.extractContent,
+        maxCharsThreshold: params.maxCharsThreshold,
+        options: {
             useDefaultIgnorePatterns: params.exportOptions.useDefaultPatterns,
             useGitignorePatterns: params.exportOptions.useGitignore,
             includePatterns,
             ignorePatterns,
             includeEmptyDirectories: params.exportOptions.includeEmptyDirectories,
             emptyDirectoryPaths: params.emptyDirectoryPaths,
-        }
-    );
+        },
+    });
+
+    const exportData = await exportTask.promise;
 
     const normalizedData = normalizeExportPaths(exportData);
     const mergedData = applyManualState(normalizedData, params.currentData);

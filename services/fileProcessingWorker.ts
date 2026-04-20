@@ -1,0 +1,50 @@
+import { processFiles, type ProcessFilesOptions } from './fileProcessor';
+
+interface FileProcessingWorkerRequest {
+    files: File[];
+    extractContent: boolean;
+    maxCharsThreshold: number;
+    options: ProcessFilesOptions;
+}
+
+self.onmessage = async (event: MessageEvent<FileProcessingWorkerRequest>) => {
+    const controller = new AbortController();
+    const { files, extractContent, maxCharsThreshold, options } = event.data;
+
+    try {
+        const result = await processFiles(
+            files,
+            (message) => {
+                self.postMessage({
+                    type: 'progress',
+                    message,
+                });
+            },
+            extractContent,
+            maxCharsThreshold,
+            controller.signal,
+            options
+        );
+
+        self.postMessage({
+            type: 'result',
+            result,
+        });
+    } catch (error) {
+        if (error instanceof DOMException) {
+            self.postMessage({
+                type: 'error',
+                name: error.name,
+                message: error.message,
+            });
+            return;
+        }
+
+        self.postMessage({
+            type: 'error',
+            message: error instanceof Error ? error.message : 'File processing worker failed',
+        });
+    }
+};
+
+export {};

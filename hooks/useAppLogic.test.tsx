@@ -74,12 +74,31 @@ vi.mock('./useFileProcessing', () => ({
 }));
 
 vi.mock('./useInteraction', () => ({
-    useInteraction: () => ({
+    useInteraction: (options: {
+        isMobile: boolean;
+        selectedFilePath: string | null;
+        setSelectedFilePath: (path: string | null) => void;
+        setActiveView: (view: 'structure' | 'code') => void;
+        setMobileView: (view: 'tree' | 'editor') => void;
+        onDeleteConfirmed?: (path: string) => void;
+    }) => ({
         editingPath: null,
         setEditingPath: vi.fn(),
         markdownPreviewPaths: new Set<string>(),
-        handleDeleteFile: vi.fn(),
-        handleFileTreeSelect: vi.fn(),
+        handleDeleteFile: vi.fn((path: string) => {
+            if (path === options.selectedFilePath) {
+                options.setSelectedFilePath(null);
+                options.setActiveView('structure');
+            }
+            options.onDeleteConfirmed?.(path);
+        }),
+        handleFileTreeSelect: vi.fn((path: string) => {
+            if (options.isMobile) {
+                options.setMobileView('editor');
+            }
+            options.setSelectedFilePath(path);
+            options.setActiveView('code');
+        }),
         handleSaveEdit: vi.fn(),
         handleToggleMarkdownPreview: vi.fn(),
         clearInteractionState: vi.fn(),
@@ -283,5 +302,28 @@ describe('useAppLogic', () => {
                 value: OriginalBlob,
             });
         }
+    });
+
+    it('removes deleted files from open tabs and clears the active selection', () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        act(() => {
+            result.current.handlers.handleFileTreeSelect('src/app.ts');
+        });
+
+        expect(result.current.state.openFiles).toEqual(['src/app.ts']);
+        expect(result.current.state.selectedFilePath).toBe('src/app.ts');
+        expect(result.current.state.activeView).toBe('code');
+
+        act(() => {
+            result.current.handlers.handleDeleteFile('src/app.ts');
+        });
+
+        expect(result.current.state.openFiles).toEqual([]);
+        expect(result.current.state.selectedFilePath).toBeNull();
+        expect(result.current.state.activeView).toBe('structure');
     });
 });

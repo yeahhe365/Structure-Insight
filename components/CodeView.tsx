@@ -146,7 +146,10 @@ const FileCard: React.FC<FileCardProps> = ({
     );
   };
 
-  const lineNumbers = Array.from({ length: file.stats.lines }, (_, i) => i + 1).join('\n');
+  const lineNumbers = React.useMemo(
+    () => Array.from({ length: file.stats.lines }, (_, i) => i + 1).join('\n'),
+    [file.stats.lines]
+  );
   const codeStyle = { fontSize: `${fontSize}px`, lineHeight: `${Math.round(fontSize * 1.5)}px` };
   
   const sanitizedMarkdown = React.useMemo(() => {

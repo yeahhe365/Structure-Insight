@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { SearchOptions, SearchResultItem, ProcessedFiles } from '../types';
+import { createSearchTask } from '../services/searchClient';
 
 interface UseSearchParams {
     processedData: ProcessedFiles | null;
@@ -20,61 +21,72 @@ export const useSearch = ({
         useRegex: false,
         wholeWord: false,
     });
+    const requestIdRef = React.useRef(0);
+    const activeSearchTaskRef = React.useRef<{ cancel: () => void } | null>(null);
 
     const handleSearch = React.useCallback((query: string, options: SearchOptions) => {
         setSearchQuery(query);
         setSearchOptions(options);
+        requestIdRef.current += 1;
+
+        activeSearchTaskRef.current?.cancel();
+        const currentRequestId = requestIdRef.current;
 
         if (!query.trim() || !processedData) {
-            setSearchResults([]);
-            setActiveResultIndex(null);
-            return;
-        }
-
-        const flags = options.caseSensitive ? 'g' : 'gi';
-        let pattern = options.useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        if (options.wholeWord && !options.useRegex) {
-            pattern = `\\b${pattern}\\b`;
-        }
-
-        let regex: RegExp;
-        try {
-            regex = new RegExp(pattern, flags);
-        } catch (_e) {
-            setSearchResults([]);
-            setActiveResultIndex(null);
-            return;
-        }
-
-        const results: SearchResultItem[] = [];
-        const activeFiles = processedData.fileContents.filter(f => !f.excluded);
-
-        activeFiles.forEach(file => {
-            const matches = [...file.content.matchAll(regex)];
-            matches.forEach((match, indexInFile) => {
-                if (match.index !== undefined) {
-                    const contentUpToMatch = file.content.substring(0, match.index);
-                    const lineNumber = contentUpToMatch.split('\n').length;
-
-                    results.push({
-                        filePath: file.path,
-                        startIndex: match.index,
-                        length: match[0].length,
-                        content: match[0],
-                        line: lineNumber,
-                        indexInFile,
-                    });
-                }
+            React.startTransition(() => {
+                setSearchResults([]);
+                setActiveResultIndex(null);
             });
+            return;
+        }
+
+        React.startTransition(() => {
+            setSearchResults([]);
+            setActiveResultIndex(null);
         });
 
-        setSearchResults(results);
-        if (results.length > 0) {
-            setActiveResultIndex(0);
-            openFile(results[0].filePath);
-        } else {
-            setActiveResultIndex(null);
-        }
+        const task = createSearchTask({
+            files: processedData.fileContents.filter(file => !file.excluded),
+            query,
+            options,
+        });
+        activeSearchTaskRef.current = task;
+
+        void task.promise.then(results => {
+            if (currentRequestId !== requestIdRef.current) {
+                return;
+            }
+
+            if (activeSearchTaskRef.current?.cancel === task.cancel) {
+                activeSearchTaskRef.current = null;
+            }
+
+            React.startTransition(() => {
+                setSearchResults(results);
+                setActiveResultIndex(results.length > 0 ? 0 : null);
+            });
+
+            if (results.length > 0) {
+                openFile(results[0].filePath);
+            }
+        }).catch(error => {
+            if (currentRequestId !== requestIdRef.current) {
+                return;
+            }
+
+            if (activeSearchTaskRef.current?.cancel === task.cancel) {
+                activeSearchTaskRef.current = null;
+            }
+
+            if (error instanceof Error && error.message === 'Search aborted') {
+                return;
+            }
+
+            React.startTransition(() => {
+                setSearchResults([]);
+                setActiveResultIndex(null);
+            });
+        });
     }, [processedData, openFile]);
 
     const handleNavigate = React.useCallback((direction: 'next' | 'prev') => {
@@ -93,10 +105,18 @@ export const useSearch = ({
     }, [searchResults, activeResultIndex, openFile]);
 
     const resetSearch = React.useCallback(() => {
+        requestIdRef.current += 1;
+        activeSearchTaskRef.current?.cancel();
         setIsSearchOpen(false);
         setSearchResults([]);
         setActiveResultIndex(null);
         setSearchQuery('');
+    }, []);
+
+    React.useEffect(() => {
+        return () => {
+            activeSearchTaskRef.current?.cancel();
+        };
     }, []);
 
     return {

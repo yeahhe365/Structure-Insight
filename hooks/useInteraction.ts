@@ -2,9 +2,10 @@
 import React from 'react';
 import { FileNode, ProcessedFiles, ConfirmationState } from '../types';
 import { summarizeAnalysis } from '../services/analysisSummary';
-import { buildASCIITree } from '../services/fileProcessor';
+import { buildASCIITree } from '../services/treeFormatter';
 import { scanSensitiveContent } from '../services/securityScan';
 import { estimateTokens } from '../services/tokenEstimate';
+import { countLines } from '../services/textMetrics';
 
 interface InteractionProps {
     processedData: ProcessedFiles | null;
@@ -17,6 +18,7 @@ interface InteractionProps {
     setSelectedFilePath: (path: string | null) => void;
     setActiveView: (view: 'structure' | 'code') => void;
     showCharCount: boolean;
+    onDeleteConfirmed?: (path: string) => void;
 }
 
 export const useInteraction = ({
@@ -30,6 +32,7 @@ export const useInteraction = ({
     setSelectedFilePath,
     setActiveView,
     showCharCount,
+    onDeleteConfirmed,
 }: InteractionProps) => {
     const [editingPath, setEditingPath] = React.useState<string | null>(null);
     const [markdownPreviewPaths, setMarkdownPreviewPaths] = React.useState(new Set<string>());
@@ -77,6 +80,7 @@ export const useInteraction = ({
                         securityFindings,
                     };
                 });
+                onDeleteConfirmed?.(path);
                 handleShowToast(`${path} 已删除。`);
             }
         });
@@ -89,7 +93,7 @@ export const useInteraction = ({
     };
     
     const handleSaveEdit = (path: string, newContent: string) => {
-        const nextLines = newContent.split('\n').length;
+        const nextLines = countLines(newContent);
         const nextChars = newContent.length;
         const nextEstimatedTokens = estimateTokens(newContent);
         const nextSecurityFindings = scanSensitiveContent(path, newContent);

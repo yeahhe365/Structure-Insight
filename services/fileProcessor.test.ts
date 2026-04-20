@@ -1,5 +1,44 @@
-import { describe, expect, it, vi } from 'vitest';
-import { processDroppedItems, processFiles } from './fileProcessor';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { processDroppedItems } from './droppedItems';
+import { processFiles } from './fileProcessor';
+
+const { processZipFileMock, createIgnoreMatcherMock, matchesGlobPatternsMock } = vi.hoisted(() => ({
+    processZipFileMock: vi.fn(),
+    createIgnoreMatcherMock: vi.fn((patterns: string[]) => {
+        const literalIgnored = new Set(patterns);
+        return {
+            test(path: string) {
+                return {
+                    ignored: literalIgnored.has(path) || literalIgnored.has(`${path}/`),
+                    unignored: false,
+                };
+            },
+        };
+    }),
+    matchesGlobPatternsMock: vi.fn((path: string, patterns: string[]) => patterns.includes(path)),
+}));
+
+vi.mock('./zipProcessor', () => ({
+    processZipFile: processZipFileMock,
+}));
+
+vi.mock('./gitignoreMatcher', () => ({
+    createIgnoreMatcher: createIgnoreMatcherMock,
+}));
+
+vi.mock('./pathPatternMatcher', () => ({
+    matchesGlobPatterns: matchesGlobPatternsMock,
+}));
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
+
+beforeEach(() => {
+    processZipFileMock.mockReset();
+    createIgnoreMatcherMock.mockClear();
+    matchesGlobPatternsMock.mockClear();
+});
 
 describe('processDroppedItems', () => {
     it('handles dropped entries even when no abort signal is available yet', async () => {
@@ -29,6 +68,137 @@ describe('processDroppedItems', () => {
 });
 
 describe('processFiles', () => {
+    it('does not load the zip processor for regular files', async () => {
+        const file = new File(['export const value = 1;\n'], 'kept.ts', { type: 'text/plain' });
+        Object.defineProperty(file, 'webkitRelativePath', {
+            value: 'demo/kept.ts',
+            configurable: true,
+        });
+
+        await processFiles(
+            [file],
+            vi.fn(),
+            true,
+            0,
+            new AbortController().signal
+        );
+
+        expect(processZipFileMock).not.toHaveBeenCalled();
+    });
+
+    it('does not load optional filter modules when no ignore files or glob patterns are present', async () => {
+        const file = new File(['export const value = 1;\n'], 'kept.ts', { type: 'text/plain' });
+        Object.defineProperty(file, 'webkitRelativePath', {
+            value: 'demo/kept.ts',
+            configurable: true,
+        });
+
+        await processFiles(
+            [file],
+            vi.fn(),
+            true,
+            0,
+            new AbortController().signal
+        );
+
+        expect(createIgnoreMatcherMock).not.toHaveBeenCalled();
+        expect(matchesGlobPatternsMock).not.toHaveBeenCalled();
+    });
+
+    it('loads the gitignore matcher module when ignore files are present', async () => {
+        const gitignore = new File(['ignored.ts\n'], '.gitignore', { type: 'text/plain' });
+        Object.defineProperty(gitignore, 'webkitRelativePath', {
+            value: 'demo/.gitignore',
+            configurable: true,
+        });
+
+        const keptFile = new File(['export const kept = true;\n'], 'kept.ts', { type: 'text/plain' });
+        Object.defineProperty(keptFile, 'webkitRelativePath', {
+            value: 'demo/kept.ts',
+            configurable: true,
+        });
+
+        await processFiles(
+            [gitignore, keptFile],
+            vi.fn(),
+            true,
+            100_000,
+            new AbortController().signal
+        );
+
+        expect(createIgnoreMatcherMock).toHaveBeenCalled();
+    });
+
+    it('loads the glob matcher module when include patterns are configured', async () => {
+        const keptFile = new File(['export const kept = true;\n'], 'kept.ts', { type: 'text/plain' });
+        Object.defineProperty(keptFile, 'webkitRelativePath', {
+            value: 'demo/kept.ts',
+            configurable: true,
+        });
+
+        await processFiles(
+            [keptFile],
+            vi.fn(),
+            true,
+            100_000,
+            new AbortController().signal,
+            {
+                includePatterns: ['demo/kept.ts'],
+            }
+        );
+
+        expect(matchesGlobPatternsMock).toHaveBeenCalled();
+    });
+
+    it('preserves empty directories discovered inside zip archives', async () => {
+        const zipFile = new File(['fake zip'], 'demo.zip', { type: 'application/zip' });
+
+        processZipFileMock.mockResolvedValueOnce({
+            files: [
+                (() => {
+                    const file = new File(['export const zipped = true;\n'], 'src/app.ts', { type: 'text/plain' });
+                    Object.defineProperty(file, 'webkitRelativePath', {
+                        value: 'demo/src/app.ts',
+                        configurable: true,
+                    });
+                    return file;
+                })(),
+            ],
+            emptyDirectoryPaths: ['demo/empty'],
+        });
+
+        const result = await processFiles(
+            [zipFile],
+            vi.fn(),
+            true,
+            100_000,
+            new AbortController().signal,
+            {
+                includeEmptyDirectories: true,
+            }
+        );
+
+        expect(result.fileContents.map(file => file.path)).toEqual(['demo/src/app.ts']);
+        expect(result.emptyDirectoryPaths).toEqual(['demo/empty']);
+        expect(result.structureString).toContain('empty');
+    });
+
+    it('throws a descriptive error when zip extraction fails', async () => {
+        const zipFile = new File(['broken zip'], 'broken.zip', { type: 'application/zip' });
+
+        processZipFileMock.mockRejectedValueOnce(new Error('corrupt archive'));
+
+        await expect(
+            processFiles(
+                [zipFile],
+                vi.fn(),
+                true,
+                100_000,
+                new AbortController().signal
+            )
+        ).rejects.toThrow('Failed to unzip broken.zip: corrupt archive');
+    });
+
     it('treats a zero maxCharsThreshold as disabled and still extracts content', async () => {
         const file = new File(['export const value = 1;\n'], 'kept.ts', { type: 'text/plain' });
         Object.defineProperty(file, 'webkitRelativePath', {
