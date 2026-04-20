@@ -93,9 +93,9 @@ const EXPECTED_DEFAULT_OUTPUT = [
     '',
     'Notes:',
     '------',
-    "- Some files may have been excluded based on .gitignore/.ignore rules and Repomix's configuration",
+    '- Some files may have been excluded based on .gitignore rules and Repomix\'s configuration',
     '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
-    '- Files matching patterns in .gitignore or .ignore are excluded',
+    '- Files matching patterns in .gitignore are excluded',
     '- Files matching default ignore patterns are excluded',
     '',
     '================================================================',
@@ -105,13 +105,78 @@ const EXPECTED_DEFAULT_OUTPUT = [
     '  app.ts',
     '',
     '================================================================',
-    'Repository Analysis',
+    'Files',
     '================================================================',
-    'Files: 1',
-    'Lines: 1',
-    'Characters: 26',
-    'Estimated Tokens: 7',
-    'Sensitive Findings: 0',
+    '',
+    '================',
+    'File: src/app.ts',
+    '================',
+    'const message = "edited";\n',
+    '',
+    '',
+    '',
+    '================================================================',
+    'End of Codebase',
+    '================================================================',
+    '',
+].join('\n');
+
+const EXPECTED_OUTPUT_WITH_HEADER_AND_INSTRUCTION = [
+    'This file is a merged representation of the entire codebase, combined into a single document by Repomix.',
+    '',
+    '================================================================',
+    'File Summary',
+    '================================================================',
+    '',
+    'Purpose:',
+    '--------',
+    "This file contains a packed representation of the entire repository's contents.",
+    'It is designed to be easily consumable by AI systems for analysis, code review,',
+    'or other automated processes.',
+    '',
+    'File Format:',
+    '------------',
+    'The content is organized as follows:',
+    '1. This summary section',
+    '2. Repository information',
+    '3. Directory structure',
+    '4. Repository files (if enabled)',
+    '5. Multiple file entries, each consisting of:',
+    '  a. A separator line (================)',
+    '  b. The file path (File: path/to/file)',
+    '  c. Another separator line',
+    '  d. The full contents of the file',
+    '  e. A blank line',
+    '',
+    'Usage Guidelines:',
+    '-----------------',
+    '- This file should be treated as read-only. Any changes should be made to the',
+    '  original repository files, not this packed version.',
+    '- When processing this file, use the file path to distinguish',
+    '  between different files in the repository.',
+    '- Be aware that this file may contain sensitive information. Handle it with',
+    '  the same level of security as you would the original repository.',
+    '- Pay special attention to the Repository Description. These contain important context and guidelines specific to this project.',
+    '- Pay special attention to the Repository Instruction. These contain important context and guidelines specific to this project.',
+    '',
+    'Notes:',
+    '------',
+    "- Some files may have been excluded based on .gitignore rules and Repomix's configuration",
+    '- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files',
+    '- Files matching patterns in .gitignore are excluded',
+    '- Files matching default ignore patterns are excluded',
+    '',
+    '',
+    '================================================================',
+    'User Provided Header',
+    '================================================================',
+    'Project overview',
+    '',
+    '================================================================',
+    'Directory Structure',
+    '================================================================',
+    'src/',
+    '  app.ts',
     '',
     '================================================================',
     'Files',
@@ -121,6 +186,14 @@ const EXPECTED_DEFAULT_OUTPUT = [
     'File: src/app.ts',
     '================',
     'const message = "edited";\n',
+    '',
+    '',
+    '',
+    '',
+    '================================================================',
+    'Instruction',
+    '================================================================',
+    'Focus on architecture decisions.',
     '',
     '================================================================',
     'End of Codebase',
@@ -223,7 +296,7 @@ describe('generateRepomixPlainOutput', () => {
         );
 
         expect(output).toContain('- Files matching default ignore patterns are excluded');
-        expect(output).not.toContain('- Files matching patterns in .gitignore or .ignore are excluded');
+        expect(output).not.toContain('- Files matching patterns in .gitignore are excluded');
         expect(output).not.toContain('- Files are sorted by Git change count (files with more changes are at the bottom)');
     });
 
@@ -285,11 +358,10 @@ describe('generateRepomixPlainOutput', () => {
             instruction: 'Focus on architecture decisions.',
         });
 
+        expect(output).toBe(EXPECTED_OUTPUT_WITH_HEADER_AND_INSTRUCTION);
+        expect(output.indexOf('User Provided Header')).toBeLessThan(output.indexOf('Directory Structure'));
         expect(output).toContain(
-            `================================================================\nUser Provided Header\n================================================================\nProject overview`
-        );
-        expect(output).toContain(
-            `================================================================\nInstruction\n================================================================\nFocus on architecture decisions.`
+            '- Pay special attention to the Repository Description. These contain important context and guidelines specific to this project.'
         );
     });
 
@@ -324,5 +396,115 @@ describe('generateRepomixPlainOutput', () => {
         expect(output).toContain('Security Warnings');
         expect(output).toContain('[high] src/.env');
         expect(output).toContain('Potential OpenAI API key detected.');
+    });
+
+    it('matches repomix trailing blank lines after the last file when content ends with a newline', () => {
+        const output = generateRepomixPlainOutput(
+            {
+                rootName: 'demo-project',
+                structureString: '',
+                treeData: [],
+                fileContents: [
+                    {
+                        path: 'a.txt',
+                        content: 'x\n',
+                        language: 'text',
+                        stats: { lines: 1, chars: 2, estimatedTokens: 1 },
+                    },
+                ],
+                analysisSummary: {
+                    totalEstimatedTokens: 1,
+                    securityFindingCount: 0,
+                    scannedFileCount: 1,
+                },
+                securityFindings: [],
+            },
+            {
+                includeFileSummary: false,
+                includeDirectoryStructure: false,
+                includeFiles: true,
+                userProvidedHeader: '',
+                instruction: '',
+            }
+        );
+
+        expect(output).toBe(
+            [
+                '================================================================',
+                'Files',
+                '================================================================',
+                '',
+                '================',
+                'File: a.txt',
+                '================',
+                'x',
+                '',
+                '',
+                '',
+                '',
+                '================================================================',
+                'End of Codebase',
+                '================================================================',
+                '',
+            ].join('\n')
+        );
+    });
+
+    it('matches repomix trailing blank lines before the instruction section when the last file ends with a newline', () => {
+        const output = generateRepomixPlainOutput(
+            {
+                rootName: 'demo-project',
+                structureString: '',
+                treeData: [],
+                fileContents: [
+                    {
+                        path: 'a.txt',
+                        content: 'x\n',
+                        language: 'text',
+                        stats: { lines: 1, chars: 2, estimatedTokens: 1 },
+                    },
+                ],
+                analysisSummary: {
+                    totalEstimatedTokens: 1,
+                    securityFindingCount: 0,
+                    scannedFileCount: 1,
+                },
+                securityFindings: [],
+            },
+            {
+                includeFileSummary: false,
+                includeDirectoryStructure: false,
+                includeFiles: true,
+                userProvidedHeader: '',
+                instruction: 'note',
+            }
+        );
+
+        expect(output).toBe(
+            [
+                '================================================================',
+                'Files',
+                '================================================================',
+                '',
+                '================',
+                'File: a.txt',
+                '================',
+                'x',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '================================================================',
+                'Instruction',
+                '================================================================',
+                'note',
+                '',
+                '================================================================',
+                'End of Codebase',
+                '================================================================',
+                '',
+            ].join('\n')
+        );
     });
 });
