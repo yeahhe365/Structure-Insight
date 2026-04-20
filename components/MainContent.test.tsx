@@ -28,20 +28,14 @@ vi.mock('./ScrollToTopButton', () => ({
   default: () => <div data-testid="scroll-to-top">scroll to top</div>,
 }));
 
-vi.mock('./FileTree', () => ({
-  default: ({ nodes }: { nodes: Array<{ name: string; isDirectory: boolean; children: unknown[] }> }) => {
-    const names: string[] = [];
-    const visit = (items: Array<{ name: string; isDirectory: boolean; children: any[] }>) => {
-      for (const node of items) {
-        names.push(node.name);
-        if (node.isDirectory) {
-          visit(node.children);
-        }
-      }
-    };
-    visit(nodes as Array<{ name: string; isDirectory: boolean; children: any[] }>);
-    return <div data-testid="file-tree">{names.join('|')}</div>;
-  },
+vi.mock('react-virtuoso', () => ({
+  Virtuoso: ({ data, itemContent }: any) => (
+    <div data-testid="virtuoso" data-count={String(data.length)}>
+      {data.map((item: any, index: number) => (
+        <div key={item.path}>{itemContent(index, item)}</div>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('./CodeView', () => ({
@@ -53,29 +47,40 @@ vi.mock('./StructureView', () => ({
 }));
 
 function createProcessedData(fileName: string, filePath: string): ProcessedFiles {
-  const [directoryName] = filePath.split('/');
+  const parts = filePath.split('/');
+  const fileNode = {
+    name: fileName,
+    path: filePath,
+    isDirectory: false as const,
+    children: [],
+    status: 'processed' as const,
+    lines: 1,
+    chars: fileName.length,
+  };
+
+  let treeNode = fileNode as {
+    name: string;
+    path: string;
+    isDirectory: boolean;
+    children: any[];
+    status?: 'processed';
+    lines?: number;
+    chars?: number;
+  };
+
+  for (let index = parts.length - 2; index >= 0; index -= 1) {
+    treeNode = {
+      name: parts[index],
+      path: parts.slice(0, index + 1).join('/'),
+      isDirectory: true,
+      children: [treeNode],
+    };
+  }
 
   return {
     rootName: 'demo',
-    structureString: `demo\n└── ${directoryName}\n`,
-    treeData: [
-      {
-        name: directoryName,
-        path: directoryName,
-        isDirectory: true,
-        children: [
-          {
-            name: fileName,
-            path: filePath,
-            isDirectory: false,
-            children: [],
-            status: 'processed',
-            lines: 1,
-            chars: fileName.length,
-          },
-        ],
-      },
-    ],
+    structureString: `demo\n└── ${parts[0]}\n`,
+    treeData: [treeNode],
     fileContents: [
       {
         path: filePath,
@@ -138,12 +143,12 @@ function createLogic(processedData: ProcessedFiles) {
 }
 
 describe('MainContent', () => {
-  it('clears a stale extension filter when the current tree no longer contains that extension', async () => {
+  it('clears a stale extension filter without collapsing nested directories in the replacement tree', async () => {
     const codeViewRef = React.createRef<HTMLDivElement>();
     const leftPanelRef = React.createRef<HTMLDivElement>();
     const { rerender } = render(
       <MainContent
-        logic={createLogic(createProcessedData('app.ts', 'src/app.ts')) as never}
+        logic={createLogic(createProcessedData('app.ts', 'src/nested/app.ts')) as never}
         codeViewRef={codeViewRef}
         leftPanelRef={leftPanelRef}
       />
@@ -151,19 +156,20 @@ describe('MainContent', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '.ts' }));
     await waitFor(() => {
-      expect(screen.getByTestId('file-tree').textContent).toContain('app.ts');
+      expect(screen.getByText('app.ts')).not.toBeNull();
     });
 
     rerender(
       <MainContent
-        logic={createLogic(createProcessedData('notes.md', 'docs/notes.md')) as never}
+        logic={createLogic(createProcessedData('notes.md', 'src/nested/notes.md')) as never}
         codeViewRef={codeViewRef}
         leftPanelRef={leftPanelRef}
       />
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('file-tree').textContent).toContain('notes.md');
+      expect(screen.getByText('nested')).not.toBeNull();
+      expect(screen.getByText('notes.md')).not.toBeNull();
     });
   });
 });

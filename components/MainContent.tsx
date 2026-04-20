@@ -83,13 +83,14 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
 
     const treeData = state.processedData?.treeData || [];
     const extensions = React.useMemo(() => collectExtensions(treeData), [treeData]);
-    const filteredNodes = React.useMemo(() => filterTreeByExtension(treeData, filterExt), [treeData, filterExt]);
+    const activeFilterExt = filterExt && extensions.includes(filterExt) ? filterExt : null;
+    const filteredNodes = React.useMemo(() => filterTreeByExtension(treeData, activeFilterExt), [treeData, activeFilterExt]);
 
     React.useEffect(() => {
-        if (filterExt && !extensions.includes(filterExt)) {
+        if (filterExt && activeFilterExt === null) {
             setFilterExt(null);
         }
-    }, [extensions, filterExt]);
+    }, [activeFilterExt, filterExt]);
 
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
