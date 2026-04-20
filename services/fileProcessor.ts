@@ -61,6 +61,11 @@ function getFilePath(file: File): string {
     return (file.webkitRelativePath || file.name).replace(/\\/g, '/');
 }
 
+function shouldExpandZipFile(file: File): boolean {
+    const relativePath = file.webkitRelativePath;
+    return !relativePath || relativePath === file.name;
+}
+
 function parseGitignorePatterns(content: string): string[] {
     return content
         .split(/\r?\n/)
@@ -236,7 +241,7 @@ export async function processFiles(
     }
     for (const file of files) {
         if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-        if (file.name.toLowerCase().endsWith('.zip')) {
+        if (file.name.toLowerCase().endsWith('.zip') && shouldExpandZipFile(file)) {
             onProgress(`正在解压 ${file.name}...`);
             try {
                 const { processZipFile } = await import('./zipProcessor');

@@ -183,6 +183,26 @@ describe('processFiles', () => {
         expect(result.structureString).toContain('empty');
     });
 
+    it('does not expand zip files discovered inside imported directories', async () => {
+        const zipFile = new File(['fake zip'], 'docs.zip', { type: 'application/zip' });
+        Object.defineProperty(zipFile, 'webkitRelativePath', {
+            value: 'demo/downloads/docs.zip',
+            configurable: true,
+        });
+
+        const result = await processFiles(
+            [zipFile],
+            vi.fn(),
+            true,
+            100_000,
+            new AbortController().signal
+        );
+
+        expect(processZipFileMock).not.toHaveBeenCalled();
+        expect(result.fileContents).toEqual([]);
+        expect(result.structureString).toContain('docs.zip');
+    });
+
     it('throws a descriptive error when zip extraction fails', async () => {
         const zipFile = new File(['broken zip'], 'broken.zip', { type: 'application/zip' });
 
@@ -219,6 +239,28 @@ describe('processFiles', () => {
         expect(result.treeData[0]?.children?.[0]).toMatchObject({
             path: 'demo/kept.ts',
             status: 'processed',
+        });
+    });
+
+    it('skips macOS metadata files like .DS_Store from exported file contents', async () => {
+        const dsStore = new File(['binaryish\0content'], '.DS_Store', { type: 'application/octet-stream' });
+        Object.defineProperty(dsStore, 'webkitRelativePath', {
+            value: 'demo/.DS_Store',
+            configurable: true,
+        });
+
+        const result = await processFiles(
+            [dsStore],
+            vi.fn(),
+            true,
+            0,
+            new AbortController().signal
+        );
+
+        expect(result.fileContents).toEqual([]);
+        expect(result.treeData[0].children[0]).toMatchObject({
+            path: 'demo/.DS_Store',
+            status: 'skipped',
         });
     });
 

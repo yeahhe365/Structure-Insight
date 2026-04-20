@@ -7,7 +7,7 @@ export const IGNORED_EXTENSIONS = new Set([
   '.zip', '.rar', '.7z', '.tar', '.gz',
   '.exe', '.dll', '.so', '.o', '.a', '.obj',
   '.class', '.jar', '.pyc', '.pyd',
-  '.DS_Store',
+  '.ds_store',
   '.eot', '.ttf', '.woff', '.woff2',
 ]);
 
