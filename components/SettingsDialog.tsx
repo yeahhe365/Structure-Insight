@@ -54,8 +54,6 @@ interface SettingsSectionDefinition {
     id: SettingsSectionId;
     label: string;
     title: string;
-    description: string;
-    icon: string;
 }
 
 const APP_VERSION = '5.4.0';
@@ -65,22 +63,16 @@ const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
         id: 'workspace',
         label: '工作区',
         title: '工作区设置',
-        description: '阅读体验、本地处理和缓存管理。',
-        icon: 'fa-solid fa-sliders',
     },
     {
         id: 'export',
         label: '导出',
         title: '导出设置',
-        description: '打包结构、过滤规则和附加说明。',
-        icon: 'fa-solid fa-box-archive',
     },
     {
         id: 'about',
         label: '关于',
         title: '项目与版本',
-        description: '版本信息、仓库入口和设计说明。',
-        icon: 'fa-solid fa-circle-info',
     },
 ];
 
@@ -146,16 +138,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveSection(section.id)}
                 className={[
-                    'flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors',
+                    'flex items-center gap-3 rounded-xl border px-3 py-2 text-left text-sm transition-colors',
                     'focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 dark:focus:ring-offset-dark-panel',
                     isActive
-                        ? 'border-primary/30 bg-white text-light-text dark:border-primary/30 dark:bg-slate-800 dark:text-dark-text'
-                        : 'border-transparent bg-transparent text-light-subtle-text hover:bg-white hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900 dark:hover:text-dark-text',
+                        ? 'border-black/10 bg-white text-light-text dark:border-white/10 dark:bg-slate-900 dark:text-dark-text'
+                        : 'border-transparent bg-transparent text-light-subtle-text hover:bg-white/80 hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/80 dark:hover:text-dark-text',
                 ].join(' ')}
             >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                    <i className={section.icon}></i>
-                </span>
                 <span className="font-medium">{section.label}</span>
             </button>
         );
@@ -554,7 +543,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             onClick={onClose}
         >
             <motion.div
-                className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-black/5 bg-light-panel shadow-2xl shadow-slate-900/15 dark:border-white/10 dark:bg-slate-950"
+                className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-[20px] border border-black/5 bg-light-panel shadow-2xl shadow-slate-900/12 dark:border-white/10 dark:bg-slate-950"
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.98, opacity: 0, y: 8 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -563,8 +552,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
             >
                 <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 dark:border-white/5 sm:px-5">
                     <div className="min-w-0">
-                        <h3 className="text-lg font-semibold text-light-text dark:text-dark-text">设置</h3>
-                        <p className="mt-1 text-xs text-light-subtle-text dark:text-dark-subtle-text">{currentSection.description}</p>
+                        <h3 className="text-base font-semibold text-light-text dark:text-dark-text">设置</h3>
                     </div>
                     <button
                         type="button"
@@ -577,7 +565,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)]">
-                    <aside className="border-b border-black/5 bg-slate-50/90 px-3 py-3 dark:border-white/5 dark:bg-slate-950 lg:border-b-0 lg:border-r dark:lg:bg-slate-950">
+                    <aside className="border-b border-black/5 bg-slate-50/80 px-3 py-3 dark:border-white/5 dark:bg-slate-950 lg:border-b-0 lg:border-r dark:lg:bg-slate-950">
                         <div role="tablist" aria-label="设置导航" className="space-y-1.5">
                             {SETTINGS_SECTIONS.map(section => (
                                 <TabButton key={section.id} section={section} />
@@ -592,7 +580,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                             aria-labelledby={panelLabelId}
                             className="space-y-3"
                         >
-                            <div className="px-1">
+                            <div className="px-1 pb-1">
                                 <h2 className="text-2xl font-semibold tracking-tight text-light-text dark:text-dark-text">{currentSection.title}</h2>
                             </div>
                             {renderSectionContent()}

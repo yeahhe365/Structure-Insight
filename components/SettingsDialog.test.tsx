@@ -66,6 +66,7 @@ describe('SettingsDialog', () => {
         expect(screen.getByRole('tablist', { name: '设置导航' })).toBeTruthy();
         expect(screen.getByRole('tab', { name: '工作区' }).getAttribute('aria-selected')).toBe('true');
         expect(screen.getByRole('heading', { level: 2, name: '工作区设置' })).toBeTruthy();
+        expect(screen.queryByText('阅读体验、本地处理和缓存管理。')).toBeNull();
         expect(screen.queryByText('导出设置')).toBeNull();
 
         fireEvent.click(screen.getByRole('tab', { name: '导出' }));
