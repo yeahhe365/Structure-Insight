@@ -317,4 +317,58 @@ describe('processFiles', () => {
         expect(result.analysisSummary?.securityFindingCount).toBe(1);
         expect(result.securityFindings?.[0].ruleId).toBe('openai-api-key');
     });
+
+    it('sorts tree nodes with directories first using natural case-insensitive order including empty directories', async () => {
+        const alphaFile = new File(['export const alpha = true;\n'], 'alpha.ts', { type: 'text/plain' });
+        Object.defineProperty(alphaFile, 'webkitRelativePath', {
+            value: 'demo/alpha.ts',
+            configurable: true,
+        });
+
+        const betaFile = new File(['export const beta = true;\n'], 'Beta.ts', { type: 'text/plain' });
+        Object.defineProperty(betaFile, 'webkitRelativePath', {
+            value: 'demo/Beta.ts',
+            configurable: true,
+        });
+
+        const file2 = new File(['export const two = true;\n'], 'file-2.ts', { type: 'text/plain' });
+        Object.defineProperty(file2, 'webkitRelativePath', {
+            value: 'demo/file-2.ts',
+            configurable: true,
+        });
+
+        const file10 = new File(['export const ten = true;\n'], 'file-10.ts', { type: 'text/plain' });
+        Object.defineProperty(file10, 'webkitRelativePath', {
+            value: 'demo/file-10.ts',
+            configurable: true,
+        });
+
+        const result = await processFiles(
+            [alphaFile, betaFile, file2, file10],
+            vi.fn(),
+            true,
+            100_000,
+            new AbortController().signal,
+            {
+                includeEmptyDirectories: true,
+                emptyDirectoryPaths: ['demo/empty-12', 'demo/docs', 'demo/empty-3'],
+            }
+        );
+
+        expect(result.fileContents.map(file => file.path)).toEqual([
+            'demo/alpha.ts',
+            'demo/Beta.ts',
+            'demo/file-2.ts',
+            'demo/file-10.ts',
+        ]);
+        expect(result.treeData[0]?.children.map(node => node.name)).toEqual([
+            'docs',
+            'empty-3',
+            'empty-12',
+            'alpha.ts',
+            'Beta.ts',
+            'file-2.ts',
+            'file-10.ts',
+        ]);
+    });
 });

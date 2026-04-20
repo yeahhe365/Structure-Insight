@@ -203,6 +203,38 @@ describe('buildExportOutput', () => {
         expect(output).toContain('[TRUNCATED_BASE64_DATA]');
     });
 
+    it('uses natural case-insensitive ordering for rebuilt directory structures and empty directories', async () => {
+        const files = [
+            createFile('demo/file-10.ts', 'export const ten = true;\n'),
+            createFile('demo/file-2.ts', 'export const two = true;\n'),
+            createFile('demo/Beta.ts', 'export const beta = true;\n'),
+            createFile('demo/alpha.ts', 'export const alpha = true;\n'),
+        ];
+
+        const output = await buildExportOutput({
+            currentData: {
+                ...CURRENT_DATA,
+                fileContents: [],
+                treeData: [],
+                structureString: '',
+                removedPaths: [],
+            },
+            rawFiles: files,
+            emptyDirectoryPaths: ['demo/empty-12', 'demo/docs', 'demo/empty-3'],
+            exportOptions: {
+                ...createExportOptions({ format: 'json' }),
+                includeEmptyDirectories: true,
+            },
+            extractContent: true,
+            maxCharsThreshold: 100000,
+            progressCallback: vi.fn(),
+        });
+
+        expect(output).toContain(
+            '"directoryStructure": "docs/\\nempty-3/\\nempty-12/\\nalpha.ts\\nBeta.ts\\nfile-2.ts\\nfile-10.ts"'
+        );
+    });
+
     it('keeps removed files out of exports after users delete them in-app', async () => {
         const files = [
             createFile('demo/src/app.ts', 'const answer = 42;\n'),

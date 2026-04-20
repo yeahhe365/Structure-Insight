@@ -1,4 +1,5 @@
 import type { FileContent, FileNode, ProcessedFiles } from '../types';
+import { compareTreeNodes } from './treeSort';
 
 const PLAIN_SEPARATOR = '='.repeat(16);
 const PLAIN_LONG_SEPARATOR = '='.repeat(64);
@@ -112,13 +113,7 @@ function buildSummaryUsageGuidelines(options: RepomixPlainOutputOptions): string
 }
 
 function sortNodes(nodes: FileNode[]): FileNode[] {
-    return [...nodes].sort((a, b) => {
-        if (a.isDirectory !== b.isDirectory) {
-            return a.isDirectory ? -1 : 1;
-        }
-
-        return a.name.localeCompare(b.name);
-    });
+    return [...nodes].sort(compareTreeNodes);
 }
 
 function buildDirectoryLines(nodes: FileNode[], indent = ''): string[] {

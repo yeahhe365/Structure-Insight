@@ -7,6 +7,7 @@ import { estimateTokens } from './tokenEstimate';
 import { yieldToMainThread, getCurrentTimeMs } from './scheduler';
 import { countLines } from './textMetrics';
 import { buildASCIITree } from './treeFormatter';
+import { compareFilePaths, sortTreeNodes } from './treeSort';
 
 const IGNORE_FILE_NAMES = new Set(['.gitignore', '.ignore']);
 
@@ -394,20 +395,7 @@ export async function processFiles(
         }
     }
 
-    fileContents.sort((a,b) => a.path.localeCompare(b.path));
-
-    // Sort tree once at the end instead of on every insertion
-    const sortNodes = (nodes: FileNode[]): FileNode[] => {
-        nodes.sort((a, b) => {
-            if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
-            return a.name.localeCompare(b.name);
-        });
-        for (const node of nodes) {
-            if (node.isDirectory) sortNodes(node.children);
-        }
-        return nodes;
-    };
-    sortNodes(roots);
+    fileContents.sort((a, b) => compareFilePaths(a.path, b.path));
 
     onProgress("正在完成输出...");
     
@@ -428,6 +416,8 @@ export async function processFiles(
     for (const emptyDirPath of filteredEmptyDirectoryPaths) {
         ensureDirectoryPath(emptyDirPath, nodeMap, roots);
     }
+
+    sortTreeNodes(roots);
 
     const structureString = buildASCIITree(roots, rootNameForDisplay);
 

@@ -5,6 +5,7 @@ import { generateRepomixPlainOutput } from './repomixPlainOutput';
 import { scanSensitiveContent } from './securityScan';
 import { estimateTokens } from './tokenEstimate';
 import { countLines } from './textMetrics';
+import { compareFilePaths, sortTreeNodes } from './treeSort';
 
 export type ExportFormat = 'plain' | 'xml' | 'markdown' | 'json';
 
@@ -176,20 +177,7 @@ function buildTree(files: FileContent[], emptyDirectoryPaths: string[], preferre
         ensurePath(directoryPath, false);
     }
 
-    const sortNodes = (nodes: FileNode[]) => {
-        nodes.sort((a, b) => {
-            if (a.isDirectory !== b.isDirectory) {
-                return a.isDirectory ? -1 : 1;
-            }
-            return a.name.localeCompare(b.name);
-        });
-        for (const node of nodes) {
-            if (node.isDirectory) {
-                sortNodes(node.children);
-            }
-        }
-    };
-    sortNodes(roots);
+    sortTreeNodes(roots);
 
     let rootName = preferredRootName || 'Project';
     if (!preferredRootName && roots.length === 1 && roots[0].isDirectory) {
@@ -212,6 +200,7 @@ function applyManualState(exportData: ProcessedFiles, currentData: ProcessedFile
             const current = currentByPath.get(file.path);
             return current ? { ...file, ...current } : file;
         });
+    mergedFiles.sort((a, b) => compareFilePaths(a.path, b.path));
 
     const visibleFiles = mergedFiles.filter(file => !file.excluded);
     const tree = buildTree(visibleFiles, exportData.emptyDirectoryPaths ?? [], currentData.rootName);

@@ -16,6 +16,8 @@ interface FileTreeProps {
   selectedFilePath: string | null;
 }
 
+const FILE_TREE_ROW_HEIGHT = 36;
+
 function countFiles(node: FileNode): number {
   if (!node.isDirectory) {
     return 1;
@@ -313,6 +315,7 @@ const FileTree: React.FC<FileTreeProps> = ({
           ref={virtuosoRef}
           style={{ height: '100%' }}
           data={visibleRows}
+          fixedItemHeight={FILE_TREE_ROW_HEIGHT}
           computeItemKey={(_index, row) => row.path}
           increaseViewportBy={240}
           scrollerRef={ref => {

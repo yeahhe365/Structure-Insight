@@ -349,6 +349,78 @@ describe('generateRepomixPlainOutput', () => {
         expect(output).not.toContain('repo-a/\n  a.ts\nrepo-b/');
     });
 
+    it('renders directory structures with directories first and natural case-insensitive ordering', () => {
+        const output = generateRepomixPlainOutput(
+            {
+                rootName: 'demo',
+                structureString: '',
+                treeData: [
+                    {
+                        name: 'demo',
+                        path: 'demo',
+                        isDirectory: true,
+                        children: [
+                            {
+                                name: 'file-10.ts',
+                                path: 'demo/file-10.ts',
+                                isDirectory: false,
+                                children: [],
+                            },
+                            {
+                                name: 'file-2.ts',
+                                path: 'demo/file-2.ts',
+                                isDirectory: false,
+                                children: [],
+                            },
+                            {
+                                name: 'Beta.ts',
+                                path: 'demo/Beta.ts',
+                                isDirectory: false,
+                                children: [],
+                            },
+                            {
+                                name: 'alpha.ts',
+                                path: 'demo/alpha.ts',
+                                isDirectory: false,
+                                children: [],
+                            },
+                            {
+                                name: 'empty-12',
+                                path: 'demo/empty-12',
+                                isDirectory: true,
+                                children: [],
+                            },
+                            {
+                                name: 'docs',
+                                path: 'demo/docs',
+                                isDirectory: true,
+                                children: [],
+                            },
+                            {
+                                name: 'empty-3',
+                                path: 'demo/empty-3',
+                                isDirectory: true,
+                                children: [],
+                            },
+                        ],
+                    },
+                ],
+                fileContents: [],
+            },
+            {
+                includeFileSummary: false,
+                includeDirectoryStructure: true,
+                includeFiles: false,
+                userProvidedHeader: '',
+                instruction: '',
+            }
+        );
+
+        expect(output).toContain(
+            ['docs/', 'empty-3/', 'empty-12/', 'alpha.ts', 'Beta.ts', 'file-2.ts', 'file-10.ts'].join('\n')
+        );
+    });
+
     it('renders user provided header and instruction sections when text is present', () => {
         const output = generateRepomixPlainOutput(PROJECT_DATA, {
             includeFileSummary: true,

@@ -5,8 +5,12 @@ import FileTree from './FileTree';
 import type { FileNode } from '../types';
 
 vi.mock('react-virtuoso', () => ({
-  Virtuoso: ({ data, itemContent }: any) => (
-    <div data-testid="virtuoso" data-count={String(data.length)}>
+  Virtuoso: ({ data, itemContent, fixedItemHeight }: any) => (
+    <div
+      data-testid="virtuoso"
+      data-count={String(data.length)}
+      data-fixed-item-height={fixedItemHeight == null ? '' : String(fixedItemHeight)}
+    >
       {data.slice(0, 12).map((item: any, index: number) => (
         <div key={item.path}>{itemContent(index, item)}</div>
       ))}
@@ -110,6 +114,21 @@ describe('FileTree virtualization', () => {
     expect(screen.getByTestId('virtuoso').getAttribute('data-count')).toBe('201');
     expect(screen.getByText('file-0.ts')).not.toBeNull();
     expect(screen.queryByText('file-199.ts')).toBeNull();
+  });
+
+  it('uses a fixed row height for the virtual list to avoid first-item probe flicker', () => {
+    render(
+      <FileTree
+        nodes={makeLargeTree()}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    expect(screen.getByTestId('virtuoso').getAttribute('data-fixed-item-height')).toBe('36');
   });
 
   it('removes descendant rows when collapsing a directory', () => {
