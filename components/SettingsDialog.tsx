@@ -138,14 +138,30 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => setActiveSection(section.id)}
                 className={[
-                    'flex items-center gap-3 rounded-xl border px-3 py-2 text-left text-sm transition-colors',
+                    'group relative flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition-all',
                     'focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 dark:focus:ring-offset-dark-panel',
                     isActive
-                        ? 'border-black/10 bg-white text-light-text dark:border-white/10 dark:bg-slate-900 dark:text-dark-text'
-                        : 'border-transparent bg-transparent text-light-subtle-text hover:bg-white/80 hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/80 dark:hover:text-dark-text',
+                        ? 'bg-white text-light-text shadow-sm ring-1 ring-black/6 dark:bg-slate-900 dark:text-dark-text dark:ring-white/10'
+                        : 'bg-transparent text-light-subtle-text hover:bg-white/70 hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/70 dark:hover:text-dark-text',
                 ].join(' ')}
             >
-                <span className="font-medium">{section.label}</span>
+                <span
+                    className={[
+                        'absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full transition-opacity',
+                        isActive ? 'bg-primary opacity-100' : 'opacity-0 group-hover:opacity-60',
+                    ].join(' ')}
+                />
+                <span
+                    className={[
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs transition-colors',
+                        isActive
+                            ? 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100'
+                            : 'bg-transparent text-light-subtle-text dark:text-dark-subtle-text',
+                    ].join(' ')}
+                >
+                    <i className="fa-solid fa-chevron-right"></i>
+                </span>
+                <span className={['font-medium tracking-tight', isActive ? '' : 'opacity-95'].join(' ')}>{section.label}</span>
             </button>
         );
     };
@@ -565,8 +581,11 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_minmax(0,1fr)]">
-                    <aside className="border-b border-black/5 bg-slate-50/80 px-3 py-3 dark:border-white/5 dark:bg-slate-950 lg:border-b-0 lg:border-r dark:lg:bg-slate-950">
-                        <div role="tablist" aria-label="设置导航" className="space-y-1.5">
+                    <aside className="border-b border-black/5 bg-slate-50/70 px-3 py-3 dark:border-white/5 dark:bg-slate-950 lg:border-b-0 lg:border-r dark:lg:bg-slate-950">
+                        <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">
+                            菜单
+                        </div>
+                        <div role="tablist" aria-label="设置导航" className="space-y-1">
                             {SETTINGS_SECTIONS.map(section => (
                                 <TabButton key={section.id} section={section} />
                             ))}
