@@ -7,7 +7,7 @@ import { useSearch } from './useSearch';
 import { buildASCIITree } from '../services/treeFormatter';
 import { buildExportOutput, type ExportFormat } from '../services/exportBuilder';
 import { splitOutputText } from '../services/exportSplit';
-import { ConfirmationState, FileContent } from '../types';
+import { ConfirmationState, FileContent, RecentProject } from '../types';
 
 const LEGACY_MAX_CHARS_THRESHOLD_DEFAULT = 1000000;
 const MAX_CHARS_THRESHOLD_MIGRATION_KEY = 'migration:maxCharsThresholdDefaultDisabled:v1';
@@ -75,13 +75,17 @@ export const useAppLogic = (
     const [mobileView, setMobileView] = React.useState<'tree' | 'editor'>('editor');
     const isMobile = React.useMemo(() => windowSize.width <= 768, [windowSize.width]);
 
-    const [recentProjects, setRecentProjects] = usePersistentState<{ name: string; openedAt: number }[]>('recentProjects', []);
+    const [recentProjects, setRecentProjects] = usePersistentState<RecentProject[]>('recentProjects', []);
 
-    const addToHistory = React.useCallback((name: string) => {
+    const rememberRecentProject = React.useCallback((project: RecentProject) => {
         setRecentProjects(prev => {
-            const filtered = prev.filter(p => p.name !== name);
-            return [{ name, openedAt: Date.now() }, ...filtered].slice(0, 5);
+            const filtered = prev.filter(p => p.id !== project.id);
+            return [{ ...project }, ...filtered].slice(0, 5);
         });
+    }, [setRecentProjects]);
+
+    const forgetRecentProject = React.useCallback((projectId: string) => {
+        setRecentProjects(prev => prev.filter(project => project.id !== projectId));
     }, [setRecentProjects]);
 
     const handleShowToast = React.useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -91,10 +95,12 @@ export const useAppLogic = (
 
     const {
         processedData, setProcessedData, lastProcessedFiles, setLastProcessedFiles, handleProcessing,
-        lastEmptyDirectoryPaths, handleFileSelect, handleDrop, handleRefresh, handleCancel, abortControllerRef,
+        lastEmptyDirectoryPaths, handleFileSelect, handleRecentProjectSelect, handleDrop, handleRefresh, handleCancel, abortControllerRef,
     } = useFileProcessing({
         extractContent, maxCharsThreshold, setIsLoading, setProgressMessage,
         setMobileView, handleShowToast, isMobile, setSelectedFilePath, setActiveView,
+        onRememberProject: rememberRecentProject,
+        onForgetProject: forgetRecentProject,
     });
 
     const {
@@ -175,12 +181,6 @@ export const useAppLogic = (
             }
         }
     }, [showCharCount, processedData?.treeData, processedData?.rootName]);
-
-    React.useEffect(() => {
-        if (processedData?.rootName) {
-            addToHistory(processedData.rootName);
-        }
-    }, [processedData?.rootName]);
 
     const selectedFile = React.useMemo<FileContent | null>(() => {
         if (!selectedFilePath || !processedData?.fileContents) return null;
@@ -424,6 +424,7 @@ export const useAppLogic = (
             setIsDragging,
             handleDrop: (e: React.DragEvent) => { setIsDragging(false); handleDrop(e, isLoadingRef.current); },
             handleFileSelect,
+            handleRecentProjectSelect,
             handleCopyAll,
             handleSave,
             handleReset,

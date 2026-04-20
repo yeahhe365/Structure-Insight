@@ -2,7 +2,9 @@
 import React from 'react';
 import { processDroppedItems } from '../services/droppedItems';
 import { createFileProcessingTask } from '../services/fileProcessingClient';
-import { ProcessedFiles } from '../types';
+import { readDirectoryHandle } from '../services/directoryHandleReader';
+import { deleteRecentProjectHandle, loadRecentProjectHandle, saveRecentProjectHandle } from '../services/recentProjectHandles';
+import { RecentProject, ProcessedFiles } from '../types';
 
 interface FileProcessingProps {
     extractContent: boolean;
@@ -14,6 +16,8 @@ interface FileProcessingProps {
     isMobile: boolean;
     setSelectedFilePath: (path: string | null) => void;
     setActiveView: (view: 'structure' | 'code') => void;
+    onRememberProject: (project: RecentProject) => void;
+    onForgetProject: (projectId: string) => void;
 }
 
 export const useFileProcessing = ({
@@ -26,6 +30,8 @@ export const useFileProcessing = ({
     isMobile,
     setSelectedFilePath,
     setActiveView,
+    onRememberProject,
+    onForgetProject,
 }: FileProcessingProps) => {
     const [processedData, setProcessedData] = React.useState<ProcessedFiles | null>(null);
     const [lastProcessedFiles, setLastProcessedFiles] = React.useState<File[] | null>(null);
@@ -84,7 +90,30 @@ export const useFileProcessing = ({
         }
     };
 
-    const handleFileSelect = () => {
+    const handleFileSelect = async () => {
+        if (window.showDirectoryPicker) {
+            try {
+                const directoryHandle = await window.showDirectoryPicker({ mode: 'read' });
+                const projectId = crypto.randomUUID();
+                const dropped = await readDirectoryHandle(directoryHandle);
+
+                await saveRecentProjectHandle(projectId, directoryHandle);
+                onRememberProject({
+                    id: projectId,
+                    name: directoryHandle.name,
+                    openedAt: Date.now(),
+                });
+                await handleProcessing(dropped.files, false, dropped.emptyDirectoryPaths);
+                return;
+            } catch (error: any) {
+                if (error?.name !== 'AbortError' && error?.name !== 'NotAllowedError') {
+                    console.error('Error opening directory handle:', error);
+                    handleShowToast('读取文件夹时发生错误。', 'error');
+                }
+                return;
+            }
+        }
+
         const input = document.createElement('input');
         input.type = 'file';
         input.webkitdirectory = true;
@@ -95,6 +124,39 @@ export const useFileProcessing = ({
             }
         };
         input.click();
+    };
+
+    const handleRecentProjectSelect = async (project: RecentProject) => {
+        try {
+            const directoryHandle = await loadRecentProjectHandle(project.id);
+            if (!directoryHandle) {
+                onForgetProject(project.id);
+                handleShowToast('该历史记录已失效，请重新选择文件夹。', 'info');
+                return;
+            }
+
+            const queryPermission = await directoryHandle.queryPermission({ mode: 'read' });
+            const permission = queryPermission === 'granted'
+                ? queryPermission
+                : await directoryHandle.requestPermission({ mode: 'read' });
+
+            if (permission !== 'granted') {
+                handleShowToast('需要读取权限才能重新打开该项目。', 'info');
+                return;
+            }
+
+            const dropped = await readDirectoryHandle(directoryHandle);
+            onRememberProject({
+                ...project,
+                openedAt: Date.now(),
+            });
+            await handleProcessing(dropped.files, false, dropped.emptyDirectoryPaths);
+        } catch (error) {
+            console.error('Error reopening recent project:', error);
+            await deleteRecentProjectHandle(project.id).catch(() => {});
+            onForgetProject(project.id);
+            handleShowToast('重新打开历史项目失败，请重新选择文件夹。', 'error');
+        }
     };
 
     const handleDrop = async (e: React.DragEvent, isLoading: boolean) => {
@@ -143,6 +205,7 @@ export const useFileProcessing = ({
         setLastProcessedFiles,
         handleProcessing,
         handleFileSelect,
+        handleRecentProjectSelect,
         handleDrop,
         handleRefresh,
         handleCancel,

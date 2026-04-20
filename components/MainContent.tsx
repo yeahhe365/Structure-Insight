@@ -207,7 +207,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                          )}
                                     </div>
                                 ) : (
-                                    <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect} recentProjects={state.recentProjects}/></div>
+                                    <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect} onOpenRecentProject={handlers.handleRecentProjectSelect} recentProjects={state.recentProjects}/></div>
                                 )}
                             </motion.div>
                         )}
@@ -309,7 +309,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                     <ScrollToTopButton targetRef={codeViewRef} />
                                 </div>
                             ) : (
-                                <InitialPrompt onOpenFolder={handlers.handleFileSelect} recentProjects={state.recentProjects}/>
+                                <InitialPrompt onOpenFolder={handlers.handleFileSelect} onOpenRecentProject={handlers.handleRecentProjectSelect} recentProjects={state.recentProjects}/>
                             )}
                         </div>
                     </div>

@@ -1,10 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
-interface RecentProject {
-    name: string;
-    openedAt: number;
-}
+import { RecentProject } from '../types';
 
 function timeAgo(timestamp: number): string {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -18,9 +14,10 @@ function timeAgo(timestamp: number): string {
 interface InitialPromptProps {
     onOpenFolder: () => void;
     recentProjects?: RecentProject[];
+    onOpenRecentProject?: (project: RecentProject) => void;
 }
 
-const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProjects = [] }) => {
+const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProjects = [], onOpenRecentProject }) => {
     return (
         <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden p-6 select-none bg-light-bg dark:bg-dark-bg">
             {/* Background Pattern */}
@@ -87,14 +84,16 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                         <p className="text-xs font-medium text-light-subtle-text dark:text-dark-subtle-text mb-3 uppercase tracking-wider">最近项目</p>
                         <div className="grid grid-cols-1 gap-2">
                             {recentProjects.map((project) => (
-                                <div
+                                <button
+                                    type="button"
                                     key={project.name + project.openedAt}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-light-panel dark:bg-dark-panel border border-light-border dark:border-dark-border cursor-default"
+                                    onClick={() => onOpenRecentProject?.(project)}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-light-panel dark:bg-dark-panel border border-light-border dark:border-dark-border transition-colors hover:border-primary/40 hover:bg-light-border/40 dark:hover:bg-dark-border/40 text-left"
                                 >
                                     <i className="fa-solid fa-folder text-sm text-primary"></i>
                                     <span className="text-sm font-medium text-light-text dark:text-dark-text flex-1 truncate">{project.name}</span>
                                     <span className="text-xs text-light-subtle-text dark:text-dark-subtle-text whitespace-nowrap">{timeAgo(project.openedAt)}</span>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </motion.div>
