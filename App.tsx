@@ -26,20 +26,65 @@ function getProgressWidth(message: string | null): string {
     return `${Math.min(95, (current / total) * 100)}%`;
 }
 
+function isFileDragEvent(event: React.DragEvent<HTMLElement>): boolean {
+    const types = event.dataTransfer?.types;
+    return Array.isArray(types)
+        ? types.includes('Files')
+        : Array.from(types ?? []).includes('Files');
+}
+
 const App: React.FC = () => {
     const codeViewRef = React.useRef<HTMLDivElement>(null);
     const leftPanelRef = React.useRef<HTMLDivElement>(null);
+    const dragDepthRef = React.useRef(0);
 
     const logic = useAppLogic(codeViewRef, leftPanelRef);
     const { state, handlers, settings } = logic;
+
+    const handleDragEnter = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!isFileDragEvent(event)) {
+            return;
+        }
+
+        dragDepthRef.current += 1;
+        handlers.setIsDragging(true);
+    }, [handlers]);
+
+    const handleDragOver = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+    }, []);
+
+    const handleDragLeave = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!isFileDragEvent(event)) {
+            return;
+        }
+
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) {
+            handlers.setIsDragging(false);
+        }
+    }, [handlers]);
+
+    const handleDrop = React.useCallback((event: React.DragEvent<HTMLDivElement>) => {
+        dragDepthRef.current = 0;
+        handlers.setIsDragging(false);
+        handlers.handleDrop(event);
+    }, [handlers]);
     
     return (
         <div
             className="flex flex-col h-full bg-light-bg dark:bg-dark-bg"
-            onDragEnter={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(true);}}
-            onDragOver={(e) => {e.preventDefault(); e.stopPropagation();}}
-            onDragLeave={(e) => {e.preventDefault(); e.stopPropagation(); handlers.setIsDragging(false);}}
-            onDrop={handlers.handleDrop}
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             role="application"
             aria-label="Structure Insight 代码分析工具"
         >

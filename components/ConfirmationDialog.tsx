@@ -4,21 +4,47 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface ConfirmationDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: () => void;
+    onConfirm: () => void | Promise<void>;
     title: string;
     message: string;
 }
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ isOpen, onClose, onConfirm, title, message }) => {
+    const [isConfirming, setIsConfirming] = React.useState(false);
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
+            if (e.key === 'Escape' && !isConfirming) onClose();
         };
         if (isOpen) {
             window.addEventListener('keydown', handleKeyDown);
         }
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isConfirming, isOpen, onClose]);
+
+    const handleConfirmClick = React.useCallback(async () => {
+        if (isConfirming) {
+            return;
+        }
+
+        setIsConfirming(true);
+
+        try {
+            await onConfirm();
+            onClose();
+        } catch (error) {
+            console.error('Confirmation action failed:', error);
+        } finally {
+            setIsConfirming(false);
+        }
+    }, [isConfirming, onClose, onConfirm]);
+
+    const handleBackdropClick = React.useCallback(() => {
+        if (isConfirming) {
+            return;
+        }
+        onClose();
+    }, [isConfirming, onClose]);
 
     return (
         <AnimatePresence>
@@ -28,7 +54,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ isOpen, onClose
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    onClick={onClose}
+                    onClick={handleBackdropClick}
                 >
                     <motion.div
                         className="bg-light-panel dark:bg-dark-panel rounded-lg shadow-2xl border border-light-border dark:border-dark-border w-full max-w-sm m-4"
@@ -56,14 +82,16 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ isOpen, onClose
                         <div className="bg-light-bg dark:bg-dark-bg/50 px-6 py-3 flex flex-row-reverse rounded-b-lg">
                             <button
                                 type="button"
-                                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-dark-panel ml-3"
-                                onClick={() => { onConfirm(); onClose(); }}
+                                disabled={isConfirming}
+                                className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-dark-panel ml-3"
+                                onClick={() => { void handleConfirmClick(); }}
                             >
                                 确认
                             </button>
                             <button
                                 type="button"
-                                className="inline-flex justify-center rounded-md border border-light-border dark:border-dark-border bg-light-panel dark:bg-dark-panel px-4 py-2 text-sm font-medium text-light-text dark:text-dark-text shadow-sm hover:bg-light-border dark:hover:bg-dark-border/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-dark-panel"
+                                disabled={isConfirming}
+                                className="inline-flex justify-center rounded-md border border-light-border dark:border-dark-border bg-light-panel dark:bg-dark-panel px-4 py-2 text-sm font-medium text-light-text dark:text-dark-text shadow-sm hover:bg-light-border dark:hover:bg-dark-border/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-dark-panel"
                                 onClick={onClose}
                             >
                                 取消

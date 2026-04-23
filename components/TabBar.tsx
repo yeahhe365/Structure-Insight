@@ -34,8 +34,10 @@ const TabBar: React.FC<TabBarProps> = ({ openFiles, selectedFilePath, onTabSelec
                         <i className={`${icon} ${color} text-[11px]`} />
                         <span className="truncate max-w-[120px]">{fileName}</span>
                         <button
+                            type="button"
+                            aria-label={`关闭 ${path}`}
                             onClick={(e) => { e.stopPropagation(); onCloseTab(path); }}
-                            className="ml-1 w-4 h-4 flex items-center justify-center rounded hover:bg-light-border dark:hover:bg-dark-border text-light-subtle-text dark:text-dark-subtle-text opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="ml-1 flex h-5 w-5 items-center justify-center rounded text-light-subtle-text transition-opacity hover:bg-light-border dark:text-dark-subtle-text dark:hover:bg-dark-border opacity-100 md:h-4 md:w-4 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
                         >
                             <i className="fa-solid fa-xmark text-[10px]" />
                         </button>

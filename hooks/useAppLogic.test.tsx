@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, fireEvent, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProcessedFiles } from '../types';
 import { useAppLogic } from './useAppLogic';
@@ -256,6 +256,27 @@ describe('useAppLogic', () => {
         expect(result.current.state.maxCharsThreshold).toBe(1000000);
     });
 
+    it('applies a real light-theme class when dark mode is disabled so light-only CSS can match', async () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+
+        const { result } = renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        await waitFor(() => {
+            expect(document.documentElement.classList.contains('light')).toBe(true);
+            expect(document.documentElement.classList.contains('dark')).toBe(false);
+        });
+
+        act(() => {
+            result.current.settings.setIsDark(true);
+        });
+
+        await waitFor(() => {
+            expect(document.documentElement.classList.contains('dark')).toBe(true);
+            expect(document.documentElement.classList.contains('light')).toBe(false);
+        });
+    });
+
     it('uses the async export builder for copy and save actions', async () => {
         const codeViewRef = React.createRef<HTMLDivElement>();
         const leftPanelRef = React.createRef<HTMLDivElement>();
@@ -446,5 +467,30 @@ describe('useAppLogic', () => {
 
         expect(result.current.state.activeView).toBe('code');
         expect(result.current.state.mobileView).toBe('editor');
+    });
+
+    it('prevents browser save shortcuts while focus is inside a textarea without triggering app save', () => {
+        const codeViewRef = React.createRef<HTMLDivElement>();
+        const leftPanelRef = React.createRef<HTMLDivElement>();
+        renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
+
+        const textarea = document.createElement('textarea');
+        document.body.appendChild(textarea);
+        textarea.focus();
+        const callCountBefore = buildExportOutputMock.mock.calls.length;
+
+        const keydownEvent = new KeyboardEvent('keydown', {
+            key: 's',
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+        });
+
+        fireEvent(textarea, keydownEvent);
+
+        expect(buildExportOutputMock).toHaveBeenCalledTimes(callCountBefore);
+        expect(keydownEvent.defaultPrevented).toBe(true);
+
+        textarea.remove();
     });
 });

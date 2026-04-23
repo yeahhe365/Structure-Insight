@@ -48,14 +48,30 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
     
     const maxChars = sortedFiles.length > 0 ? sortedFiles[0].stats.chars : 0;
 
-    const ActionButton = ({ icon, label, onClick, className = "", danger = false }: { icon: string, label: string, onClick: (e: React.MouseEvent) => void, className?: string, danger?: boolean }) => (
+    const ActionButton = ({
+        icon,
+        label,
+        onClick,
+        className = "",
+        danger = false,
+        ariaLabel,
+    }: {
+        icon: string,
+        label: string,
+        onClick: (e: React.MouseEvent) => void,
+        className?: string,
+        danger?: boolean,
+        ariaLabel: string,
+    }) => (
         <button
+            type="button"
             onClick={onClick}
-            className={`flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text transition-all hover:border-primary hover:text-primary ${danger ? 'hover:border-red-500 hover:text-red-500' : ''} ${className}`}
+            aria-label={ariaLabel}
+            className={`flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-all hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1 ${danger ? 'hover:border-red-500 hover:text-red-500' : ''} ${className}`}
             title={label}
         >
             <i className={`fa-solid ${icon}`}></i>
-            <span className="hidden sm:inline">{label}</span>
+            <span className="hidden md:inline">{label}</span>
         </button>
     );
 
@@ -171,21 +187,24 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                                     </button>
                                     
                                     {/* Action Toolbar */}
-                                    <div className="relative z-20 px-3 pb-2 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-1 group-hover:translate-y-0 duration-200">
+                                    <div className="relative z-20 px-3 pb-2 flex items-center space-x-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity md:translate-y-1 md:group-hover:translate-y-0 md:group-focus-within:translate-y-0 duration-200">
                                         <div className="ml-12 flex items-center space-x-2">
                                             <ActionButton 
                                                 icon="fa-copy" 
                                                 label="路径" 
+                                                ariaLabel={`复制 ${file.path} 路径`}
                                                 onClick={(e) => { e.stopPropagation(); onCopyPath(file.path); }} 
                                             />
                                             <ActionButton 
                                                 icon={isExcluded ? "fa-eye" : "fa-eye-slash"} 
                                                 label={isExcluded ? "包含" : "排除"} 
+                                                ariaLabel={isExcluded ? `包含 ${file.path}` : `排除 ${file.path}`}
                                                 onClick={(e) => { e.stopPropagation(); onToggleExclude(file.path); }} 
                                             />
                                             <ActionButton 
                                                 icon="fa-trash-can" 
                                                 label="删除" 
+                                                ariaLabel={`删除 ${file.path}`}
                                                 onClick={(e) => { e.stopPropagation(); onDeleteFile(file.path); }} 
                                                 danger 
                                             />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SearchDialog from './SearchDialog';
 
@@ -38,6 +38,24 @@ afterEach(() => {
 });
 
 describe('SearchDialog', () => {
+    it('adds extra right padding when showing result counts so typed text stays visible', () => {
+        render(
+            <SearchDialog
+                onClose={vi.fn()}
+                onSearch={vi.fn()}
+                onNavigate={vi.fn()}
+                resultsCount={12}
+                currentIndex={1}
+            />
+        );
+
+        const input = screen.getByPlaceholderText('搜索...');
+        fireEvent.change(input, { target: { value: 'very-long-search-query' } });
+
+        expect((input as HTMLInputElement).className).toContain('pr-24');
+        expect(screen.getByText('2 / 12')).toBeTruthy();
+    });
+
     it('uses viewport-safe sizing on narrow screens and labels dialog controls', () => {
         const { container } = render(
             <SearchDialog

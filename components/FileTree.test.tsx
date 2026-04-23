@@ -38,6 +38,39 @@ afterEach(() => {
 });
 
 describe('FileTree virtualization', () => {
+  it('keeps file row actions reachable without hover-only behavior on touch layouts', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    const actions = screen.getByTitle('复制完整路径').parentElement as HTMLElement;
+    expect(actions.className).toContain('opacity-100');
+    expect(actions.className).toContain('md:opacity-0');
+    expect(actions.className).toContain('md:pointer-events-none');
+  });
+
   it('resets to the default expanded state when a different tree is loaded', () => {
     const { rerender } = render(
       <FileTree
@@ -310,14 +343,14 @@ describe('FileTree virtualization', () => {
       />
     );
 
-    const pathButton = screen.getByRole('button', { name: '路径' });
+    const pathButton = screen.getByRole('button', { name: '复制 src/index.ts 路径' });
     const actionContainer = pathButton.parentElement;
     const rowContainer = screen.getByText('index.ts').closest('.group');
 
     expect(actionContainer).not.toBeNull();
-    expect(actionContainer?.className).toContain('absolute');
-    expect(actionContainer?.className).toContain('top-full');
-    expect(actionContainer?.className).not.toContain('mt-1');
+    expect(actionContainer?.className).toContain('md:absolute');
+    expect(actionContainer?.className).toContain('md:top-full');
+    expect(actionContainer?.className).toContain('opacity-100');
     expect(actionContainer?.className).not.toContain('top-1/2');
     expect(rowContainer?.className).not.toContain('flex-col');
   });

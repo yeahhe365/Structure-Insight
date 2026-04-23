@@ -15,7 +15,7 @@ interface StatusBarProps {
 }
 
 const StatusBarItem: React.FC<{icon: string, value: number | string, label: string}> = ({icon, value, label}) => (
-    <span className="flex items-center" title={label}>
+    <span className="flex items-center shrink-0" title={label}>
         <i className={`fa-solid ${icon} w-4 text-center mr-1.5`}></i>
         {typeof value === 'number' ? value.toLocaleString() : value}
     </span>
@@ -37,25 +37,25 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
     const analysisSummary = processedData?.analysisSummary;
 
     return (
-        <footer className="h-8 flex items-center px-4 space-x-6 bg-light-header dark:bg-dark-header border-t border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
+        <footer className="h-8 flex items-center gap-4 overflow-x-auto whitespace-nowrap no-scrollbar px-4 bg-light-header dark:bg-dark-header border-t border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0">
             {selectedFileName && (
-                <span className="flex items-center mr-auto" title="当前文件">
+                <span className="flex items-center shrink-0 mr-auto min-w-0" title="当前文件">
                     <i className="fa-solid fa-file-code w-4 text-center mr-1.5"></i>
-                    {selectedFileName}
+                    <span className="truncate max-w-[40vw] sm:max-w-none">{selectedFileName}</span>
                 </span>
             )}
-            {!selectedFileName && <span className="mr-auto" />}
+            {!selectedFileName && <span className="mr-auto shrink-0" />}
             {typeSummary && (
-                <span className="flex items-center" title="文件类型分布">
+                <span className="flex items-center shrink-0" title="文件类型分布">
                     <i className="fa-solid fa-chart-pie w-4 text-center mr-1.5"></i>
-                    {typeSummary}
+                    <span className="truncate max-w-[35vw] sm:max-w-none">{typeSummary}</span>
                 </span>
             )}
-            <span className="flex items-center" title="编码">
+            <span className="flex items-center shrink-0" title="编码">
                 <i className="fa-solid fa-text-width w-4 text-center mr-1.5"></i>
                 UTF-8
             </span>
-            <span className="flex items-center" title={isDark ? '深色主题' : '浅色主题'}>
+            <span className="flex items-center shrink-0" title={isDark ? '深色主题' : '浅色主题'}>
                 <i className={`fa-solid ${isDark ? 'fa-moon' : 'fa-sun'} w-4 text-center mr-1.5`}></i>
                 {isDark ? 'Dark' : 'Light'}
             </span>
@@ -68,7 +68,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ fileCount, totalLines, totalChars
             {analysisSummary && analysisSummary.securityFindingCount > 0 && (
                 <button
                     onClick={onShowSecurityFindings}
-                    className="flex items-center hover:text-amber-500 transition-colors"
+                    className="flex items-center shrink-0 hover:text-amber-500 transition-colors"
                     title="敏感信息提示"
                 >
                     <i className="fa-solid fa-triangle-exclamation w-4 text-center mr-1.5"></i>

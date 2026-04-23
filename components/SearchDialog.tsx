@@ -163,6 +163,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
 
     const optionButtonClass = (isActive: boolean) => 
         `flex items-center justify-center w-8 h-8 rounded-md text-sm transition-colors ${isActive ? 'bg-primary/20 text-primary' : 'hover:bg-light-border dark:hover:bg-dark-border'}`;
+    const inputPaddingClass = query ? 'pr-24 sm:pr-28' : 'pr-3';
 
 
     return (
@@ -192,11 +193,11 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ onClose, onSearch, onNaviga
                                 onFocus={() => setIsHistoryOpen(true)}
                                 onBlur={() => setTimeout(() => setIsHistoryOpen(false), 150)}
                                 placeholder="搜索..."
-                                className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                                className={`w-full pl-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary ${inputPaddingClass}`}
                                 autoComplete="off"
                             />
                              {query && (
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-light-subtle-text dark:text-dark-subtle-text">
+                                <span className="pointer-events-none absolute right-3 top-1/2 max-w-[40%] -translate-y-1/2 truncate text-right text-xs text-light-subtle-text dark:text-dark-subtle-text">
                                     {currentIndex !== null ? `${currentIndex + 1} / ${resultsCount}` : `${resultsCount} 个结果`}
                                 </span>
                              )}

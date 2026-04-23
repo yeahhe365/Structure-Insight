@@ -132,34 +132,40 @@ const FileTreeRow: React.FC<{
         )}
 
         {!node.isDirectory && (
-          <div className="absolute right-2 top-full z-20 flex items-center space-x-2 rounded-md bg-light-panel/95 px-1 py-0.5 opacity-0 shadow-sm backdrop-blur-sm pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto dark:bg-dark-panel/95">
+          <div className="ml-2 flex shrink-0 items-center space-x-1 opacity-100 pointer-events-auto md:absolute md:right-2 md:top-full md:z-20 md:ml-0 md:space-x-2 md:rounded-md md:bg-light-panel/95 md:px-1 md:py-0.5 md:opacity-0 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto dark:md:bg-dark-panel/95">
             <button
               onClick={(event) => { event.stopPropagation(); onCopyPath(node.path); }}
-              className="flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text hover:text-primary hover:border-primary transition-colors shrink-0"
+              type="button"
+              aria-label={`复制 ${node.path} 路径`}
+              className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
               title="复制完整路径"
             >
               <i className="fa-solid fa-copy"></i>
-              <span>路径</span>
+              <span className="hidden md:inline">路径</span>
             </button>
 
             {node.status === 'processed' && (
               <button
                 onClick={handleToggleExcludeClick}
-                className="flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text hover:text-primary hover:border-primary transition-colors shrink-0"
+                type="button"
+                aria-label={node.excluded ? `包含 ${node.path}` : `排除 ${node.path}`}
+                className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
                 title={node.excluded ? '包含此文件' : '从分析中排除'}
               >
                 <i className={`fa-solid ${node.excluded ? 'fa-eye' : 'fa-eye-slash'}`}></i>
-                <span>{node.excluded ? '包含' : '排除'}</span>
+                <span className="hidden md:inline">{node.excluded ? '包含' : '排除'}</span>
               </button>
             )}
 
             <button
               onClick={handleDelete}
-              className="flex items-center space-x-1.5 px-2 py-1 rounded text-xs bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border shadow-sm text-light-subtle-text hover:text-red-500 hover:border-red-500 transition-colors shrink-0"
+              type="button"
+              aria-label={`删除 ${node.path}`}
+              className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-red-500 hover:text-red-500 dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
               title="从列表中移除"
             >
               <i className="fa-solid fa-trash-can"></i>
-              <span>删除</span>
+              <span className="hidden md:inline">删除</span>
             </button>
           </div>
         )}

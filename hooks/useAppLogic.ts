@@ -12,6 +12,19 @@ import { clearPersistedAppData } from '../services/appStorage';
 const LEGACY_MAX_CHARS_THRESHOLD_DEFAULT = 1000000;
 const MAX_CHARS_THRESHOLD_MIGRATION_KEY = 'migration:maxCharsThresholdDefaultDisabled:v1';
 
+function isEditableEventTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+
+    const tagName = target.tagName.toLowerCase();
+    if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+        return true;
+    }
+
+    return target.isContentEditable || Boolean(target.closest('[contenteditable="true"]'));
+}
+
 export const useAppLogic = (
     codeViewRef: React.RefObject<HTMLDivElement | null>,
     leftPanelRef: React.RefObject<HTMLDivElement | null>
@@ -267,6 +280,7 @@ export const useAppLogic = (
 
     React.useEffect(() => {
         document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.classList.toggle('light', !isDark);
         const lightTheme = document.getElementById('hljs-light-theme') as HTMLLinkElement | null;
         const darkTheme = document.getElementById('hljs-dark-theme') as HTMLLinkElement | null;
         if (lightTheme) lightTheme.disabled = isDark;
@@ -397,12 +411,21 @@ export const useAppLogic = (
 
     React.useEffect(() => {
         const handleGlobalKeys = (e: KeyboardEvent) => {
+            const isEditingText = isEditableEventTarget(e.target);
+            const normalizedKey = e.key.toLowerCase();
+
             if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'f') { e.preventDefault(); if (processedData) setIsSearchOpen(p => !p); }
-                if (e.key === 's') { e.preventDefault(); if (processedData) void handleSave(); }
-                if (e.key === 'o') { e.preventDefault(); handleFileSelect(); }
-                if (e.key === '/') { e.preventDefault(); setIsShortcutsOpen(p => !p); }
-                if (e.key === 'w') { e.preventDefault(); if (selectedFilePath) closeTab(selectedFilePath); }
+                if (normalizedKey === 'f' || normalizedKey === 's' || normalizedKey === 'o' || normalizedKey === '/' || normalizedKey === 'w') {
+                    e.preventDefault();
+                }
+
+                if (!isEditingText) {
+                    if (normalizedKey === 'f') { if (processedData) setIsSearchOpen(p => !p); }
+                    if (normalizedKey === 's') { if (processedData) void handleSave(); }
+                    if (normalizedKey === 'o') { handleFileSelect(); }
+                    if (normalizedKey === '/') { setIsShortcutsOpen(p => !p); }
+                    if (normalizedKey === 'w') { if (selectedFilePath) closeTab(selectedFilePath); }
+                }
             }
             if (e.key === 'Escape') {
                 if (isShortcutsOpen) { e.preventDefault(); setIsShortcutsOpen(false); }

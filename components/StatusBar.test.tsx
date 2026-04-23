@@ -1,9 +1,43 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import StatusBar from './StatusBar';
 
+afterEach(() => {
+    cleanup();
+});
+
 describe('StatusBar', () => {
+    it('keeps status content reachable on narrow screens with horizontal scrolling', () => {
+        const { container } = render(
+            <StatusBar
+                fileCount={8}
+                totalLines={120}
+                totalChars={2400}
+                selectedFileName="very-long-file-name.ts"
+                processedData={{
+                    fileContents: [
+                        {
+                            path: 'src/very-long-file-name.ts',
+                            excluded: false,
+                            stats: { lines: 120, chars: 2400, estimatedTokens: 600 },
+                        },
+                    ],
+                    analysisSummary: {
+                        totalEstimatedTokens: 600,
+                        securityFindingCount: 1,
+                        scannedFileCount: 1,
+                    },
+                }}
+            />
+        );
+
+        const footer = container.querySelector('footer') as HTMLElement | null;
+        expect(footer).not.toBeNull();
+        expect(footer?.className).toContain('overflow-x-auto');
+        expect(footer?.className).toContain('whitespace-nowrap');
+    });
+
     it('shows estimated token and security warning metrics from processed data', () => {
         const onShowSecurityFindings = vi.fn();
         render(

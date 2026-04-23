@@ -53,12 +53,26 @@ const FileCard: React.FC<FileCardProps> = ({
 }) => {
   const [editText, setEditText] = React.useState(file.content);
   const codeRef = React.useRef<HTMLElement>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const highlightTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHighlightKey = React.useRef('');
+
+  const syncTextareaHeight = React.useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, []);
 
   React.useEffect(() => {
     setEditText(file.content);
   }, [file.content]);
+
+  React.useLayoutEffect(() => {
+    if (!isEditing) return;
+    syncTextareaHeight();
+  }, [editText, fontSize, isEditing, syncTextareaHeight]);
 
   // Cleanup highlight timer on unmount
   React.useEffect(() => {
@@ -72,7 +86,7 @@ const FileCard: React.FC<FileCardProps> = ({
     if (!codeRef.current || isEditing || isMarkdownPreview || file.excluded) return;
 
     // Skip if the highlight inputs haven't actually changed
-    const highlightKey = `${file.path}:${file.content.length}:${searchQuery}:${searchOptions.caseSensitive}:${searchOptions.useRegex}:${searchOptions.wholeWord}:${activeMatchIndexInFile}`;
+    const highlightKey = `${file.path}:${file.content}:${searchQuery}:${searchOptions.caseSensitive}:${searchOptions.useRegex}:${searchOptions.wholeWord}:${activeMatchIndexInFile}`;
     if (highlightKey === lastHighlightKey.current) return;
     lastHighlightKey.current = highlightKey;
 
@@ -210,12 +224,7 @@ const FileCard: React.FC<FileCardProps> = ({
                 style={codeStyle}
                 autoFocus
                 rows={1}
-                ref={(el) => {
-                    if (el) {
-                        el.style.height = 'auto';
-                        el.style.height = el.scrollHeight + 'px';
-                    }
-                }}
+                ref={textareaRef}
             />
             <div className="flex justify-end space-x-2 mt-2">
                 <button onClick={onCancelEdit} className="px-3 py-1 rounded-md text-sm bg-gray-200 dark:bg-dark-border hover:bg-gray-300 dark:hover:bg-gray-600">取消</button>
