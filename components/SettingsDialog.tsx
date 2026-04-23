@@ -78,6 +78,169 @@ const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     },
 ];
 
+interface ToggleProps {
+    checked: boolean;
+    onChange: () => void;
+    label: string;
+    id: string;
+}
+
+const Toggle = ({ checked, onChange, label, id }: ToggleProps) => (
+    <button
+        id={id}
+        type="button"
+        aria-label={label}
+        aria-pressed={checked}
+        onClick={onChange}
+        className={[
+            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all',
+            'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-slate-950',
+            checked
+                ? 'border-primary/30 bg-primary shadow-sm shadow-primary/25'
+                : 'border-light-border bg-light-panel dark:border-dark-border dark:bg-slate-800',
+        ].join(' ')}
+    >
+        <span
+            className={[
+                'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
+                checked ? 'translate-x-6' : 'translate-x-1',
+            ].join(' ')}
+        />
+    </button>
+);
+
+interface SidebarTabButtonProps {
+    section: SettingsSectionDefinition;
+    activeSection: SettingsSectionId;
+    onSelectSection: (sectionId: SettingsSectionId) => void;
+}
+
+const SidebarTabButton = ({ section, activeSection, onSelectSection }: SidebarTabButtonProps) => {
+    const isActive = activeSection === section.id;
+
+    return (
+        <button
+            id={`settings-tab-${section.id}`}
+            type="button"
+            role="tab"
+            aria-label={section.label}
+            aria-controls={`settings-panel-${section.id}`}
+            aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
+            onClick={() => onSelectSection(section.id)}
+            className={[
+                'flex flex-shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all outline-none select-none',
+                'w-auto md:w-full focus-visible:ring-2 focus-visible:ring-primary/50',
+                isActive
+                    ? 'bg-light-bg text-light-text shadow-sm dark:bg-slate-900 dark:text-dark-text'
+                    : 'text-light-subtle-text hover:bg-light-hover hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/60 dark:hover:text-dark-text',
+            ].join(' ')}
+        >
+            <i
+                className={[
+                    'fa-solid w-4 text-center transition-colors',
+                    section.icon,
+                    isActive ? 'text-primary' : 'text-light-subtle-text dark:text-dark-subtle-text',
+                ].join(' ')}
+            />
+            <span>{section.label}</span>
+        </button>
+    );
+};
+
+interface SectionGroupProps {
+    title: string;
+    icon?: string;
+    children: React.ReactNode;
+}
+
+const SectionGroup = ({ title, icon, children }: SectionGroupProps) => (
+    <section className="py-2">
+        <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">
+            {icon ? <i className={`fa-solid ${icon} w-3.5 text-center`} /> : null}
+            {title}
+        </h4>
+        <div className="divide-y divide-light-border/80 rounded-2xl border border-light-border/80 bg-light-panel px-4 dark:divide-dark-border/80 dark:border-dark-border/80 dark:bg-slate-900">
+            {children}
+        </div>
+    </section>
+);
+
+interface SettingsRowProps {
+    label: string;
+    description?: string;
+    control?: React.ReactNode;
+    children?: React.ReactNode;
+    stacked?: boolean;
+}
+
+const SettingsRow = ({ label, description, control, children, stacked = false }: SettingsRowProps) => (
+    <div className="py-3">
+        <div className={stacked ? 'space-y-3' : 'flex items-start justify-between gap-4'}>
+            <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-light-text dark:text-dark-text">{label}</div>
+                {description ? (
+                    <p className="mt-0.5 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">
+                        {description}
+                    </p>
+                ) : null}
+            </div>
+            {!stacked && control ? <div className="shrink-0">{control}</div> : null}
+        </div>
+        {stacked && children ? <div className="mt-3">{children}</div> : null}
+        {!stacked && children ? <div className="mt-3">{children}</div> : null}
+    </div>
+);
+
+interface FieldProps {
+    id: string;
+    value: string | number;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    multiline?: boolean;
+    rows?: number;
+    type?: string;
+    min?: number;
+}
+
+const Field = ({
+    id,
+    value,
+    onChange,
+    placeholder,
+    multiline = false,
+    rows = 3,
+    type = 'text',
+    min,
+}: FieldProps) => {
+    const className = 'w-full rounded-lg border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-slate-950 dark:text-dark-text';
+
+    if (multiline) {
+        return (
+            <textarea
+                id={id}
+                value={String(value)}
+                onChange={(event) => onChange(event.target.value)}
+                rows={rows}
+                className={`${className} resize-y`}
+                placeholder={placeholder}
+            />
+        );
+    }
+
+    return (
+        <input
+            id={id}
+            type={type}
+            min={min}
+            value={String(value)}
+            onChange={(event) => onChange(event.target.value)}
+            className={className}
+            placeholder={placeholder}
+        />
+    );
+};
+
 const SettingsDialog: React.FC<SettingsDialogProps> = ({
     isOpen,
     onClose,
@@ -131,22 +294,14 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         }
 
         setActiveSection('workspace');
-        setStarsLoading(true);
+        setStars(null);
+        setStarsLoading(false);
+    }, [isOpen]);
 
-        fetch('https://api.github.com/repos/yeahhe365/Structure-Insight')
-            .then(res => res.json())
-            .then(data => {
-                if (typeof data?.stargazers_count === 'number') {
-                    setStars(data.stargazers_count);
-                } else {
-                    setStars(null);
-                }
-            })
-            .catch(err => {
-                console.error('Failed to fetch GitHub stars:', err);
-                setStars(null);
-            })
-            .finally(() => setStarsLoading(false));
+    React.useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
 
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
@@ -158,6 +313,38 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
+    React.useEffect(() => {
+        if (!isOpen || activeSection !== 'about') {
+            return;
+        }
+
+        let cancelled = false;
+        setStarsLoading(true);
+
+        fetch('https://api.github.com/repos/yeahhe365/Structure-Insight')
+            .then(res => res.json())
+            .then(data => {
+                if (cancelled) {
+                    return;
+                }
+                setStars(typeof data?.stargazers_count === 'number' ? data.stargazers_count : null);
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setStars(null);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setStarsLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isOpen, activeSection]);
+
     if (!isOpen) {
         return null;
     }
@@ -167,170 +354,6 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     const panelLabelId = `settings-tab-${activeSection}`;
     const maxCharsThresholdInKb = Math.round(maxCharsThreshold / 1024);
     const starStatusText = starsLoading ? '正在获取 GitHub 数据…' : stars !== null ? `${stars.toLocaleString()} Stars` : 'GitHub 数据暂不可用';
-
-    const Toggle = ({
-        checked,
-        onChange,
-        label,
-        id,
-    }: {
-        checked: boolean;
-        onChange: () => void;
-        label: string;
-        id: string;
-    }) => (
-        <button
-            id={id}
-            type="button"
-            aria-label={label}
-            aria-pressed={checked}
-            onClick={onChange}
-            className={[
-                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all',
-                'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-slate-950',
-                checked
-                    ? 'border-primary/30 bg-primary shadow-sm shadow-primary/25'
-                    : 'border-light-border bg-light-panel dark:border-dark-border dark:bg-slate-800',
-            ].join(' ')}
-        >
-            <span
-                className={[
-                    'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
-                    checked ? 'translate-x-6' : 'translate-x-1',
-                ].join(' ')}
-            />
-        </button>
-    );
-
-    const SidebarTabButton = ({ section }: { section: SettingsSectionDefinition }) => {
-        const isActive = activeSection === section.id;
-
-        return (
-            <button
-                id={`settings-tab-${section.id}`}
-                type="button"
-                role="tab"
-                aria-label={section.label}
-                aria-controls={`settings-panel-${section.id}`}
-                aria-selected={isActive}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => setActiveSection(section.id)}
-                className={[
-                    'flex flex-shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all outline-none select-none',
-                    'w-auto md:w-full focus-visible:ring-2 focus-visible:ring-primary/50',
-                    isActive
-                        ? 'bg-light-bg text-light-text shadow-sm dark:bg-slate-900 dark:text-dark-text'
-                        : 'text-light-subtle-text hover:bg-light-hover hover:text-light-text dark:text-dark-subtle-text dark:hover:bg-slate-900/60 dark:hover:text-dark-text',
-                ].join(' ')}
-            >
-                <i
-                    className={[
-                        'fa-solid w-4 text-center transition-colors',
-                        section.icon,
-                        isActive ? 'text-primary' : 'text-light-subtle-text dark:text-dark-subtle-text',
-                    ].join(' ')}
-                />
-                <span>{section.label}</span>
-            </button>
-        );
-    };
-
-    const SectionGroup = ({
-        title,
-        icon,
-        children,
-    }: {
-        title: string;
-        icon?: string;
-        children: React.ReactNode;
-    }) => (
-        <section className="py-2">
-            <h4 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">
-                {icon ? <i className={`fa-solid ${icon} w-3.5 text-center`} /> : null}
-                {title}
-            </h4>
-            <div className="divide-y divide-light-border/80 rounded-2xl border border-light-border/80 bg-light-panel px-4 dark:divide-dark-border/80 dark:border-dark-border/80 dark:bg-slate-900">
-                {children}
-            </div>
-        </section>
-    );
-
-    const SettingsRow = ({
-        label,
-        description,
-        control,
-        children,
-        stacked = false,
-    }: {
-        label: string;
-        description?: string;
-        control?: React.ReactNode;
-        children?: React.ReactNode;
-        stacked?: boolean;
-    }) => (
-        <div className="py-3">
-            <div className={stacked ? 'space-y-3' : 'flex items-start justify-between gap-4'}>
-                <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-light-text dark:text-dark-text">{label}</div>
-                    {description ? (
-                        <p className="mt-0.5 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">
-                            {description}
-                        </p>
-                    ) : null}
-                </div>
-                {!stacked && control ? <div className="shrink-0">{control}</div> : null}
-            </div>
-            {stacked && children ? <div className="mt-3">{children}</div> : null}
-            {!stacked && children ? <div className="mt-3">{children}</div> : null}
-        </div>
-    );
-
-    const Field = ({
-        id,
-        value,
-        onChange,
-        placeholder,
-        multiline = false,
-        rows = 3,
-        type = 'text',
-        min,
-    }: {
-        id: string;
-        value: string | number;
-        onChange: (value: string) => void;
-        placeholder?: string;
-        multiline?: boolean;
-        rows?: number;
-        type?: string;
-        min?: number;
-    }) => {
-        const className = 'w-full rounded-lg border border-light-border bg-light-bg px-3 py-2.5 text-sm text-light-text outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 dark:border-dark-border dark:bg-slate-950 dark:text-dark-text';
-
-        if (multiline) {
-            return (
-                <textarea
-                    id={id}
-                    value={String(value)}
-                    onChange={(event) => onChange(event.target.value)}
-                    rows={rows}
-                    className={`${className} resize-y`}
-                    placeholder={placeholder}
-                />
-            );
-        }
-
-        return (
-            <input
-                id={id}
-                type={type}
-                min={min}
-                value={String(value)}
-                onChange={(event) => onChange(event.target.value)}
-                className={className}
-                placeholder={placeholder}
-            />
-        );
-    };
 
     const ThemeSegmentedControl = () => (
         <div className="inline-flex rounded-lg border border-light-border bg-light-bg p-1 dark:border-dark-border dark:bg-slate-950">
@@ -363,7 +386,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     const renderWorkspaceSection = () => (
         <div className="max-w-3xl mx-auto w-full space-y-6">
             <SectionGroup title="外观" icon="fa-palette">
-                <SettingsRow label="主题模式" description="对齐 All-Model-Chat 的分段式主题切换。">
+                <SettingsRow label="主题模式" description="在浅色与深色阅读环境之间快速切换。">
                     <ThemeSegmentedControl />
                 </SettingsRow>
                 <SettingsRow label="字体大小" description="即时调整阅读密度。" stacked>
@@ -480,9 +503,9 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
             <SectionGroup title="内容处理" icon="fa-wand-magic-sparkles">
                 <SettingsRow
-                    label="显示行号"
-                    description="为导出的正文追加行号。"
-                    control={<Toggle id="line-numbers-toggle" label="显示行号" checked={showLineNumbers} onChange={onToggleShowLineNumbers} />}
+                    label="导出时显示行号"
+                    description="只影响导出正文；代码预览保留阅读行号，便于定位。"
+                    control={<Toggle id="line-numbers-toggle" label="导出时显示行号" checked={showLineNumbers} onChange={onToggleShowLineNumbers} />}
                 />
                 <SettingsRow
                     label="移除空行"
@@ -591,8 +614,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
 
                 <p className="text-sm leading-6 text-light-subtle-text dark:text-dark-subtle-text">
-                    面向代码结构理解、项目导出与目录探索的工作台。这个设置页现在按 All-Model-Chat 的产品化设置面板风格重做，
-                    更强调侧边导航、内容扫描效率和一致的控件层级。
+                    面向代码结构理解、项目导出与目录探索的本地工作台。设置面板围绕导入、阅读和导出流程组织，
+                    让常用调整更容易扫描，也保持控件层级一致。
                 </p>
             </div>
 
@@ -668,7 +691,12 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         className="flex flex-1 gap-1 overflow-x-auto px-2 pb-2 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:px-3 md:pb-3"
                     >
                         {SETTINGS_SECTIONS.map(section => (
-                            <SidebarTabButton key={section.id} section={section} />
+                            <SidebarTabButton
+                                key={section.id}
+                                section={section}
+                                activeSection={activeSection}
+                                onSelectSection={setActiveSection}
+                            />
                         ))}
                     </nav>
                 </aside>
