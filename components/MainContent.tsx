@@ -7,6 +7,7 @@ import { useAppLogic } from '../hooks/useAppLogic';
 import ScrollSlider from './ScrollSlider';
 import ScrollToTopButton from './ScrollToTopButton';
 import { FileNode } from '../types';
+import { compareFileTypeLabels, getFileTypeLabel } from '../services/fileTypeLabel';
 
 const FileTree = React.lazy(() => import('./FileTree'));
 const CodeView = React.lazy(() => import('./CodeView'));
@@ -18,38 +19,42 @@ interface MainContentProps {
     leftPanelRef: React.RefObject<HTMLDivElement | null>;
 }
 
-/** Recursively collect unique file extensions from a tree */
-function collectExtensions(nodes: FileNode[]): string[] {
-    const exts = new Set<string>();
+interface FileTypeCount {
+    label: string;
+    count: number;
+}
+
+function collectFileTypeCounts(nodes: FileNode[]): FileTypeCount[] {
+    const counts = new Map<string, number>();
+
     const walk = (items: FileNode[]) => {
         for (const node of items) {
             if (node.isDirectory) {
                 walk(node.children);
             } else {
-                const dot = node.name.lastIndexOf('.');
-                if (dot > 0 && dot < node.name.length - 1) {
-                    exts.add(node.name.slice(dot).toLowerCase());
-                }
+                const label = getFileTypeLabel(node.name);
+                counts.set(label, (counts.get(label) ?? 0) + 1);
             }
         }
     };
+
     walk(nodes);
-    return Array.from(exts).sort();
+
+    return Array.from(counts.entries())
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => compareFileTypeLabels(a.label, b.label));
 }
 
-/** Recursively filter tree to files matching `ext`, keeping directories that have matching children */
-function filterTreeByExtension(nodes: FileNode[], ext: string | null): FileNode[] {
-    if (!ext) return nodes;
+function filterTreeByFileType(nodes: FileNode[], fileType: string | null): FileNode[] {
+    if (!fileType) return nodes;
     return nodes.reduce<FileNode[]>((acc, node) => {
         if (node.isDirectory) {
-            const filteredChildren = filterTreeByExtension(node.children, ext);
+            const filteredChildren = filterTreeByFileType(node.children, fileType);
             if (filteredChildren.length > 0) {
                 acc.push({ ...node, children: filteredChildren });
             }
         } else {
-            const dot = node.name.lastIndexOf('.');
-            const fileExt = dot > 0 && dot < node.name.length - 1 ? node.name.slice(dot).toLowerCase() : '';
-            if (fileExt === ext) {
+            if (getFileTypeLabel(node.name) === fileType) {
                 acc.push(node);
             }
         }
@@ -75,22 +80,101 @@ const SuspenseFallback: React.FC = () => (
     </div>
 );
 
+const FileTypeFilterToolbar: React.FC<{
+    fileTypes: FileTypeCount[];
+    activeFilterType: string | null;
+    hiddenSelectedFileName: string | null;
+    onSelectFileType: (fileType: string | null) => void;
+}> = ({ fileTypes, activeFilterType, hiddenSelectedFileName, onSelectFileType }) => {
+    if (fileTypes.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="shrink-0 border-b border-light-border dark:border-dark-border">
+            <div className="px-3 pt-2 text-[11px] text-light-subtle-text dark:text-dark-subtle-text">
+                <span className="font-semibold uppercase tracking-[0.16em]">文件类型筛选</span>
+                <p className="mt-1">筛选仅影响文件树浏览，不影响导出与右侧内容。</p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 px-3 pt-2 pb-2">
+                <button
+                    type="button"
+                    aria-label="全部"
+                    aria-pressed={activeFilterType === null}
+                    onClick={() => onSelectFileType(null)}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                        activeFilterType === null
+                            ? 'bg-primary text-white'
+                            : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
+                    }`}
+                >
+                    全部
+                </button>
+                {fileTypes.map(fileType => (
+                    <button
+                        key={fileType.label}
+                        type="button"
+                        aria-label={fileType.label}
+                        aria-pressed={activeFilterType === fileType.label}
+                        onClick={() => onSelectFileType(activeFilterType === fileType.label ? null : fileType.label)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                            activeFilterType === fileType.label
+                                ? 'bg-primary text-white'
+                                : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
+                        }`}
+                    >
+                        <span>{fileType.label}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${activeFilterType === fileType.label ? 'bg-white/20' : 'bg-light-panel dark:bg-dark-panel'}`}>
+                            {fileType.count}
+                        </span>
+                    </button>
+                ))}
+            </div>
+            {hiddenSelectedFileName && (
+                <div className="px-3 pb-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200">
+                        <span>当前文件 {hiddenSelectedFileName} 未显示在当前筛选结果中。</span>
+                        <button
+                            type="button"
+                            onClick={() => onSelectFileType(null)}
+                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-medium text-amber-900 transition-colors hover:bg-amber-100 dark:text-amber-100 dark:hover:bg-amber-900/40"
+                        >
+                            清除筛选
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanelRef }) => {
     const { state, handlers } = logic;
     const { isMobile } = state;
     const fileTreeScrollRef = React.useRef<HTMLElement | null>(null);
-    const [filterExt, setFilterExt] = React.useState<string | null>(null);
+    const [filterType, setFilterType] = React.useState<string | null>(null);
 
     const treeData = state.processedData?.treeData || [];
-    const extensions = React.useMemo(() => collectExtensions(treeData), [treeData]);
-    const activeFilterExt = filterExt && extensions.includes(filterExt) ? filterExt : null;
-    const filteredNodes = React.useMemo(() => filterTreeByExtension(treeData, activeFilterExt), [treeData, activeFilterExt]);
+    const fileTypes = React.useMemo(() => collectFileTypeCounts(treeData), [treeData]);
+    const activeFilterType = filterType && fileTypes.some(fileType => fileType.label === filterType) ? filterType : null;
+    const filteredNodes = React.useMemo(() => filterTreeByFileType(treeData, activeFilterType), [treeData, activeFilterType]);
+    const hiddenSelectedFileName = React.useMemo(() => {
+        if (!activeFilterType || !state.selectedFilePath) {
+            return null;
+        }
+
+        if (getFileTypeLabel(state.selectedFilePath) === activeFilterType) {
+            return null;
+        }
+
+        return state.selectedFilePath.split('/').pop() ?? state.selectedFilePath;
+    }, [activeFilterType, state.selectedFilePath]);
 
     React.useEffect(() => {
-        if (filterExt && activeFilterExt === null) {
-            setFilterExt(null);
+        if (filterType && activeFilterType === null) {
+            setFilterType(null);
         }
-    }, [activeFilterExt, filterExt]);
+    }, [activeFilterType, filterType]);
 
     const mobileFabIcon = () => {
         if (!state.processedData) return 'fa-list-ul';
@@ -129,23 +213,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                    <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
                             <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full bg-light-panel dark:bg-dark-panel flex flex-col">
-                                {extensions.length > 0 && (
-                                    <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
-                                        {extensions.map(ext => (
-                                            <button
-                                                key={ext}
-                                                onClick={() => setFilterExt(filterExt === ext ? null : ext)}
-                                                className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                                                    filterExt === ext
-                                                        ? 'bg-primary text-white'
-                                                        : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
-                                                }`}
-                                            >
-                                                {ext}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                                <FileTypeFilterToolbar
+                                    fileTypes={fileTypes}
+                                    activeFilterType={activeFilterType}
+                                    hiddenSelectedFileName={hiddenSelectedFileName}
+                                    onSelectFileType={setFilterType}
+                                />
                                 <div className="flex-1 min-h-0">
                                     <React.Suspense fallback={<SuspenseFallback />}>
                                         <FileTree
@@ -155,7 +228,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                             onDeleteFile={handlers.handleDeleteFile}
                                             onCopyPath={handlers.handleCopyPath}
                                             onToggleExclude={handlers.handleToggleExclude}
-                                            onDirDoubleClick={handlers.handleDirDoubleClick}
                                             selectedFilePath={state.selectedFilePath}
                                         />
                                     </React.Suspense>
@@ -164,7 +236,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                         )}
                         {state.mobileView === 'editor' && (
                             <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: '100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
-                                {state.activeView === 'code' && state.processedData && (
+                                {state.processedData && state.openFiles.length > 0 && (
                                     <TabBar
                                         openFiles={state.openFiles}
                                         selectedFilePath={state.selectedFilePath}
@@ -216,23 +288,12 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 <>
                     <div ref={leftPanelRef} className="relative h-full bg-light-panel dark:bg-dark-panel flex flex-col" style={{ width: `${state.panelWidth}%` }}>
                         <div className="flex-1 min-h-0 flex flex-col">
-                            {extensions.length > 0 && (
-                                <div className="shrink-0 flex flex-wrap gap-1.5 px-3 pt-2 pb-1 border-b border-light-border dark:border-dark-border">
-                                    {extensions.map(ext => (
-                                        <button
-                                            key={ext}
-                                            onClick={() => setFilterExt(filterExt === ext ? null : ext)}
-                                            className={`px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                                                filterExt === ext
-                                                    ? 'bg-primary text-white'
-                                                    : 'bg-light-hover dark:bg-dark-hover text-light-subtle-text dark:text-dark-subtle-text hover:bg-primary/20 dark:hover:bg-primary/20'
-                                            }`}
-                                        >
-                                            {ext}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
+                            <FileTypeFilterToolbar
+                                fileTypes={fileTypes}
+                                activeFilterType={activeFilterType}
+                                hiddenSelectedFileName={hiddenSelectedFileName}
+                                onSelectFileType={setFilterType}
+                            />
                             <div className="relative flex-1 min-h-0">
                                 <React.Suspense fallback={<SuspenseFallback />}>
                                     <FileTree
@@ -243,7 +304,6 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                         onDeleteFile={handlers.handleDeleteFile}
                                         onCopyPath={handlers.handleCopyPath}
                                         onToggleExclude={handlers.handleToggleExclude}
-                                        onDirDoubleClick={handlers.handleDirDoubleClick}
                                         selectedFilePath={state.selectedFilePath}
                                     />
                                 </React.Suspense>
@@ -255,7 +315,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                          <div className="w-full h-full bg-light-border dark:bg-dark-border group-hover:bg-primary transition-colors duration-200" />
                     </div>
                     <div className="flex-1 h-full overflow-hidden bg-light-bg dark:bg-dark-bg flex flex-col">
-                        {state.activeView === 'code' && (
+                        {state.openFiles.length > 0 && (
                             <TabBar
                                 openFiles={state.openFiles}
                                 selectedFilePath={state.selectedFilePath}

@@ -174,29 +174,33 @@ const FileCard: React.FC<FileCardProps> = ({
     return '';
   }, [file.content, isMarkdown, isMarkdownPreview, file.excluded]);
 
+  const pathSegments = file.path.split('/');
+  const fileName = pathSegments.pop() || file.path;
+  const directoryPath = pathSegments.join('/') || '根目录';
 
   return (
     <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
-      <div className="px-3 py-1.5 border-b border-light-border dark:border-dark-border text-xs text-light-subtle-text dark:text-dark-subtle-text flex items-center">
-        <i className="fa-solid fa-folder-tree mr-2 opacity-50"></i>
-        {file.path.split('/').map((segment, i, segments) => (
-          <React.Fragment key={i}>
-            {i > 0 && <i className="fa-solid fa-chevron-right mx-1.5 text-[8px] opacity-40"></i>}
-            <span className={`hover:text-primary cursor-default transition-colors ${i === segments.length - 1 ? 'font-semibold text-light-text dark:text-dark-text' : ''}`}>{segment}</span>
-          </React.Fragment>
-        ))}
-      </div>
-      <div className="flex justify-between items-center p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm">
-        <div className="font-mono text-sm text-light-text dark:text-dark-text truncate flex items-center" title={file.path}>
-          <i className="fa-solid fa-file-lines mr-2 text-light-subtle-text dark:text-dark-subtle-text"></i>
-          <span className={`truncate ${file.excluded ? 'line-through text-light-subtle-text dark:text-dark-subtle-text italic' : ''}`}>{file.path} {file.excluded && "(已排除)"}</span>
-           <button onClick={() => onCopyPath(file.path)} className="ml-2 text-light-subtle-text hover:text-primary transition-colors flex items-center justify-center p-1 rounded hover:bg-light-border dark:hover:bg-dark-border/50" title="复制路径">
+      <div className="flex flex-col gap-3 p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex items-center gap-3" title={file.path}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled">
+            <i className="fa-solid fa-file-lines"></i>
+          </div>
+          <div className="min-w-0">
+            <div className={`truncate font-mono text-sm font-semibold text-light-text dark:text-dark-text ${file.excluded ? 'line-through text-light-subtle-text dark:text-dark-subtle-text italic' : ''}`}>
+              {fileName} {file.excluded && "(已排除)"}
+            </div>
+            <div data-file-path-display="full" className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-light-subtle-text dark:text-dark-subtle-text">
+              <i className="fa-solid fa-folder text-[10px]"></i>
+              <span className="truncate">{directoryPath}</span>
+            </div>
+          </div>
+           <button onClick={() => onCopyPath(file.path)} className="text-light-subtle-text hover:text-primary transition-colors flex items-center justify-center p-1.5 rounded-lg hover:bg-light-border dark:hover:bg-dark-border/50" title="复制完整路径" aria-label="复制完整路径">
               <i className="fa-solid fa-copy text-xs"></i>
           </button>
         </div>
-        <div className="flex items-center space-x-4 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-2">
-          <span className="hidden sm:inline">{file.stats.lines} 行</span>
-          <span className="hidden sm:inline">{file.stats.chars} 字符</span>
+        <div className="flex items-center gap-2 text-xs text-light-subtle-text dark:text-dark-subtle-text shrink-0 sm:ml-2">
+          <span className="hidden rounded-full border border-light-border px-2 py-1 dark:border-dark-border sm:inline">{file.stats.lines} 行</span>
+          <span className="hidden rounded-full border border-light-border px-2 py-1 dark:border-dark-border sm:inline">{file.stats.chars} 字符</span>
           {isMarkdown && !file.excluded && (
              <IconButton onClick={() => onToggleMarkdownPreview(file.path)} title={isMarkdownPreview ? "显示原文" : "预览 Markdown"} disabled={isEditing} icon={isMarkdownPreview ? 'fa-file-code' : 'fa-eye'} />
           )}
@@ -235,7 +239,7 @@ const FileCard: React.FC<FileCardProps> = ({
         <div className="prose dark:prose-invert max-w-none p-4" style={{fontSize: `${fontSize}px`}} dangerouslySetInnerHTML={{ __html: sanitizedMarkdown }} />
       ) : (
         <div className="flex" style={codeStyle}>
-            <pre className="line-numbers text-right pr-4 pl-2 py-3 select-none text-light-subtle-text/50 dark:text-dark-subtle-text/50 bg-light-bg/50 dark:bg-dark-bg/50">
+            <pre className="line-numbers text-right pr-4 pl-2 py-3 select-none text-light-subtle-text dark:text-dark-subtle-text bg-light-bg/70 dark:bg-dark-bg/70">
                 {lineNumbers}
             </pre>
             <div className="relative flex-1">

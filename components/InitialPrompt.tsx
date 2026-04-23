@@ -18,32 +18,58 @@ interface InitialPromptProps {
 }
 
 const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProjects = [], onOpenRecentProject }) => {
+    const capabilities = [
+        {
+            icon: 'fa-shield-halved',
+            title: '浏览器本地处理',
+            description: '源代码不上传，导入、扫描和导出都在当前浏览器完成。',
+        },
+        {
+            icon: 'fa-file-zipper',
+            title: '文件夹与 ZIP',
+            description: '支持选择目录、拖放文件夹，也可以直接导入压缩包。',
+        },
+        {
+            icon: 'fa-layer-group',
+            title: '多格式导出',
+            description: '生成 Plain、Markdown、XML 或 JSON，方便喂给 AI。',
+        },
+    ];
+
     return (
-        <div className="relative flex flex-col items-center justify-center h-full w-full overflow-hidden p-4 sm:p-6 select-none bg-light-bg dark:bg-dark-bg">
+        <div className="relative h-full w-full overflow-y-auto select-none bg-light-bg dark:bg-dark-bg">
             {/* Background Pattern */}
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" 
+                <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.08]" 
                     style={{
                         backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
                         backgroundSize: '24px 24px'
                     }}
                 ></div>
-                <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-primary/5 to-transparent"></div>
+                <div className="absolute left-1/2 top-[-12rem] h-[28rem] w-[42rem] -translate-x-1/2 rounded-full bg-gradient-to-r from-primary/15 via-amber-400/10 to-cyan-400/10 blur-3xl"></div>
+                <div className="absolute bottom-[-10rem] right-[-8rem] h-[24rem] w-[24rem] rounded-full bg-amber-500/10 blur-3xl"></div>
             </div>
 
-            <div className="z-10 w-full max-w-5xl flex flex-col items-center px-2 sm:px-0">
+            <div className="relative z-10 mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-start px-4 py-10 pb-16 sm:px-6 lg:justify-center">
                 {/* Hero */}
                 <motion.div 
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-center mb-12 px-2"
+                    className="text-center mb-10 px-2"
                 >
-                    <h1 className="mx-auto max-w-[10ch] text-3xl font-extrabold leading-tight tracking-tight text-light-text dark:text-dark-text sm:max-w-none sm:text-4xl md:text-6xl mb-6">
-                        Structure <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Insight</span>
+                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-light-border bg-light-panel/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text shadow-sm backdrop-blur dark:border-dark-border dark:bg-dark-panel/80 dark:text-dark-subtle-text">
+                        <span className="h-2 w-2 rounded-full bg-primary"></span>
+                        浏览器优先，本地分析
+                    </div>
+                    <h1 className="mx-auto max-w-[10ch] text-3xl font-extrabold leading-tight tracking-tight text-light-text dark:text-dark-text sm:max-w-none sm:text-4xl md:text-6xl mb-5">
+                        Structure <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-cyan-600 to-amber-500 dark:from-primary-disabled dark:via-cyan-300 dark:to-amber-300">Insight</span>
                     </h1>
                     <p className="mx-auto max-w-sm px-2 text-sm leading-relaxed text-light-subtle-text dark:text-dark-subtle-text sm:text-lg md:max-w-2xl md:text-xl">
-                        将代码库整理为 AI 友好 格式
+                        将代码库整理为 AI 友好格式
+                    </p>
+                    <p className="mx-auto mt-3 max-w-2xl px-2 text-xs leading-6 text-light-subtle-text dark:text-dark-subtle-text sm:text-sm">
+                        快速理解目录结构、估算上下文体积、发现潜在敏感内容，并生成适合分享给 AI 的仓库快照。
                     </p>
                 </motion.div>
 
@@ -52,20 +78,42 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.2 }}
-                    className="w-full max-w-lg mb-16"
+                    className="w-full max-w-xl mb-8"
                 >
                     <button
                         onClick={onOpenFolder}
-                        className="group relative w-full bg-light-panel dark:bg-dark-panel border-2 border-dashed border-light-border dark:border-dark-border hover:border-primary dark:hover:border-primary rounded-2xl p-5 sm:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/5 flex flex-col items-center gap-4 text-center cursor-pointer outline-none focus:ring-4 focus:ring-primary/10"
+                        className="group relative w-full overflow-hidden rounded-3xl border border-primary/20 bg-light-panel/90 p-5 text-left shadow-xl shadow-primary/10 outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/15 focus:ring-4 focus:ring-primary/15 dark:bg-dark-panel/90 sm:p-6"
+                        aria-label="选择项目文件夹"
                     >
-                         <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/20 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
+                        <div className="relative flex items-center gap-4">
+                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/25 transition-all duration-300 group-hover:scale-105">
                             <i className="fa-solid fa-folder-open text-2xl"></i>
                         </div>
-                        <div>
-                            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-1 group-hover:text-primary transition-colors">选择文件夹</h3>
-                            <p className="text-xs sm:text-sm text-light-subtle-text dark:text-dark-subtle-text">或将文件夹拖放到页面任意位置</p>
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-1 group-hover:text-primary transition-colors">选择项目文件夹</h3>
+                            <p className="text-xs sm:text-sm text-light-subtle-text dark:text-dark-subtle-text">支持文件夹、ZIP 与拖放导入，几秒内生成可导航结构。</p>
+                        </div>
+                        <i className="fa-solid fa-arrow-right hidden text-xl text-primary transition-transform group-hover:translate-x-1 sm:block"></i>
                         </div>
                     </button>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mb-10 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-3"
+                >
+                    {capabilities.map(item => (
+                        <div key={item.title} className="rounded-2xl border border-light-border bg-light-panel/80 p-4 shadow-sm backdrop-blur dark:border-dark-border dark:bg-dark-panel/80">
+                            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled">
+                                <i className={`fa-solid ${item.icon}`}></i>
+                            </div>
+                            <h3 className="text-sm font-bold text-light-text dark:text-dark-text">{item.title}</h3>
+                            <p className="mt-1 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">{item.description}</p>
+                        </div>
+                    ))}
                 </motion.div>
 
                 {/* Recent Projects */}
@@ -74,7 +122,7 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.4 }}
-                        className="w-full max-w-lg mb-16"
+                        className="w-full max-w-lg mb-10"
                     >
                         <p className="text-xs font-medium text-light-subtle-text dark:text-dark-subtle-text mb-3 uppercase tracking-wider">最近项目</p>
                         <div className="grid grid-cols-1 gap-2">
@@ -93,17 +141,17 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                         </div>
                     </motion.div>
                 )}
+                {/* Footer Info */}
+                <motion.div
+                    data-landing-footer
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 1, delay: 0.8 }}
+                    className="mt-auto px-4 pt-6 text-center text-[11px] sm:text-xs text-light-subtle-text dark:text-dark-subtle-text"
+                >
+                    安全本地处理 · 浏览器运行
+                </motion.div>
             </div>
-            
-            {/* Footer Info */}
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1, delay: 0.8 }}
-                className="absolute bottom-4 px-4 text-center text-[11px] sm:text-xs text-light-subtle-text/50 dark:text-dark-subtle-text/50"
-            >
-                Secure & Local • Browser-based Processing
-            </motion.div>
         </div>
     );
 };

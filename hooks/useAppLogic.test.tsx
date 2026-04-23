@@ -469,7 +469,7 @@ describe('useAppLogic', () => {
         expect(result.current.state.mobileView).toBe('editor');
     });
 
-    it('prevents browser save shortcuts while focus is inside a textarea without triggering app save', () => {
+    it('leaves browser save shortcuts alone while focus is inside a textarea and does not trigger app save', () => {
         const codeViewRef = React.createRef<HTMLDivElement>();
         const leftPanelRef = React.createRef<HTMLDivElement>();
         renderHook(() => useAppLogic(codeViewRef, leftPanelRef));
@@ -489,7 +489,7 @@ describe('useAppLogic', () => {
         fireEvent(textarea, keydownEvent);
 
         expect(buildExportOutputMock).toHaveBeenCalledTimes(callCountBefore);
-        expect(keydownEvent.defaultPrevented).toBe(true);
+        expect(keydownEvent.defaultPrevented).toBe(false);
 
         textarea.remove();
     });

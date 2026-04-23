@@ -413,19 +413,16 @@ export const useAppLogic = (
         const handleGlobalKeys = (e: KeyboardEvent) => {
             const isEditingText = isEditableEventTarget(e.target);
             const normalizedKey = e.key.toLowerCase();
+            const isHandledShortcut = normalizedKey === 'f' || normalizedKey === 's' || normalizedKey === 'o' || normalizedKey === '/' || normalizedKey === 'w';
 
-            if (e.ctrlKey || e.metaKey) {
-                if (normalizedKey === 'f' || normalizedKey === 's' || normalizedKey === 'o' || normalizedKey === '/' || normalizedKey === 'w') {
-                    e.preventDefault();
-                }
+            if ((e.ctrlKey || e.metaKey) && isHandledShortcut && !isEditingText) {
+                e.preventDefault();
 
-                if (!isEditingText) {
-                    if (normalizedKey === 'f') { if (processedData) setIsSearchOpen(p => !p); }
-                    if (normalizedKey === 's') { if (processedData) void handleSave(); }
-                    if (normalizedKey === 'o') { handleFileSelect(); }
-                    if (normalizedKey === '/') { setIsShortcutsOpen(p => !p); }
-                    if (normalizedKey === 'w') { if (selectedFilePath) closeTab(selectedFilePath); }
-                }
+                if (normalizedKey === 'f') { if (processedData) setIsSearchOpen(p => !p); }
+                if (normalizedKey === 's') { if (processedData) void handleSave(); }
+                if (normalizedKey === 'o') { handleFileSelect(); }
+                if (normalizedKey === '/') { setIsShortcutsOpen(p => !p); }
+                if (normalizedKey === 'w') { if (selectedFilePath) closeTab(selectedFilePath); }
             }
             if (e.key === 'Escape') {
                 if (isShortcutsOpen) { e.preventDefault(); setIsShortcutsOpen(false); }

@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe('StatusBar', () => {
-    it('keeps status content reachable on narrow screens with horizontal scrolling', () => {
+    it('groups status content into readable labeled chips with visible overflow', () => {
         const { container } = render(
             <StatusBar
                 fileCount={8}
@@ -36,6 +36,11 @@ describe('StatusBar', () => {
         expect(footer).not.toBeNull();
         expect(footer?.className).toContain('overflow-x-auto');
         expect(footer?.className).toContain('whitespace-nowrap');
+        expect(footer?.className).not.toContain('no-scrollbar');
+        expect(screen.getByText('文件')).toBeTruthy();
+        expect(screen.getByText('行数')).toBeTruthy();
+        expect(screen.getByText('字符')).toBeTruthy();
+        expect(screen.getByTitle('当前文件').className).toContain('rounded-full');
     });
 
     it('shows estimated token and security warning metrics from processed data', () => {
@@ -73,5 +78,44 @@ describe('StatusBar', () => {
         expect(screen.getByTitle('敏感信息提示').textContent).toContain('2');
         fireEvent.click(screen.getByTitle('敏感信息提示'));
         expect(onShowSecurityFindings).toHaveBeenCalledTimes(1);
+    });
+
+    it('uses consistent file type labels for extensions, dotfiles, and extensionless files', () => {
+        render(
+            <StatusBar
+                fileCount={3}
+                totalLines={9}
+                totalChars={90}
+                processedData={{
+                    fileContents: [
+                        {
+                            path: 'src/app.ts',
+                            excluded: false,
+                            stats: { lines: 3, chars: 30, estimatedTokens: 9 },
+                        },
+                        {
+                            path: 'src/.env',
+                            excluded: false,
+                            stats: { lines: 3, chars: 30, estimatedTokens: 9 },
+                        },
+                        {
+                            path: 'Dockerfile',
+                            excluded: false,
+                            stats: { lines: 3, chars: 30, estimatedTokens: 9 },
+                        },
+                    ],
+                    analysisSummary: {
+                        totalEstimatedTokens: 27,
+                        securityFindingCount: 0,
+                        scannedFileCount: 3,
+                    },
+                }}
+            />
+        );
+
+        const typeSummary = screen.getByTitle('文件类型分布').textContent ?? '';
+        expect(typeSummary).toContain('.ts: 1');
+        expect(typeSummary).toContain('.env: 1');
+        expect(typeSummary).toContain('无扩展名: 1');
     });
 });

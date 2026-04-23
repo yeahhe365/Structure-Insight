@@ -12,23 +12,34 @@ interface FileTreeProps {
   onDeleteFile: (path: string) => void;
   onCopyPath: (path: string) => void;
   onToggleExclude: (path: string) => void;
-  onDirDoubleClick?: () => void;
   selectedFilePath: string | null;
 }
 
 const FILE_TREE_ROW_HEIGHT = 36;
 const FILE_TREE_INDENT_REM = 1.25;
 
-function countFiles(node: FileNode): number {
-  if (!node.isDirectory) {
-    return 1;
+function buildDirectoryFileCounts(nodes: FileNode[]): Map<string, number> {
+  const counts = new Map<string, number>();
+
+  const walk = (node: FileNode): number => {
+    if (!node.isDirectory) {
+      return 1;
+    }
+
+    let fileCount = 0;
+    for (const child of node.children) {
+      fileCount += walk(child);
+    }
+
+    counts.set(node.path, fileCount);
+    return fileCount;
+  };
+
+  for (const node of nodes) {
+    walk(node);
   }
 
-  let count = 0;
-  for (const child of node.children) {
-    count += countFiles(child);
-  }
-  return count;
+  return counts;
 }
 
 function getRowStatus(node: FileNode): { statusClass: string; title: string; displayName: string } {
@@ -53,23 +64,39 @@ function getRowStatus(node: FileNode): { statusClass: string; title: string; dis
 
 const FileTreeRow: React.FC<{
   row: VisibleTreeRow;
+  isActionMenuOpen: boolean;
   onFileSelect: (path: string) => void;
   onDeleteFile: (path: string) => void;
   onCopyPath: (path: string) => void;
   onToggleExclude: (path: string) => void;
-  onDirDoubleClick?: () => void;
+  directoryFileCount: number;
   onToggleExpand: (path: string) => void;
-}> = React.memo(({ row, onFileSelect, onDeleteFile, onCopyPath, onToggleExclude, onDirDoubleClick, onToggleExpand }) => {
+  onToggleActionMenu: (path: string) => void;
+  onCloseActionMenu: () => void;
+}> = React.memo(({
+  row,
+  isActionMenuOpen,
+  onFileSelect,
+  onDeleteFile,
+  onCopyPath,
+  onToggleExclude,
+  directoryFileCount,
+  onToggleExpand,
+  onToggleActionMenu,
+  onCloseActionMenu,
+}) => {
   const { node, level, isOpen, isSelected, isFocused } = row;
   const { statusClass, title, displayName } = getRowStatus(node);
 
   const handleToggle = () => {
+    onCloseActionMenu();
     if (node.isDirectory) {
       onToggleExpand(node.path);
     }
   };
 
   const handleSelect = () => {
+    onCloseActionMenu();
     if (!node.isDirectory && node.status === 'processed') {
       onFileSelect(node.path);
     } else if (node.isDirectory) {
@@ -77,21 +104,35 @@ const FileTreeRow: React.FC<{
     }
   };
 
-  const handleDoubleClick = () => {
-    if (node.isDirectory && onDirDoubleClick) {
-      onToggleExpand(node.path);
-      onDirDoubleClick();
-    }
-  };
-
   const handleDelete = (event: React.MouseEvent) => {
     event.stopPropagation();
+    onCloseActionMenu();
     onDeleteFile(node.path);
   };
 
   const handleToggleExcludeClick = (event: React.MouseEvent) => {
     event.stopPropagation();
+    onCloseActionMenu();
     onToggleExclude(node.path);
+  };
+
+  const handleCopyPathClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onCloseActionMenu();
+    onCopyPath(node.path);
+  };
+
+  const handleActionMenuToggle = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    onToggleActionMenu(node.path);
+  };
+
+  const handleActionKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      onCloseActionMenu();
+    }
   };
 
   const iconElement = node.isDirectory
@@ -110,7 +151,6 @@ const FileTreeRow: React.FC<{
       <div
         className={`group relative flex min-h-9 items-center py-1 px-2 rounded-md cursor-pointer hover:bg-light-border dark:hover:bg-dark-border/50 transition-colors duration-150 ${statusClass} ${isSelected ? 'bg-primary/10 dark:bg-primary/20' : ''} ${isFocused ? 'ring-1 ring-primary/50 bg-primary/5' : ''}`}
         onClick={handleSelect}
-        onDoubleClick={handleDoubleClick}
         title={title}
         data-path={node.path}
       >
@@ -126,47 +166,71 @@ const FileTreeRow: React.FC<{
         <span className={`truncate text-sm flex-1 min-w-0 ml-2 ${node.excluded ? 'line-through' : ''}`}>{displayName}</span>
 
         {node.isDirectory && (
-          <span className="text-[10px] text-light-subtle-text/60 dark:text-dark-subtle-text/60 shrink-0 ml-1 tabular-nums">
-            {countFiles(node)}
+          <span className="text-[10px] text-light-subtle-text dark:text-dark-subtle-text shrink-0 ml-1 tabular-nums">
+            {directoryFileCount}
           </span>
         )}
 
         {!node.isDirectory && (
-          <div className="ml-2 flex shrink-0 items-center space-x-1 opacity-100 pointer-events-auto md:absolute md:right-2 md:top-full md:z-20 md:ml-0 md:space-x-2 md:rounded-md md:bg-light-panel/95 md:px-1 md:py-0.5 md:opacity-0 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:transition-opacity md:duration-150 md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:group-focus-within:opacity-100 md:group-focus-within:pointer-events-auto dark:md:bg-dark-panel/95">
+          <div className="relative ml-2 flex w-7 shrink-0 items-center justify-center opacity-100 pointer-events-auto">
             <button
-              onClick={(event) => { event.stopPropagation(); onCopyPath(node.path); }}
+              onClick={handleActionMenuToggle}
+              onKeyDown={handleActionKeyDown}
               type="button"
-              aria-label={`复制 ${node.path} 路径`}
-              className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
-              title="复制完整路径"
+              aria-haspopup="menu"
+              aria-expanded={isActionMenuOpen}
+              aria-label={`更多 ${node.path} 操作`}
+              data-file-action-trigger
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-light-border bg-light-bg text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg"
+              title="更多操作"
             >
-              <i className="fa-solid fa-copy"></i>
-              <span className="hidden md:inline">路径</span>
+              <i className="fa-solid fa-ellipsis"></i>
             </button>
 
-            {node.status === 'processed' && (
-              <button
-                onClick={handleToggleExcludeClick}
-                type="button"
-                aria-label={node.excluded ? `包含 ${node.path}` : `排除 ${node.path}`}
-                className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
-                title={node.excluded ? '包含此文件' : '从分析中排除'}
+            {isActionMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-30 mt-1 w-28 overflow-hidden rounded-lg border border-light-border bg-light-panel py-1 text-xs shadow-lg dark:border-dark-border dark:bg-dark-panel"
+                data-file-action-menu
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={handleActionKeyDown}
               >
-                <i className={`fa-solid ${node.excluded ? 'fa-eye' : 'fa-eye-slash'}`}></i>
-                <span className="hidden md:inline">{node.excluded ? '包含' : '排除'}</span>
-              </button>
-            )}
+                <button
+                  onClick={handleCopyPathClick}
+                  type="button"
+                  role="menuitem"
+                  aria-label={`复制 ${node.path} 路径`}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-light-subtle-text transition-colors hover:bg-light-hover hover:text-primary dark:text-dark-subtle-text dark:hover:bg-dark-hover"
+                >
+                  <i className="fa-solid fa-copy w-3 text-center"></i>
+                  路径
+                </button>
 
-            <button
-              onClick={handleDelete}
-              type="button"
-              aria-label={`删除 ${node.path}`}
-              className="flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-red-500 hover:text-red-500 dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1"
-              title="从列表中移除"
-            >
-              <i className="fa-solid fa-trash-can"></i>
-              <span className="hidden md:inline">删除</span>
-            </button>
+                {node.status === 'processed' && (
+                  <button
+                    onClick={handleToggleExcludeClick}
+                    type="button"
+                    role="menuitem"
+                    aria-label={node.excluded ? `包含 ${node.path}` : `排除 ${node.path}`}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-light-subtle-text transition-colors hover:bg-light-hover hover:text-primary dark:text-dark-subtle-text dark:hover:bg-dark-hover"
+                  >
+                    <i className={`fa-solid ${node.excluded ? 'fa-eye' : 'fa-eye-slash'} w-3 text-center`}></i>
+                    {node.excluded ? '包含' : '排除'}
+                  </button>
+                )}
+
+                <button
+                  onClick={handleDelete}
+                  type="button"
+                  role="menuitem"
+                  aria-label={`删除 ${node.path}`}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-light-subtle-text transition-colors hover:bg-red-50 hover:text-red-500 dark:text-dark-subtle-text dark:hover:bg-red-950/30"
+                >
+                  <i className="fa-solid fa-trash-can w-3 text-center"></i>
+                  删除
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -182,16 +246,19 @@ const FileTree: React.FC<FileTreeProps> = ({
   onDeleteFile,
   onCopyPath,
   onToggleExclude,
-  onDirDoubleClick,
   selectedFilePath,
 }) => {
   const [expandedPaths, setExpandedPaths] = React.useState<Set<string>>(() => collectExpandedDirectoryPaths(nodes));
   const [focusedPath, setFocusedPath] = React.useState<string | null>(null);
+  const [openActionMenuPath, setOpenActionMenuPath] = React.useState<string | null>(null);
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
+  const treeRef = React.useRef<HTMLDivElement>(null);
+  const directoryFileCounts = React.useMemo(() => buildDirectoryFileCounts(nodes), [nodes]);
 
   React.useEffect(() => {
     setExpandedPaths(collectExpandedDirectoryPaths(nodes));
     setFocusedPath(null);
+    setOpenActionMenuPath(null);
   }, [treeResetKey]);
 
   const handleToggleExpand = React.useCallback((path: string) => {
@@ -214,6 +281,39 @@ const FileTree: React.FC<FileTreeProps> = ({
   const visiblePaths = React.useMemo(() => visibleRows.map(row => row.path), [visibleRows]);
 
   React.useEffect(() => {
+    if (openActionMenuPath && !visiblePaths.includes(openActionMenuPath)) {
+      setOpenActionMenuPath(null);
+    }
+  }, [openActionMenuPath, visiblePaths]);
+
+  React.useEffect(() => {
+    if (!openActionMenuPath) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (target.closest('[data-file-action-menu]') || target.closest('[data-file-action-trigger]')) {
+        return;
+      }
+
+      if (treeRef.current?.contains(target)) {
+        setOpenActionMenuPath(null);
+        return;
+      }
+
+      setOpenActionMenuPath(null);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [openActionMenuPath]);
+
+  React.useEffect(() => {
     if (!focusedPath) {
       return;
     }
@@ -225,6 +325,12 @@ const FileTree: React.FC<FileTreeProps> = ({
   }, [focusedPath, visiblePaths]);
 
   const handleKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Escape' && openActionMenuPath) {
+      event.preventDefault();
+      setOpenActionMenuPath(null);
+      return;
+    }
+
     if (!visiblePaths.length) {
       return;
     }
@@ -290,22 +396,32 @@ const FileTree: React.FC<FileTreeProps> = ({
         setFocusedPath(null);
         break;
     }
-  }, [visiblePaths, visibleRows, focusedPath, handleToggleExpand, onFileSelect]);
+  }, [visiblePaths, visibleRows, focusedPath, handleToggleExpand, onFileSelect, openActionMenuPath]);
 
   const collapseAll = React.useCallback(() => {
+    setOpenActionMenuPath(null);
     setExpandedPaths(new Set());
   }, []);
 
   const expandAll = React.useCallback(() => {
+    setOpenActionMenuPath(null);
     setExpandedPaths(collectExpandedDirectoryPaths(nodes));
   }, [nodes]);
+
+  const handleToggleActionMenu = React.useCallback((path: string) => {
+    setOpenActionMenuPath(current => current === path ? null : path);
+  }, []);
+
+  const closeActionMenu = React.useCallback(() => {
+    setOpenActionMenuPath(null);
+  }, []);
 
   if (!nodes || nodes.length === 0) {
     return <div className="p-4 text-center text-sm text-light-subtle-text dark:text-dark-subtle-text">未加载文件。</div>;
   }
 
   return (
-    <div className="p-2 h-full min-h-0 flex flex-col" role="tree" aria-label="资源管理器" tabIndex={0} onKeyDown={handleKeyDown}>
+    <div ref={treeRef} className="p-2 h-full min-h-0 flex flex-col" role="tree" aria-label="资源管理器" tabIndex={0} onKeyDown={handleKeyDown}>
       <div className="flex items-center justify-between px-2 mb-2">
         <h3 className="text-xs font-semibold text-light-subtle-text dark:text-dark-subtle-text uppercase tracking-wider">资源管理器</h3>
         <div className="flex items-center gap-1">
@@ -333,15 +449,18 @@ const FileTree: React.FC<FileTreeProps> = ({
           itemContent={(_index, row) => (
             <FileTreeRow
               row={row}
+              isActionMenuOpen={openActionMenuPath === row.path}
               onFileSelect={onFileSelect}
               onDeleteFile={onDeleteFile}
-            onCopyPath={onCopyPath}
-            onToggleExclude={onToggleExclude}
-            onDirDoubleClick={onDirDoubleClick}
-            onToggleExpand={handleToggleExpand}
-          />
-        )}
-      />
+              onCopyPath={onCopyPath}
+              onToggleExclude={onToggleExclude}
+              directoryFileCount={directoryFileCounts.get(row.path) ?? 0}
+              onToggleExpand={handleToggleExpand}
+              onToggleActionMenu={handleToggleActionMenu}
+              onCloseActionMenu={closeActionMenu}
+            />
+          )}
+        />
       </div>
     </div>
   );

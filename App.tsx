@@ -87,11 +87,12 @@ const App: React.FC = () => {
             onDrop={handleDrop}
             role="application"
             aria-label="Structure Insight 代码分析工具"
+            aria-busy={state.isLoading || state.isExporting}
         >
             {/* Loading progress bar */}
             {(state.isLoading || state.isExporting) && (
                 <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-light-border dark:bg-dark-border overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-300 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
+                    <div className="h-full bg-gradient-to-r from-primary via-cyan-500 to-amber-400 transition-all duration-300 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
                 </div>
             )}
             <Header 
@@ -101,12 +102,13 @@ const App: React.FC = () => {
                 onReset={handlers.handleReset} 
                 onCancel={handlers.handleCancel}
                 onSettings={() => handlers.setIsSettingsOpen(true)}
+                onToggleShortcuts={() => handlers.setIsShortcutsOpen(true)}
                 onToggleSearch={() => handlers.setIsSearchOpen(true)}
                 onToggleFileRank={() => handlers.setIsFileRankOpen(true)}
+                onShowCode={() => handlers.setActiveView('code')}
                 onShowStructure={() => handlers.setActiveView('structure')}
                 hasContent={!!state.processedData} 
-                isLoading={state.isLoading || state.isExporting}
-                isCancelable={state.isLoading}
+                busyState={state.isLoading ? 'loading' : state.isExporting ? 'exporting' : null}
                 activeView={state.activeView}
             />
             

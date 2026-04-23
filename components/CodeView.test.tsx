@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CodeView from './CodeView';
 import type { FileContent } from '../types';
@@ -40,6 +40,7 @@ describe('CodeView', () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -177,5 +178,31 @@ describe('CodeView', () => {
     await waitFor(() => {
       expect(container.querySelector('code')?.textContent).toBe('bar');
     });
+  });
+
+  it('uses a compact file header without duplicating the full path as a breadcrumb row', () => {
+    const { container } = render(
+      <CodeView
+        selectedFile={FILE}
+        editingPath={null}
+        onStartEdit={vi.fn()}
+        onSaveEdit={vi.fn()}
+        onCancelEdit={vi.fn()}
+        markdownPreviewPaths={new Set<string>()}
+        onToggleMarkdownPreview={vi.fn()}
+        onShowToast={vi.fn()}
+        fontSize={14}
+        searchQuery=""
+        searchOptions={{ caseSensitive: false, useRegex: false, wholeWord: false }}
+        activeMatchIndexInFile={null}
+        onCopyPath={vi.fn()}
+        wordWrap={false}
+      />
+    );
+
+    expect(screen.getByText('demo.ts')).toBeTruthy();
+    expect(screen.getByText('src')).toBeTruthy();
+    expect(container.querySelector('.fa-folder-tree')).toBeNull();
+    expect(container.querySelectorAll('[data-file-path-display="full"]')).toHaveLength(1);
   });
 });

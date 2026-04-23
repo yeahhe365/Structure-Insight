@@ -38,7 +38,11 @@ afterEach(() => {
 });
 
 describe('FileTree virtualization', () => {
-  it('keeps file row actions reachable without hover-only behavior on touch layouts', () => {
+  it('keeps explorer rows compact and exposes secondary actions from a menu', () => {
+    const onCopyPath = vi.fn();
+    const onToggleExclude = vi.fn();
+    const onDeleteFile = vi.fn();
+
     render(
       <FileTree
         nodes={[
@@ -58,17 +62,29 @@ describe('FileTree virtualization', () => {
           },
         ]}
         onFileSelect={vi.fn()}
-        onDeleteFile={vi.fn()}
-        onCopyPath={vi.fn()}
-        onToggleExclude={vi.fn()}
+        onDeleteFile={onDeleteFile}
+        onCopyPath={onCopyPath}
+        onToggleExclude={onToggleExclude}
         selectedFilePath={null}
       />
     );
 
-    const actions = screen.getByTitle('复制完整路径').parentElement as HTMLElement;
-    expect(actions.className).toContain('opacity-100');
-    expect(actions.className).toContain('md:opacity-0');
-    expect(actions.className).toContain('md:pointer-events-none');
+    expect(screen.queryByRole('button', { name: '复制 src/index.ts 路径' })).toBeNull();
+
+    const menuButton = screen.getByRole('button', { name: '更多 src/index.ts 操作' });
+    expect(menuButton.className).toContain('w-7');
+    fireEvent.click(menuButton);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: '复制 src/index.ts 路径' }));
+    expect(onCopyPath).toHaveBeenCalledWith('src/index.ts');
+
+    fireEvent.click(menuButton);
+    fireEvent.click(screen.getByRole('menuitem', { name: '排除 src/index.ts' }));
+    expect(onToggleExclude).toHaveBeenCalledWith('src/index.ts');
+
+    fireEvent.click(menuButton);
+    fireEvent.click(screen.getByRole('menuitem', { name: '删除 src/index.ts' }));
+    expect(onDeleteFile).toHaveBeenCalledWith('src/index.ts');
   });
 
   it('resets to the default expanded state when a different tree is loaded', () => {
@@ -243,6 +259,37 @@ describe('FileTree virtualization', () => {
     expect(screen.queryByText('index.ts')).toBeNull();
   });
 
+  it('ignores directory double clicks so the tree does not bounce between states unexpectedly', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    fireEvent.doubleClick(screen.getByText('src'));
+    expect(screen.getByText('index.ts')).not.toBeNull();
+  });
+
   it('navigates visible rows with the keyboard and opens processed files on Enter', () => {
     const onFileSelect = vi.fn();
 
@@ -316,7 +363,7 @@ describe('FileTree virtualization', () => {
     expect(screen.getByText('index.ts').closest('[title]')?.getAttribute('title')).toBe('src/index.ts');
   });
 
-  it('renders file action buttons below the file row instead of centering them over the label', () => {
+  it('renders only a compact action trigger in the fixed-height tree row', () => {
     render(
       <FileTree
         nodes={[
@@ -343,15 +390,94 @@ describe('FileTree virtualization', () => {
       />
     );
 
-    const pathButton = screen.getByRole('button', { name: '复制 src/index.ts 路径' });
-    const actionContainer = pathButton.parentElement;
+    const menuButton = screen.getByRole('button', { name: '更多 src/index.ts 操作' });
+    const actionContainer = menuButton.parentElement;
     const rowContainer = screen.getByText('index.ts').closest('.group');
 
     expect(actionContainer).not.toBeNull();
-    expect(actionContainer?.className).toContain('md:absolute');
-    expect(actionContainer?.className).toContain('md:top-full');
-    expect(actionContainer?.className).toContain('opacity-100');
+    expect(actionContainer?.className).toContain('w-7');
+    expect(actionContainer?.className).not.toContain('gap-1');
     expect(actionContainer?.className).not.toContain('top-1/2');
     expect(rowContainer?.className).not.toContain('flex-col');
+  });
+
+  it('closes the active file action menu when Escape is pressed', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    const menuButton = screen.getByRole('button', { name: '更多 src/index.ts 操作' });
+    fireEvent.click(menuButton);
+    expect(screen.getByRole('menu')).toBeTruthy();
+
+    fireEvent.keyDown(menuButton, { key: 'Escape' });
+
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('keeps only one file action menu open at a time', () => {
+    render(
+      <FileTree
+        nodes={[
+          {
+            name: 'src',
+            path: 'src',
+            isDirectory: true,
+            children: [
+              {
+                name: 'index.ts',
+                path: 'src/index.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+              {
+                name: 'app.ts',
+                path: 'src/app.ts',
+                isDirectory: false,
+                children: [],
+                status: 'processed',
+              },
+            ],
+          },
+        ]}
+        onFileSelect={vi.fn()}
+        onDeleteFile={vi.fn()}
+        onCopyPath={vi.fn()}
+        onToggleExclude={vi.fn()}
+        selectedFilePath={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '更多 src/index.ts 操作' }));
+    expect(screen.getByRole('menuitem', { name: '复制 src/index.ts 路径' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: '更多 src/app.ts 操作' }));
+
+    expect(screen.getAllByRole('menu')).toHaveLength(1);
+    expect(screen.queryByRole('menuitem', { name: '复制 src/index.ts 路径' })).toBeNull();
+    expect(screen.getByRole('menuitem', { name: '复制 src/app.ts 路径' })).toBeTruthy();
   });
 });

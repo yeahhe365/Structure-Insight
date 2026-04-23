@@ -5,16 +5,16 @@
 /* Structure Insight - Custom Styles */
 
 :root {
-  --color-primary: #3B82F6;
-  --color-primary-hover: #2563EB;
+  --color-primary: #0F766E;
+  --color-primary-hover: #0D9488;
   --color-highlight: #fde047;
   --color-highlight-dark: #ca8a04;
   --color-highlight-active: #fb923c;
   --color-highlight-active-border: #f97316;
-  --color-scrollbar-light: #d1d5db;
-  --color-scrollbar-light-hover: #9ca3af;
-  --color-scrollbar-dark: #374151;
-  --color-scrollbar-dark-hover: #4b5563;
+  --color-scrollbar-light: #cfc5b6;
+  --color-scrollbar-light-hover: #9f8f7b;
+  --color-scrollbar-dark: #2b3a33;
+  --color-scrollbar-dark-hover: #3f554c;
 }
 
 /* Custom scrollbar styles */
@@ -106,7 +106,7 @@ pre code.hljs {
 
 /* Selection color */
 ::selection {
-  background-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(15, 118, 110, 0.28);
   color: inherit;
 }
 
@@ -135,7 +135,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3B82F6;
+  background: var(--color-primary);
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -145,7 +145,7 @@ input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #3B82F6;
+  background: var(--color-primary);
   cursor: pointer;
   border: 2px solid white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);

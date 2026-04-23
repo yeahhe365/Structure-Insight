@@ -6,16 +6,22 @@ interface KeyboardShortcutsDialogProps {
     onClose: () => void;
 }
 
-const shortcuts = [
-    { keys: ['Ctrl', 'O'], description: '打开文件夹' },
-    { keys: ['Ctrl', 'F'], description: '在文件中查找' },
-    { keys: ['Ctrl', 'S'], description: '保存为文本' },
-    { keys: ['Escape'], description: '关闭对话框' },
-    { keys: ['Ctrl', '/'], description: '显示快捷键帮助' },
-    { keys: ['Ctrl', 'W'], description: '关闭当前标签页' },
-];
+function getShortcutModifier(): string {
+    if (typeof navigator === 'undefined') return 'Ctrl';
+    return /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘' : 'Ctrl';
+}
 
 const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpen, onClose }) => {
+    const modifierKey = getShortcutModifier();
+    const shortcuts = [
+        { keys: [modifierKey, 'O'], description: '打开项目' },
+        { keys: [modifierKey, 'F'], description: '在文件中查找' },
+        { keys: [modifierKey, 'S'], description: '保存为文本' },
+        { keys: ['Escape'], description: '关闭对话框' },
+        { keys: [modifierKey, '/'], description: '显示快捷键帮助' },
+        { keys: [modifierKey, 'W'], description: '关闭当前标签页' },
+    ];
+
     React.useEffect(() => {
         if (isOpen) {
             const handleKeyDown = (e: KeyboardEvent) => {
