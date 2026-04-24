@@ -1,5 +1,5 @@
 const CACHE_NAME = 'structure-insight-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon.svg'];
+const APP_SHELL = ['./', './index.html', './manifest.json', './icon.svg'];
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -30,7 +30,7 @@ async function networkFirst(request) {
     }
     return response;
   } catch (error) {
-    const cached = (await cache.match(request)) || (await cache.match('/index.html'));
+    const cached = (await cache.match(request)) || (await cache.match('./index.html'));
     if (cached) {
       return cached;
     }

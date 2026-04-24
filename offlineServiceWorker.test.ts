@@ -10,6 +10,11 @@ describe('service worker source', () => {
         expect(source).toContain('event.respondWith(networkFirst(request));');
     });
 
+    it('uses relative app shell paths for subdirectory deployments', () => {
+        expect(source).toContain("const APP_SHELL = ['./', './index.html', './manifest.json', './icon.svg'];");
+        expect(source).not.toContain("'/index.html'");
+    });
+
     it('does not cache opaque CDN responses indefinitely', () => {
         expect(source).not.toContain('response.type === \'opaque\'');
     });

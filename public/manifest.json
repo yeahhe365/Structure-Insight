@@ -2,14 +2,14 @@
   "name": "Structure Insight",
   "short_name": "StructureInsight",
   "description": "浏览器端代码结构分析工具 - 快速分析和可视化代码项目结构",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#F9FAFB",
   "theme_color": "#3B82F6",
   "orientation": "any",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

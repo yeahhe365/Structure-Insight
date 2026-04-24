@@ -22,6 +22,8 @@ function getShortcutModifier(): string {
   return /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘' : 'Ctrl';
 }
 
+const iconUrl = `${import.meta.env.BASE_URL}icon.svg`;
+
 const Header: React.FC<HeaderProps> = ({
   onOpenFolder,
   onCopyAll,
@@ -51,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
     <header className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-light-border bg-light-header px-3 py-2 shadow-sm shadow-slate-900/5 dark:border-dark-border dark:bg-dark-header dark:shadow-black/20 shrink-0 z-20" role="banner">
       <div className="flex min-w-0 items-center gap-3">
         <a href="https://structure-insight-website.pages.dev/" target="_blank" rel="noopener noreferrer" title="访问 Structure Insight 主页">
-          <img src="/icon.svg" alt="Structure Insight Logo" className="h-9 w-9" />
+          <img src={iconUrl} alt="Structure Insight Logo" className="h-9 w-9" />
         </a>
         <div className="hidden min-w-0 sm:block">
           <h1 className="truncate text-lg font-bold tracking-tight text-light-text dark:text-dark-text">Structure Insight</h1>

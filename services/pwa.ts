@@ -7,8 +7,9 @@ export function registerAppServiceWorker(
     }
 
     windowLike.addEventListener('load', () => {
+        const serviceWorkerUrl = new URL('sw.js', new URL(import.meta.env.BASE_URL, windowLike.location.origin)).toString();
         void navigatorLike.serviceWorker
-            .register('/sw.js')
+            .register(serviceWorkerUrl)
             .catch((error) => {
                 console.error('Failed to register service worker:', error);
             });

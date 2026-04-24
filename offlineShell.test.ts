@@ -11,5 +11,9 @@ describe('offline shell', () => {
         expect(html).not.toContain('https://cdn.tailwindcss.com');
         expect(html).not.toContain('https://cdnjs.cloudflare.com');
         expect(html).not.toContain('https://aistudiocdn.com');
+        expect(html).not.toContain('href="/manifest.json"');
+        expect(html).not.toContain('href="/icon.svg"');
+        expect(html).not.toContain('href="/hljs-light.css"');
+        expect(html).not.toContain('href="/hljs-dark.css"');
     });
 });

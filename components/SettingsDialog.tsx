@@ -55,6 +55,7 @@ interface SettingsSectionDefinition {
 }
 
 const APP_VERSION = '5.4.0';
+const iconUrl = `${import.meta.env.BASE_URL}icon.svg`;
 
 const SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     {
@@ -592,7 +593,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
         <div className="flex min-h-full flex-col items-center px-4 py-3 text-center">
             <div className="relative">
                 <img
-                    src="/icon.svg"
+                    src={iconUrl}
                     alt="Structure Insight Logo"
                     className="h-24 w-24 rounded-[28px] drop-shadow-[0_18px_40px_rgba(15,23,42,0.18)]"
                 />
