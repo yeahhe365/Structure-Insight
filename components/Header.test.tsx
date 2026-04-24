@@ -42,9 +42,11 @@ describe('Header', () => {
         expect(screen.getByRole('button', { name: '重置' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '快捷键' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '设置' })).toBeTruthy();
-        expect(screen.getByRole('toolbar', { name: '工具栏' }).className).toContain('flex-wrap');
-        expect(container.querySelector('header')?.className).toContain('min-h-[60px]');
-        expect(container.querySelector('header')?.className).toContain('px-3');
+        expect(screen.getByRole('toolbar', { name: '工具栏' }).className).toContain('flex-nowrap');
+        expect(screen.getByRole('toolbar', { name: '工具栏' }).className).toContain('overflow-x-auto');
+        expect(container.querySelector('header')?.className).toContain('h-12');
+        expect(container.querySelector('header')?.className).toContain('px-2');
+        expect(container.querySelector('header')?.className).toContain('overflow-hidden');
         expect(container.querySelector('[data-toolbar-group="view"]')).toBeTruthy();
         expect(container.querySelector('[data-toolbar-group="analysis"]')).toBeTruthy();
         expect(container.querySelector('[data-toolbar-group="export"]')).toBeTruthy();

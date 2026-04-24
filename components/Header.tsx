@@ -44,24 +44,24 @@ const Header: React.FC<HeaderProps> = ({
   const isBusy = busyState !== null;
   const isLoading = busyState === 'loading';
   const isExporting = busyState === 'exporting';
-  const secondaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl px-2.5 text-sm font-medium text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-hover dark:hover:bg-dark-hover hover:text-light-text dark:hover:text-dark-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
-  const primaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl bg-primary px-3.5 text-sm font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
+  const secondaryButtonClass = 'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-medium text-light-subtle-text transition-colors hover:bg-light-hover hover:text-light-text disabled:cursor-not-allowed disabled:opacity-50 dark:text-dark-subtle-text dark:hover:bg-dark-hover dark:hover:text-dark-text';
+  const primaryButtonClass = 'inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60 sm:px-3';
   const activeButtonClass = 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled';
-  const iconClass = 'text-[0.95rem]';
+  const iconClass = 'text-[0.86rem]';
 
   return (
-    <header className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-light-border bg-light-header px-3 py-2 shadow-sm shadow-slate-900/5 dark:border-dark-border dark:bg-dark-header dark:shadow-black/20 shrink-0 z-20" role="banner">
-      <div className="flex min-w-0 items-center gap-3">
+    <header className="flex h-12 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-light-border bg-light-header px-2 py-1 shadow-sm shadow-slate-900/5 dark:border-dark-border dark:bg-dark-header dark:shadow-black/20 sm:px-3 z-20" role="banner">
+      <div className="flex min-w-0 shrink-0 items-center gap-2">
         <a href="https://structure-insight-website.pages.dev/" target="_blank" rel="noopener noreferrer" title="访问 Structure Insight 主页">
-          <img src={iconUrl} alt="Structure Insight Logo" className="h-9 w-9" />
+          <img src={iconUrl} alt="Structure Insight Logo" className="h-8 w-8" />
         </a>
-        <div className="hidden min-w-0 sm:block">
-          <h1 className="truncate text-lg font-bold tracking-tight text-light-text dark:text-dark-text">Structure Insight</h1>
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-light-subtle-text dark:text-dark-subtle-text">本地仓库上下文</p>
+        <div className="hidden min-w-0 lg:block">
+          <h1 className="truncate text-sm font-bold tracking-tight text-light-text dark:text-dark-text">Structure Insight</h1>
+          <p className="text-[9px] font-medium uppercase tracking-[0.16em] text-light-subtle-text dark:text-dark-subtle-text">本地仓库上下文</p>
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5 sm:gap-2" role="toolbar" aria-label="工具栏">
+      <div className="no-scrollbar flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-1 overflow-x-auto" role="toolbar" aria-label="工具栏">
         <button
           onClick={onOpenFolder}
           className={primaryButtonClass}
@@ -70,12 +70,12 @@ const Header: React.FC<HeaderProps> = ({
           disabled={isBusy}
         >
           <i className={`fa-solid fa-folder-open ${iconClass}`}></i>
-          <span>打开项目</span>
+          <span className="hidden sm:inline">打开项目</span>
         </button>
 
         {hasContent && (
           <>
-            <div data-toolbar-group="view" className="flex min-w-0 items-center gap-1 rounded-2xl border border-light-border/70 bg-light-panel/70 p-1 dark:border-dark-border/70 dark:bg-dark-panel/70">
+            <div data-toolbar-group="view" className="flex shrink-0 items-center gap-0.5 rounded-xl border border-light-border/70 bg-light-panel/70 p-0.5 dark:border-dark-border/70 dark:bg-dark-panel/70">
               <button
                 onClick={onShowCode}
                 className={`${secondaryButtonClass} ${activeView === 'code' ? activeButtonClass : ''}`}
@@ -100,7 +100,7 @@ const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            <div data-toolbar-group="analysis" className="flex min-w-0 items-center gap-1 rounded-2xl border border-light-border/70 bg-light-panel/70 p-1 dark:border-dark-border/70 dark:bg-dark-panel/70">
+            <div data-toolbar-group="analysis" className="flex shrink-0 items-center gap-0.5 rounded-xl border border-light-border/70 bg-light-panel/70 p-0.5 dark:border-dark-border/70 dark:bg-dark-panel/70">
               <button
                 onClick={onToggleSearch}
                 className={secondaryButtonClass}
@@ -123,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({
               </button>
             </div>
 
-            <div data-toolbar-group="export" className="flex min-w-0 items-center gap-1 rounded-2xl border border-light-border/70 bg-light-panel/70 p-1 dark:border-dark-border/70 dark:bg-dark-panel/70">
+            <div data-toolbar-group="export" className="flex shrink-0 items-center gap-0.5 rounded-xl border border-light-border/70 bg-light-panel/70 p-0.5 dark:border-dark-border/70 dark:bg-dark-panel/70">
               <button
                 onClick={onCopyAll}
                 className={secondaryButtonClass}
@@ -160,17 +160,17 @@ const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={onToggleShortcuts}
-          className={`${secondaryButtonClass} px-2.5`}
+          className={secondaryButtonClass}
           title={`快捷键 (${shortcutModifier}+/)`}
           aria-label="快捷键"
           disabled={isBusy}
         >
           <i className={`fa-solid fa-keyboard ${iconClass}`}></i>
-          <span className="hidden lg:inline">快捷键</span>
+          <span className="hidden xl:inline">快捷键</span>
         </button>
 
         {isExporting && (
-          <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 text-sm font-medium text-primary dark:border-primary-disabled/40 dark:bg-primary/15 dark:text-primary-disabled">
+          <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2 text-xs font-medium text-primary dark:border-primary-disabled/40 dark:bg-primary/15 dark:text-primary-disabled">
             <i className={`fa-solid fa-file-arrow-down ${iconClass}`}></i>
             <span>正在导出</span>
           </span>
@@ -182,9 +182,9 @@ const Header: React.FC<HeaderProps> = ({
             <span>取消</span>
           </button>
         ) : (
-          <button onClick={onSettings} className={`${secondaryButtonClass} px-2.5`} title="设置" aria-label="设置" disabled={isBusy}>
+          <button onClick={onSettings} className={secondaryButtonClass} title="设置" aria-label="设置" disabled={isBusy}>
             <i className={`fa-solid fa-cog ${iconClass}`}></i>
-            <span className="hidden lg:inline">设置</span>
+            <span className="hidden xl:inline">设置</span>
           </button>
         )}
       </div>
