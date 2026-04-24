@@ -4,6 +4,7 @@ import hljs from 'highlight.js/lib/common';
 import { FileContent, SearchOptions } from '../types';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { copyTextToClipboard } from '../services/clipboard';
 import { buildSearchRegex } from '../services/searchRegex';
 
 interface FileCardProps {
@@ -139,10 +140,9 @@ const FileCard: React.FC<FileCardProps> = ({
 
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text).then(
-      () => onShowToast('已复制到剪贴板！'),
-      () => onShowToast('复制失败，请检查剪贴板权限')
-    );
+    void copyTextToClipboard(text).then(copied => {
+      onShowToast(copied ? '已复制到剪贴板！' : '复制失败，请检查剪贴板权限');
+    });
   };
 
   const lineNumbers = React.useMemo(

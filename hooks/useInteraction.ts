@@ -6,6 +6,7 @@ import { buildASCIITree } from '../services/treeFormatter';
 import { scanSensitiveContent } from '../services/securityScan';
 import { estimateTokens } from '../services/tokenEstimate';
 import { countLines } from '../services/textMetrics';
+import { copyTextToClipboard } from '../services/clipboard';
 
 interface InteractionProps {
     processedData: ProcessedFiles | null;
@@ -197,10 +198,9 @@ export const useInteraction = ({
     };
 
     const handleCopyPath = (path: string) => {
-        navigator.clipboard.writeText(path).then(
-            () => handleShowToast('路径已复制'),
-            () => handleShowToast('复制失败，请检查剪贴板权限', 'error')
-        );
+        void copyTextToClipboard(path).then(copied => {
+            handleShowToast(copied ? '路径已复制' : '复制失败，请检查剪贴板权限', copied ? 'success' : 'error');
+        });
     };
     
     return {

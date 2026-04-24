@@ -90,6 +90,14 @@ vi.mock('../services/appStorage', () => ({
     clearPersistedAppData: clearPersistedAppDataMock,
 }));
 
+const { copyTextToClipboardMock } = vi.hoisted(() => ({
+    copyTextToClipboardMock: vi.fn(() => Promise.resolve(true)),
+}));
+
+vi.mock('../services/clipboard', () => ({
+    copyTextToClipboard: copyTextToClipboardMock,
+}));
+
 vi.mock('./useInteraction', () => ({
     useInteraction: (options: {
         isMobile: boolean;
@@ -328,7 +336,7 @@ describe('useAppLogic', () => {
                     includeGitDiffs: expect.anything(),
                 }),
             }));
-            expect(navigator.clipboard.writeText).toHaveBeenCalledWith('PACKED OUTPUT');
+            expect(copyTextToClipboardMock).toHaveBeenCalledWith('PACKED OUTPUT');
 
             await act(async () => {
                 await result.current.handlers.handleSave();
@@ -388,7 +396,7 @@ describe('useAppLogic', () => {
         expect(result.current.state.toastType).toBe('info');
         expect(result.current.state.toastMessage).toContain('2 条敏感信息提示');
 
-        vi.mocked(navigator.clipboard.writeText).mockRejectedValueOnce(new Error('clipboard blocked'));
+        copyTextToClipboardMock.mockResolvedValueOnce(false);
 
         await act(async () => {
             await result.current.handlers.handleCopyAll();

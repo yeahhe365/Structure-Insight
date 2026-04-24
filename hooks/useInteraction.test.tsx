@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { useInteraction } from './useInteraction';
 import type { ConfirmationState, ProcessedFiles } from '../types';
 
+vi.mock('../services/clipboard', () => ({
+    copyTextToClipboard: vi.fn(() => Promise.resolve(false)),
+}));
+
 const INITIAL_DATA: ProcessedFiles = {
     rootName: 'demo',
     structureString: 'demo\n└── app.ts\n',
@@ -112,5 +116,29 @@ describe('useInteraction', () => {
         expect(result.current.processedData).not.toBeNull();
         expect(result.current.processedData!.fileContents).toHaveLength(0);
         expect(result.current.processedData!.removedPaths).toEqual(['app.ts']);
+    });
+
+    it('shows an error toast instead of throwing when path copy is unavailable', async () => {
+        const handleShowToast = vi.fn();
+        const setConfirmation = vi.fn() as unknown as React.Dispatch<React.SetStateAction<ConfirmationState>>;
+
+        const { result } = renderHook(() => useInteraction({
+            processedData: INITIAL_DATA,
+            setProcessedData: vi.fn(),
+            handleShowToast,
+            isMobile: false,
+            setMobileView: vi.fn(),
+            setConfirmation,
+            selectedFilePath: 'app.ts',
+            setSelectedFilePath: vi.fn(),
+            setActiveView: vi.fn(),
+        }));
+
+        await act(async () => {
+            result.current.handleCopyPath('app.ts');
+            await Promise.resolve();
+        });
+
+        expect(handleShowToast).toHaveBeenCalledWith('复制失败，请检查剪贴板权限', 'error');
     });
 });

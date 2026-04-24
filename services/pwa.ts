@@ -7,7 +7,8 @@ export function registerAppServiceWorker(
     }
 
     windowLike.addEventListener('load', () => {
-        const serviceWorkerUrl = new URL('sw.js', new URL(import.meta.env.BASE_URL, windowLike.location.origin)).toString();
+        const baseUrl = new URL(import.meta.env.BASE_URL, windowLike.location.href);
+        const serviceWorkerUrl = new URL('sw.js', baseUrl).toString();
         void navigatorLike.serviceWorker
             .register(serviceWorkerUrl)
             .catch((error) => {

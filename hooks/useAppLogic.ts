@@ -8,6 +8,7 @@ import { buildExportArtifact, type ExportFormat } from '../services/exportBuilde
 import { splitOutputText } from '../services/exportSplit';
 import { ConfirmationState, FileContent, RecentProject } from '../types';
 import { clearPersistedAppData } from '../services/appStorage';
+import { copyTextToClipboard } from '../services/clipboard';
 
 const LEGACY_MAX_CHARS_THRESHOLD_DEFAULT = 1000000;
 const MAX_CHARS_THRESHOLD_MIGRATION_KEY = 'migration:maxCharsThresholdDefaultDisabled:v1';
@@ -312,7 +313,12 @@ export const useAppLogic = (
             const artifact = await buildProjectContext(setProgressMessage);
             if (!artifact) return;
 
-            await navigator.clipboard.writeText(artifact.output);
+            const copied = await copyTextToClipboard(artifact.output);
+            if (!copied) {
+                handleShowToast('复制到剪贴板失败。', 'error');
+                return;
+            }
+
             const warningCount = artifact.analysisSummary.securityFindingCount ?? 0;
             if (warningCount > 0) {
                 handleShowToast(`已复制内容，并检测到 ${warningCount} 条敏感信息提示。`, 'info');
