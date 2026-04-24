@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { FileContent } from '../types';
 
 interface FileRankDialogProps {
@@ -67,7 +66,7 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
             type="button"
             onClick={onClick}
             aria-label={ariaLabel}
-            className={`flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-all hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1 ${danger ? 'hover:border-red-500 hover:text-red-500' : ''} ${className}`}
+            className={`flex h-7 w-7 items-center justify-center rounded border border-light-border bg-white text-xs text-light-subtle-text shadow-sm transition-colors hover:border-primary hover:text-primary dark:border-dark-border dark:bg-dark-bg md:h-auto md:w-auto md:space-x-1.5 md:px-2 md:py-1 ${danger ? 'hover:border-red-500 hover:text-red-500' : ''} ${className}`}
             title={label}
         >
             <i className={`fa-solid ${icon}`}></i>
@@ -76,23 +75,16 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
     );
 
     return (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
             onClick={onClose}
         >
-            <motion.div
+            <div
                 className="bg-light-panel dark:bg-dark-panel rounded-xl shadow-2xl border border-light-border dark:border-dark-border w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ duration: 0.2 }}
             >
                 {/* Header */}
-                 <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50 backdrop-blur-md shrink-0">
+                 <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50 shrink-0">
                     <h3 className="font-bold text-lg text-light-text dark:text-dark-text flex items-center gap-2">
                         <i className="fa-solid fa-arrow-down-short-wide text-primary"></i>
                         文件大小排行
@@ -145,10 +137,10 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                              const percentage = maxChars > 0 ? (file.stats.chars / maxChars) * 100 : 0;
                              const isExcluded = !!file.excluded;
                              
-                             return (
+                                return (
                                 <div
                                     key={file.path}
-                                    className={`relative group rounded-lg border border-transparent hover:border-light-border dark:hover:border-dark-border hover:bg-light-bg dark:hover:bg-dark-bg transition-all overflow-hidden ${isExcluded ? 'opacity-60 italic' : ''}`}
+                                    className={`relative group rounded-lg border border-transparent hover:border-light-border dark:hover:border-dark-border hover:bg-light-bg dark:hover:bg-dark-bg transition-colors overflow-hidden ${isExcluded ? 'opacity-60 italic' : ''}`}
                                 >
                                     <button
                                         onClick={() => { onSelectFile(file.path); onClose(); }}
@@ -156,7 +148,7 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                                     >
                                         {/* Progress Bar Background */}
                                         <div 
-                                            className="absolute left-0 top-0 bottom-0 bg-primary/5 dark:bg-primary/10 transition-all duration-500 -z-10"
+                                            className="absolute left-0 top-0 bottom-0 bg-primary/5 dark:bg-primary/10 -z-10"
                                             style={{ width: `${percentage}%` }}
                                         />
                                         
@@ -215,8 +207,8 @@ const FileRankDialog: React.FC<FileRankDialogProps> = ({ isOpen, onClose, files,
                         })
                     )}
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 };
 

@@ -42,13 +42,13 @@ const Header: React.FC<HeaderProps> = ({
   const isBusy = busyState !== null;
   const isLoading = busyState === 'loading';
   const isExporting = busyState === 'exporting';
-  const secondaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl px-2.5 text-sm font-medium text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-hover dark:hover:bg-dark-hover hover:text-light-text dark:hover:text-dark-text disabled:opacity-50 disabled:cursor-not-allowed transition-all';
-  const primaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl bg-primary px-3.5 text-sm font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed transition-all';
+  const secondaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl px-2.5 text-sm font-medium text-light-subtle-text dark:text-dark-subtle-text hover:bg-light-hover dark:hover:bg-dark-hover hover:text-light-text dark:hover:text-dark-text disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+  const primaryButtonClass = 'inline-flex shrink-0 items-center justify-center gap-2 h-9 rounded-xl bg-primary px-3.5 text-sm font-semibold text-white shadow-sm shadow-primary/20 hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors';
   const activeButtonClass = 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled';
   const iconClass = 'text-[0.95rem]';
 
   return (
-    <header className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-light-border bg-light-header/95 px-3 py-2 shadow-sm shadow-slate-900/5 backdrop-blur dark:border-dark-border dark:bg-dark-header/95 dark:shadow-black/20 shrink-0 z-20" role="banner">
+    <header className="flex min-h-[60px] flex-wrap items-center justify-between gap-3 border-b border-light-border bg-light-header px-3 py-2 shadow-sm shadow-slate-900/5 dark:border-dark-border dark:bg-dark-header dark:shadow-black/20 shrink-0 z-20" role="banner">
       <div className="flex min-w-0 items-center gap-3">
         <a href="https://structure-insight-website.pages.dev/" target="_blank" rel="noopener noreferrer" title="访问 Structure Insight 主页">
           <img src="/icon.svg" alt="Structure Insight Logo" className="h-9 w-9" />

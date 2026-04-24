@@ -344,32 +344,8 @@ export async function processFiles(
             fileNode.status = 'skipped';
             fileNode.chars = file.size;
         } else if (isLikelyTooLarge) {
-            try {
-                const { content, lineCount } = await readTextFileWithMetrics(file);
-                if (hasCharLimit && content.length > maxCharsThreshold) {
-                    fileNode.status = 'skipped';
-                    fileNode.chars = content.length;
-                } else {
-                    fileContents.push({
-                        path: path,
-                        content: content,
-                        originalContent: content,
-                        language: getLanguage(file.name),
-                        stats: {
-                            lines: lineCount,
-                            chars: content.length,
-                            estimatedTokens: estimateTokens(content),
-                        },
-                        securityFindings: scanSensitiveContent(path, content),
-                    });
-                    fileNode.status = 'processed';
-                    fileNode.lines = lineCount;
-                    fileNode.chars = content.length;
-                }
-            } catch (e) {
-                fileNode.status = 'error';
-                console.warn(`Could not read file as text: ${file.name}`);
-            }
+            fileNode.status = 'skipped';
+            fileNode.chars = file.size;
         } else {
             try {
                 const { content, lineCount } = await readTextFileWithMetrics(file);

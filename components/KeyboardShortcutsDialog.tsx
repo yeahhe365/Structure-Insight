@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 interface KeyboardShortcutsDialogProps {
     isOpen: boolean;
@@ -35,22 +34,15 @@ const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpe
     if (!isOpen) return null;
 
     return (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
             onClick={onClose}
         >
-            <motion.div
+            <div
                 className="bg-light-panel dark:bg-dark-panel rounded-xl shadow-2xl border border-light-border dark:border-dark-border w-full max-w-sm overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
             >
-                <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50 backdrop-blur-md">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-bg/50">
                     <h3 className="font-bold text-lg text-light-text dark:text-dark-text">键盘快捷键</h3>
                     <button
                         onClick={onClose}
@@ -82,8 +74,8 @@ const KeyboardShortcutsDialog: React.FC<KeyboardShortcutsDialogProps> = ({ isOpe
                         ))}
                     </div>
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 };
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScrollSliderProps {
   scrollRef: React.RefObject<HTMLElement | null>;
@@ -140,30 +139,26 @@ const ScrollSlider: React.FC<ScrollSliderProps> = ({ scrollRef }) => {
     handleMouseDown(e);
   }, [scrollRef, handleMouseDown]);
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <AnimatePresence>
-    {isVisible && (
-        <motion.div
-            ref={trackRef}
-            className="absolute top-0 right-0 h-full w-4 z-20 group"
-            onMouseDown={handleTrackMouseDown}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-        >
-            <div
-                className="absolute w-2 left-1/2 -translate-x-1/2 bg-light-subtle-text/30 dark:bg-dark-subtle-text/30 rounded-full transition-all duration-200 group-hover:w-2.5 group-hover:bg-light-subtle-text/50 dark:group-hover:bg-dark-subtle-text/50"
-                style={{
-                    height: `${thumbHeight}px`,
-                    top: `${thumbPosition}px`,
-                    cursor: 'grab',
-                }}
-                onMouseDown={handleMouseDown}
-            />
-        </motion.div>
-    )}
-    </AnimatePresence>
+    <div
+      ref={trackRef}
+      className="absolute top-0 right-0 h-full w-4 z-20 group"
+      onMouseDown={handleTrackMouseDown}
+    >
+      <div
+        className="absolute w-2 left-1/2 -translate-x-1/2 bg-light-subtle-text/40 dark:bg-dark-subtle-text/40 rounded-full transition-colors group-hover:bg-light-subtle-text/50 dark:group-hover:bg-dark-subtle-text/50"
+        style={{
+            height: `${thumbHeight}px`,
+            top: `${thumbPosition}px`,
+            cursor: 'grab',
+        }}
+        onMouseDown={handleMouseDown}
+      />
+    </div>
   );
 };
 

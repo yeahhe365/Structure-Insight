@@ -105,6 +105,31 @@ describe('processFiles', () => {
         expect(matchesGlobPatternsMock).not.toHaveBeenCalled();
     });
 
+    it('skips files that exceed the byte-size threshold without reading content', async () => {
+        const file = new File(['this content must not be read'], 'huge.log', { type: 'text/plain' });
+        Object.defineProperty(file, 'size', {
+            value: 10_000,
+            configurable: true,
+        });
+        const readAsTextSpy = vi.spyOn(FileReader.prototype, 'readAsText');
+
+        const result = await processFiles(
+            [file],
+            vi.fn(),
+            true,
+            1_000,
+            new AbortController().signal
+        );
+
+        expect(readAsTextSpy).not.toHaveBeenCalled();
+        expect(result.fileContents).toEqual([]);
+        expect(result.treeData[0]).toMatchObject({
+            name: 'huge.log',
+            status: 'skipped',
+            chars: 10_000,
+        });
+    });
+
     it('loads the gitignore matcher module when ignore files are present', async () => {
         const gitignore = new File(['ignored.ts\n'], '.gitignore', { type: 'text/plain' });
         Object.defineProperty(gitignore, 'webkitRelativePath', {

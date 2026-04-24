@@ -1,10 +1,10 @@
 
 import React from 'react';
 import hljs from 'highlight.js/lib/common';
-import { motion } from 'framer-motion';
 import { FileContent, SearchOptions } from '../types';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { buildSearchRegex } from '../services/searchRegex';
 
 interface FileCardProps {
   file: FileContent;
@@ -30,21 +30,6 @@ const IconButton: React.FC<{icon: string, title: string, onClick: () => void, di
         {text && <span className="hidden sm:inline">{text}</span>}
     </button>
 );
-
-/** Build a regex from search options, returning null if invalid */
-function buildSearchRegex(query: string, options: SearchOptions): RegExp | null {
-  if (!query.trim()) return null;
-  const flags = options.caseSensitive ? 'g' : 'gi';
-  let pattern = options.useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (options.wholeWord && !options.useRegex) {
-    pattern = `\\b${pattern}\\b`;
-  }
-  try {
-    return new RegExp(pattern, flags);
-  } catch {
-    return null;
-  }
-}
 
 const FileCard: React.FC<FileCardProps> = ({
     file, isEditing, onStartEdit, onSaveEdit, onCancelEdit,
@@ -134,7 +119,7 @@ const FileCard: React.FC<FileCardProps> = ({
           mark.className = 'search-highlight';
           if (globalMatchIndex === activeMatchIndexInFile) {
             mark.classList.add('search-highlight-active');
-            setTimeout(() => mark.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
+            setTimeout(() => mark.scrollIntoView({ behavior: 'auto', block: 'center' }), 0);
           }
           mark.textContent = match[0];
           fragment.appendChild(mark);
@@ -179,8 +164,8 @@ const FileCard: React.FC<FileCardProps> = ({
   const directoryPath = pathSegments.join('/') || '根目录';
 
   return (
-    <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border transition-colors duration-300 focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
-      <div className="flex flex-col gap-3 p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className={`bg-light-panel dark:bg-dark-panel rounded-lg overflow-hidden border border-light-border dark:border-dark-border focus-within:ring-2 focus-within:ring-primary ${file.excluded ? 'opacity-75' : ''}`}>
+      <div className="flex flex-col gap-3 p-3 bg-light-header/80 dark:bg-dark-header/80 border-b border-light-border dark:border-dark-border sticky top-0 z-[1] sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex items-center gap-3" title={file.path}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled">
             <i className="fa-solid fa-file-lines"></i>
@@ -291,11 +276,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
   
   return (
     <div className="h-full p-4 md:p-6 bg-light-bg dark:bg-dark-bg">
-        <motion.div
-            key={selectedFile.path}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-        >
+        <div key={selectedFile.path}>
             <MemoizedFileCard
               file={selectedFile}
               isEditing={editingPath === selectedFile.path}
@@ -313,7 +294,7 @@ const CodeView: React.FC<CodeViewProps> = (props) => {
               onCopyPath={onCopyPath}
               wordWrap={wordWrap}
             />
-        </motion.div>
+        </div>
     </div>
   );
 };

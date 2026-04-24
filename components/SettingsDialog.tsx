@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import type { ExportFormat } from '../services/exportBuilder';
 
 interface SettingsDialogProps {
@@ -93,7 +92,7 @@ const Toggle = ({ checked, onChange, label, id }: ToggleProps) => (
         aria-pressed={checked}
         onClick={onChange}
         className={[
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-all',
+            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 dark:focus:ring-offset-slate-950',
             checked
                 ? 'border-primary/30 bg-primary shadow-sm shadow-primary/25'
@@ -129,7 +128,7 @@ const SidebarTabButton = ({ section, activeSection, onSelectSection }: SidebarTa
             tabIndex={isActive ? 0 : -1}
             onClick={() => onSelectSection(section.id)}
             className={[
-                'flex flex-shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-all outline-none select-none',
+                'flex flex-shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors outline-none select-none',
                 'w-auto md:w-full focus-visible:ring-2 focus-visible:ring-primary/50',
                 isActive
                     ? 'bg-light-bg text-light-text shadow-sm dark:bg-slate-900 dark:text-dark-text'
@@ -371,7 +370,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         onToggleTheme();
                     }}
                     className={[
-                        'rounded-md px-3 py-1.5 text-xs font-semibold transition-all',
+                        'rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
                         option.active
                             ? 'bg-primary text-white shadow-sm'
                             : 'text-light-subtle-text hover:text-light-text dark:text-dark-subtle-text dark:hover:text-dark-text',
@@ -590,7 +589,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     );
 
     const renderAboutSection = () => (
-        <div className="flex min-h-full flex-col items-center px-4 py-3 text-center animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="flex min-h-full flex-col items-center px-4 py-3 text-center">
             <div className="relative">
                 <img
                     src="/icon.svg"
@@ -624,7 +623,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     href="https://github.com/yeahhe365/Structure-Insight"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200"
                 >
                     <i className="fa-solid fa-code-branch text-sm" />
                     <span>查看 GitHub</span>
@@ -633,7 +632,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     href="https://github.com/yeahhe365/Structure-Insight/issues"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-light-border bg-light-panel px-5 py-2.5 text-sm font-medium text-light-text shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary dark:border-dark-border dark:bg-slate-900 dark:text-dark-text dark:hover:border-primary/30 dark:hover:text-primary"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-light-border bg-light-panel px-5 py-2.5 text-sm font-medium text-light-text shadow-sm hover:border-primary/30 hover:text-primary dark:border-dark-border dark:bg-slate-900 dark:text-dark-text dark:hover:border-primary/30 dark:hover:text-primary"
                 >
                     <i className="fa-solid fa-bug text-sm" />
                     <span>反馈问题</span>
@@ -656,20 +655,13 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
     };
 
     return (
-        <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
             onClick={onClose}
         >
-            <motion.div
-                className="w-full h-[100dvh] sm:h-[85vh] sm:w-[90vw] max-w-6xl overflow-hidden bg-light-panel shadow-2xl transition-all sm:rounded-xl dark:bg-slate-950 md:flex md:flex-row"
+            <div
+                className="w-full h-[100dvh] sm:h-[85vh] sm:w-[90vw] max-w-6xl overflow-hidden bg-light-panel shadow-2xl sm:rounded-xl dark:bg-slate-950 md:flex md:flex-row"
                 onClick={(event) => event.stopPropagation()}
-                initial={{ scale: 0.98, opacity: 0, y: 8 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.98, opacity: 0, y: 8 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
             >
                 <aside className="flex w-full flex-shrink-0 flex-col border-b border-light-border bg-light-header dark:border-dark-border dark:bg-slate-900 md:w-64 md:border-b-0 md:border-r">
                     <div className="flex items-center justify-between px-4 py-3 md:px-5 md:py-5">
@@ -719,8 +711,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         </section>
                     </div>
                 </main>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 };
 

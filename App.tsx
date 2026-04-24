@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { useAppLogic } from './hooks/useAppLogic';
 import Toast from './components/Toast';
 import Header from './components/Header';
@@ -92,7 +91,7 @@ const App: React.FC = () => {
             {/* Loading progress bar */}
             {(state.isLoading || state.isExporting) && (
                 <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-light-border dark:bg-dark-border overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary via-cyan-500 to-amber-400 transition-all duration-300 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
+                    <div className="h-full bg-gradient-to-r from-primary via-cyan-500 to-amber-400 transition-[width] duration-150 ease-out" style={{ width: getProgressWidth(state.progressMessage) }} />
                 </div>
             )}
             <Header 
@@ -134,9 +133,8 @@ const App: React.FC = () => {
                 message={state.confirmation.message}
              />
 
-            <AnimatePresence>
-                 {state.isSearchOpen && (
-                    <React.Suspense fallback={<SuspenseFallback />}>
+            {state.isSearchOpen && (
+                <React.Suspense fallback={<SuspenseFallback />}>
                     <SearchDialog
                         onClose={() => handlers.setIsSearchOpen(false)}
                         onSearch={handlers.handleSearch}
@@ -144,13 +142,11 @@ const App: React.FC = () => {
                         resultsCount={state.searchResults.length}
                         currentIndex={state.activeResultIndex}
                     />
-                    </React.Suspense>
-                 )}
-            </AnimatePresence>
+                </React.Suspense>
+            )}
 
-            <AnimatePresence>
-                {state.isFileRankOpen && (
-                    <React.Suspense fallback={<SuspenseFallback />}>
+            {state.isFileRankOpen && (
+                <React.Suspense fallback={<SuspenseFallback />}>
                     <FileRankDialog
                         isOpen={state.isFileRankOpen}
                         onClose={() => handlers.setIsFileRankOpen(false)}
@@ -160,13 +156,11 @@ const App: React.FC = () => {
                         onDeleteFile={handlers.handleDeleteFile}
                         onToggleExclude={handlers.handleToggleExclude}
                     />
-                    </React.Suspense>
-                )}
-            </AnimatePresence>
+                </React.Suspense>
+            )}
 
-            <AnimatePresence>
-                {state.isSettingsOpen && (
-                    <React.Suspense fallback={<SuspenseFallback />}>
+            {state.isSettingsOpen && (
+                <React.Suspense fallback={<SuspenseFallback />}>
                     <SettingsDialog
                         isOpen={state.isSettingsOpen}
                         onClose={() => handlers.setIsSettingsOpen(false)}
@@ -210,33 +204,26 @@ const App: React.FC = () => {
                         exportInstructionText={state.exportInstructionText}
                         onSetExportInstructionText={settings.setExportInstructionText}
                     />
-                    </React.Suspense>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {state.isShortcutsOpen && (
-                    <React.Suspense fallback={<SuspenseFallback />}>
+                </React.Suspense>
+            )}
+            {state.isShortcutsOpen && (
+                <React.Suspense fallback={<SuspenseFallback />}>
                     <KeyboardShortcutsDialog
                         isOpen={state.isShortcutsOpen}
                         onClose={() => handlers.setIsShortcutsOpen(false)}
                     />
-                    </React.Suspense>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {state.isSecurityFindingsOpen && (
-                    <React.Suspense fallback={<SuspenseFallback />}>
+                </React.Suspense>
+            )}
+            {state.isSecurityFindingsOpen && (
+                <React.Suspense fallback={<SuspenseFallback />}>
                     <SecurityFindingsDialog
                         isOpen={state.isSecurityFindingsOpen}
                         onClose={() => handlers.setIsSecurityFindingsOpen(false)}
                         findings={state.processedData?.securityFindings ?? []}
                     />
-                    </React.Suspense>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} type={state.toastType} />}
-            </AnimatePresence>
+                </React.Suspense>
+            )}
+            {state.toastMessage && <Toast message={state.toastMessage} onDone={() => handlers.setToastMessage(null)} type={state.toastType} />}
         </div>
     );
 };

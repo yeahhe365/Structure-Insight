@@ -1,6 +1,7 @@
 import type { FileContent, SearchOptions, SearchResultItem } from '../types';
 import { MAIN_THREAD_YIELD_INTERVAL_MS, SEARCH_MATCH_BATCH_SIZE } from './constants';
 import { yieldToMainThread, getCurrentTimeMs } from './scheduler';
+import { buildSearchRegex } from './searchRegex';
 import { buildLineStartIndices, findLineNumber } from './textMetrics';
 
 interface CachedLineStarts {
@@ -14,24 +15,6 @@ export interface SearchProjectFilesParams {
     options: SearchOptions;
     signal?: AbortSignal;
     lineStartCache?: Map<string, CachedLineStarts>;
-}
-
-function buildSearchRegex(query: string, options: SearchOptions): RegExp | null {
-    if (!query.trim()) {
-        return null;
-    }
-
-    const flags = options.caseSensitive ? 'g' : 'gi';
-    let pattern = options.useRegex ? query : query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (options.wholeWord && !options.useRegex) {
-        pattern = `\\b${pattern}\\b`;
-    }
-
-    try {
-        return new RegExp(pattern, flags);
-    } catch {
-        return null;
-    }
 }
 
 function getCachedLineStarts(file: FileContent, cache?: Map<string, CachedLineStarts>): number[] {

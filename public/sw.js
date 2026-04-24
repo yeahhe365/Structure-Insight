@@ -1,13 +1,5 @@
 const CACHE_NAME = 'structure-insight-shell-v1';
 const APP_SHELL = ['/', '/index.html', '/manifest.json', '/icon.svg'];
-const CDN_HOSTS = new Set([
-  'fonts.googleapis.com',
-  'fonts.gstatic.com',
-  'cdnjs.cloudflare.com',
-  'cdn.tailwindcss.com',
-  'aistudiocdn.com',
-]);
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
@@ -28,26 +20,12 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-async function cacheFirst(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
-  if (cached) {
-    return cached;
-  }
-
-  const response = await fetch(request);
-  if (response.ok || response.type === 'opaque') {
-    cache.put(request, response.clone());
-  }
-  return response;
-}
-
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
 
   try {
     const response = await fetch(request);
-    if (response.ok || response.type === 'opaque') {
+    if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
@@ -73,7 +51,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.origin === self.location.origin || CDN_HOSTS.has(url.host)) {
-    event.respondWith(cacheFirst(request));
+  if (url.origin === self.location.origin) {
+    event.respondWith(networkFirst(request));
   }
 });

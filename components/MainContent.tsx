@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import InitialPrompt from './InitialPrompt';
 import TabBar from './TabBar';
 import { useAppLogic } from '../hooks/useAppLogic';
@@ -64,10 +63,8 @@ function filterTreeByFileType(nodes: FileNode[], fileType: string | null): FileN
 
 const LoadingIndicator: React.FC<{message: string}> = ({message}) => (
      <div className="flex flex-col items-center justify-center h-full text-center p-4">
-        <div className="flex space-x-2 mb-6">
-            {[0, 1, 2].map(i => (
-                <div key={i} className="w-3 h-3 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-            ))}
+        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-primary/20 bg-primary/5 text-primary">
+            <i className="fa-solid fa-folder-tree text-2xl"></i>
         </div>
         <p className="text-lg font-semibold mb-2">正在处理文件...</p>
         <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text max-w-xs truncate">{message}</p>
@@ -187,32 +184,20 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
 
     return (
         <main className="flex-1 flex overflow-hidden relative">
-            <AnimatePresence>
-                {state.isDragging && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-white/70 dark:bg-dark-bg/70 backdrop-blur-sm"
-                    >
+            {state.isDragging && (
+                <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center bg-white/70 dark:bg-dark-bg/70">
                         <div className="border-4 border-dashed border-primary/60 rounded-2xl p-12 flex flex-col items-center gap-4 max-w-md mx-4">
-                            <motion.i
-                                className="fa-solid fa-cloud-arrow-up text-5xl text-primary"
-                                animate={{ scale: [1, 1.15, 1] }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                            />
+                            <i className="fa-solid fa-cloud-arrow-up text-5xl text-primary" />
                             <p className="text-xl font-bold text-light-text dark:text-dark-text">拖放文件夹或 .zip 文件</p>
                             <p className="text-sm text-light-subtle-text dark:text-dark-subtle-text">支持任意代码项目</p>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
             
             {isMobile ? (
                 <div className="relative w-full h-full overflow-hidden">
-                   <AnimatePresence initial={false}>
                         {state.mobileView === 'tree' && state.processedData && (
-                            <motion.div key="tree" initial={{x: '-100%'}} animate={{x: '0%'}} exit={{x: '-100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full bg-light-panel dark:bg-dark-panel flex flex-col">
+                            <div className="absolute inset-0 h-full bg-light-panel dark:bg-dark-panel flex flex-col">
                                 <FileTypeFilterToolbar
                                     fileTypes={fileTypes}
                                     activeFilterType={activeFilterType}
@@ -232,10 +217,10 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                         />
                                     </React.Suspense>
                                 </div>
-                            </motion.div>
+                            </div>
                         )}
                         {state.mobileView === 'editor' && (
-                            <motion.div key="editor" initial={{x: '0%'}} animate={{x: '0%'}} exit={{x: '100%'}} transition={{duration: 0.3, ease: 'easeInOut'}} className="absolute inset-0 h-full flex flex-col">
+                            <div className="absolute inset-0 h-full flex flex-col">
                                 {state.processedData && state.openFiles.length > 0 && (
                                     <TabBar
                                         openFiles={state.openFiles}
@@ -280,9 +265,8 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                                 ) : (
                                     <div className="flex-1"><InitialPrompt onOpenFolder={handlers.handleFileSelect} onOpenRecentProject={handlers.handleRecentProjectSelect} recentProjects={state.recentProjects}/></div>
                                 )}
-                            </motion.div>
+                            </div>
                         )}
-                   </AnimatePresence>
                 </div>
             ) : state.processedData ? (
                 <>
@@ -372,7 +356,7 @@ const MainContent: React.FC<MainContentProps> = ({ logic, codeViewRef, leftPanel
                 </div>
             )}
              {isMobile && state.processedData && (
-                <button onClick={handlers.handleMobileViewToggle} aria-label={state.mobileView === 'tree' ? '切换到代码视图' : '切换到文件树'} className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center z-20 active:scale-90 transition-transform">
+                <button onClick={handlers.handleMobileViewToggle} aria-label={state.mobileView === 'tree' ? '切换到代码视图' : '切换到文件树'} className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center z-20">
                     <i className={`fa-solid ${mobileFabIcon()} text-xl`}></i>
                 </button>
             )}

@@ -25,7 +25,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'framer-motion': ['framer-motion'],
           'file-tree-vendor': ['react-virtuoso'],
           'code-view-vendor': ['highlight.js/lib/common', 'marked', 'dompurify'],
         }

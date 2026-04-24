@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { RecentProject } from '../types';
 
 function timeAgo(timestamp: number): string {
@@ -52,13 +51,8 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
 
             <div className="relative z-10 mx-auto flex min-h-full w-full max-w-5xl flex-col items-center justify-start px-4 py-10 pb-16 sm:px-6 lg:justify-center">
                 {/* Hero */}
-                <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="text-center mb-10 px-2"
-                >
-                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-light-border bg-light-panel/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text shadow-sm backdrop-blur dark:border-dark-border dark:bg-dark-panel/80 dark:text-dark-subtle-text">
+                <div className="text-center mb-10 px-2">
+                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-light-border bg-light-panel/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-light-subtle-text shadow-sm dark:border-dark-border dark:bg-dark-panel/80 dark:text-dark-subtle-text">
                         <span className="h-2 w-2 rounded-full bg-primary"></span>
                         浏览器优先，本地分析
                     </div>
@@ -71,42 +65,32 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                     <p className="mx-auto mt-3 max-w-2xl px-2 text-xs leading-6 text-light-subtle-text dark:text-dark-subtle-text sm:text-sm">
                         快速理解目录结构、估算上下文体积、发现潜在敏感内容，并生成适合分享给 AI 的仓库快照。
                     </p>
-                </motion.div>
+                </div>
 
                 {/* Main Action */}
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="w-full max-w-xl mb-8"
-                >
+                <div className="w-full max-w-xl mb-8">
                     <button
                         onClick={onOpenFolder}
-                        className="group relative w-full overflow-hidden rounded-3xl border border-primary/20 bg-light-panel/90 p-5 text-left shadow-xl shadow-primary/10 outline-none transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/15 focus:ring-4 focus:ring-primary/15 dark:bg-dark-panel/90 sm:p-6"
+                        className="group relative w-full overflow-hidden rounded-3xl border border-primary/20 bg-light-panel/90 p-5 text-left shadow-xl shadow-primary/10 outline-none hover:border-primary/50 focus:ring-4 focus:ring-primary/15 dark:bg-dark-panel/90 sm:p-6"
                         aria-label="选择项目文件夹"
                     >
                         <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-primary/10 to-transparent"></div>
                         <div className="relative flex items-center gap-4">
-                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/25 transition-all duration-300 group-hover:scale-105">
+                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/25">
                             <i className="fa-solid fa-folder-open text-2xl"></i>
                         </div>
                         <div className="min-w-0 flex-1">
                             <h3 className="text-lg sm:text-xl font-bold text-light-text dark:text-dark-text mb-1 group-hover:text-primary transition-colors">选择项目文件夹</h3>
                             <p className="text-xs sm:text-sm text-light-subtle-text dark:text-dark-subtle-text">支持文件夹、ZIP 与拖放导入，几秒内生成可导航结构。</p>
                         </div>
-                        <i className="fa-solid fa-arrow-right hidden text-xl text-primary transition-transform group-hover:translate-x-1 sm:block"></i>
+                        <i className="fa-solid fa-arrow-right hidden text-xl text-primary sm:block"></i>
                         </div>
                     </button>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="mb-10 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-3"
-                >
+                <div className="mb-10 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-3">
                     {capabilities.map(item => (
-                        <div key={item.title} className="rounded-2xl border border-light-border bg-light-panel/80 p-4 shadow-sm backdrop-blur dark:border-dark-border dark:bg-dark-panel/80">
+                        <div key={item.title} className="rounded-2xl border border-light-border bg-light-panel/80 p-4 shadow-sm dark:border-dark-border dark:bg-dark-panel/80">
                             <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary-disabled">
                                 <i className={`fa-solid ${item.icon}`}></i>
                             </div>
@@ -114,16 +98,11 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                             <p className="mt-1 text-xs leading-5 text-light-subtle-text dark:text-dark-subtle-text">{item.description}</p>
                         </div>
                     ))}
-                </motion.div>
+                </div>
 
                 {/* Recent Projects */}
                 {recentProjects.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.4 }}
-                        className="w-full max-w-lg mb-10"
-                    >
+                    <div className="w-full max-w-lg mb-10">
                         <p className="text-xs font-medium text-light-subtle-text dark:text-dark-subtle-text mb-3 uppercase tracking-wider">最近项目</p>
                         <div className="grid grid-cols-1 gap-2">
                             {recentProjects.map((project) => (
@@ -139,18 +118,15 @@ const InitialPrompt: React.FC<InitialPromptProps> = ({ onOpenFolder, recentProje
                                 </button>
                             ))}
                         </div>
-                    </motion.div>
+                    </div>
                 )}
                 {/* Footer Info */}
-                <motion.div
+                <div
                     data-landing-footer
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 1, delay: 0.8 }}
                     className="mt-auto px-4 pt-6 text-center text-[11px] sm:text-xs text-light-subtle-text dark:text-dark-subtle-text"
                 >
                     安全本地处理 · 浏览器运行
-                </motion.div>
+                </div>
             </div>
         </div>
     );
