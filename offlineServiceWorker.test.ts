@@ -3,7 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('service worker source', () => {
-    const source = fs.readFileSync(path.resolve(__dirname, 'sw.js'), 'utf8');
+    const source = fs.readFileSync(path.resolve(__dirname, 'public/sw.js'), 'utf8');
 
     it('uses network-first for same-origin built assets to avoid stale deployments', () => {
         expect(source).toContain("if (url.origin === self.location.origin)");
