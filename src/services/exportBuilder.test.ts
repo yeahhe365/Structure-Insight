@@ -271,6 +271,69 @@ describe('buildExportOutput', () => {
     expect(output).not.toContain('"src/removed.ts"');
   });
 
+  it('honors in-app exclude/delete when UI paths still include the project root prefix', async () => {
+    // processFiles stores webkitRelativePath as-is (e.g. demo/.env). Export then strips the
+    // root for packed output. Manual exclude/delete must still match after that strip.
+    const files = [
+      createFile('demo/.env', 'SECRET=should-not-export\n'),
+      createFile('demo/src/app.ts', 'export const answer = 42;\n'),
+      createFile('demo/src/gone.ts', 'export const gone = true;\n'),
+    ];
+
+    const rootPrefixedCurrentData: ProcessedFiles = {
+      rootName: 'demo',
+      structureString: 'demo\n├── .env\n└── src\n    ├── app.ts\n    └── gone.ts\n',
+      treeData: [],
+      fileContents: [
+        {
+          path: 'demo/.env',
+          content: 'SECRET=should-not-export\n',
+          originalContent: 'SECRET=should-not-export\n',
+          language: 'properties',
+          stats: { lines: 1, chars: 25, estimatedTokens: 4 },
+          excluded: true,
+        },
+        {
+          path: 'demo/src/app.ts',
+          content: 'export const answer = 42;\n',
+          originalContent: 'export const answer = 42;\n',
+          language: 'typescript',
+          stats: { lines: 1, chars: 26, estimatedTokens: 6 },
+        },
+      ],
+      analysisSummary: {
+        totalEstimatedTokens: 10,
+        securityFindingCount: 0,
+        scannedFileCount: 2,
+      },
+      securityFindings: [],
+      exportMetadata: {
+        usesDefaultIgnorePatterns: true,
+        usesGitignorePatterns: false,
+        sortsByGitChangeCount: false,
+      },
+      // User deleted gone.ts from the explorer; path matches tree/processFiles form.
+      removedPaths: ['demo/src/gone.ts'],
+    };
+
+    const output = await buildExportOutput({
+      currentData: rootPrefixedCurrentData,
+      rawFiles: files,
+      emptyDirectoryPaths: [],
+      exportOptions: createExportOptions({ format: 'json', useGitignore: false }),
+      extractContent: true,
+      maxCharsThreshold: 100000,
+      progressCallback: vi.fn(),
+    });
+
+    expect(output).toContain('"src/app.ts"');
+    expect(output).toContain('export const answer = 42;');
+    expect(output).not.toContain('SECRET=should-not-export');
+    expect(output).not.toContain('".env"');
+    expect(output).not.toContain('"src/gone.ts"');
+    expect(output).not.toContain('export const gone = true');
+  });
+
   it('does not emit edited changes sections', async () => {
     const files = [createFile('demo/src/app.ts', CURRENT_DATA.fileContents[0].originalContent ?? '')];
 

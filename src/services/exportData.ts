@@ -119,15 +119,40 @@ function buildTree(
   };
 }
 
+/**
+ * processFiles stores paths with the project root segment (e.g. `demo/.env`).
+ * Export rebuild strips that root so packed output uses repo-relative paths (`.env`).
+ * Manual UI state (exclude / delete / edits) still carries the original paths, so
+ * matching must strip the same root prefix before comparing.
+ */
+function stripRootPrefix(path: string, rootName: string): string {
+  if (!rootName) {
+    return path;
+  }
+
+  const prefix = `${rootName}/`;
+  return path.startsWith(prefix) ? path.slice(prefix.length) : path;
+}
+
 function applyManualState(exportData: ProcessedFiles, currentData: ProcessedFiles): ProcessedFiles {
-  const currentByPath = new Map(currentData.fileContents.map((file) => [file.path, file]));
-  const removedPaths = new Set(currentData.removedPaths ?? []);
+  const rootName = currentData.rootName || exportData.rootName;
+  const currentByPath = new Map(
+    currentData.fileContents.map((file) => {
+      const path = stripRootPrefix(file.path, rootName);
+      return [path, { ...file, path }] as const;
+    })
+  );
+  const removedPaths = new Set((currentData.removedPaths ?? []).map((path) => stripRootPrefix(path, rootName)));
 
   const mergedFiles = exportData.fileContents
     .filter((file) => !removedPaths.has(file.path))
     .map((file) => {
       const current = currentByPath.get(file.path);
-      return current ? { ...file, ...current } : file;
+      if (!current) {
+        return file;
+      }
+      // Keep the export-normalized path; never reintroduce the root prefix from UI state.
+      return { ...file, ...current, path: file.path };
     });
   mergedFiles.sort((a, b) => compareFilePaths(a.path, b.path));
 
@@ -148,18 +173,13 @@ function applyManualState(exportData: ProcessedFiles, currentData: ProcessedFile
 }
 
 function normalizeExportPaths(data: ProcessedFiles): ProcessedFiles {
-  const stripRootPrefix = (path: string) => {
-    const prefix = `${data.rootName}/`;
-    return path.startsWith(prefix) ? path.slice(prefix.length) : path;
-  };
-
   return {
     ...data,
     fileContents: data.fileContents.map((file) => ({
       ...file,
-      path: stripRootPrefix(file.path),
+      path: stripRootPrefix(file.path, data.rootName),
     })),
-    emptyDirectoryPaths: (data.emptyDirectoryPaths ?? []).map(stripRootPrefix),
+    emptyDirectoryPaths: (data.emptyDirectoryPaths ?? []).map((path) => stripRootPrefix(path, data.rootName)),
   };
 }
 
